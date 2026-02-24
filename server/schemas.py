@@ -27,3 +27,7 @@ class UserCreate(BaseModel):
     education: Optional[str] = None
     department: Optional[str] = None
     position: Optional[str] = None
+
+class TestSubmission(BaseModel):
+    answers: dict
+    time_taken: int

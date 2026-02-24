@@ -82,3 +82,32 @@ class Assignment(Base):
     # Relationships
     user = relationship("User")
     test = relationship("Test")
+
+class Response(Base):
+    __tablename__ = "responses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    test_id = Column(Integer, ForeignKey("tests.id"))
+    question_id = Column(Integer, ForeignKey("questions.id"))
+    selected_option_id = Column(Integer, ForeignKey("options.id"))
+    
+    # Relationships
+    user = relationship("User")
+    test = relationship("Test")
+    question = relationship("Question")
+    option = relationship("Option")
+
+class Result(Base):
+    __tablename__ = "results"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    test_id = Column(Integer, ForeignKey("tests.id"))
+    score = Column(Integer, default=0)
+    time_taken = Column(Integer) # in seconds
+    completed_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User")
+    test = relationship("Test")
