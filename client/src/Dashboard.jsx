@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import CreateUser from './CreateUser';
+import Swal from 'sweetalert2';
 
 function Dashboard({ token, onLogout }) {
   const [user, setUser] = useState(null);
@@ -139,16 +140,67 @@ function Dashboard({ token, onLogout }) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                        {/* ... existing assignment logic ... */}
                        <div className="flex flex-col gap-1">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex flex-col gap-1">
                           {getUserAssignments(u.id).length > 0 ? getUserAssignments(u.id).map(a => (
-                            <span key={a.id} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs inline-block">
-                              {a.test_name}
+                            <span key={a.id} className={`px-2 py-1 rounded text-xs inline-block ${
+                              a.status === 'locked' ? 'bg-red-100 text-red-800' :
+                              a.status === 'completed' ? 'bg-gray-100 text-gray-500' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {a.test_name} ({a.status})
                             </span>
                           )) : <span className="text-gray-400 text-xs">None</span>}
                         </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                       {/* ... existing action logic ... */}
-                       <div className="flex gap-2 items-center">
+                        </div>
+                    </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                       <div className="flex gap-2 items-center flex-wrap">
+                         
+                         {/* 1. NEW: Unlock Button (Only shows if status is locked) */}
+                         {getUserAssignments(u.id).some(a => a.status === 'locked') && (
+                            <button 
+                                                            onClick={async () => {
+                                const lockedA = getUserAssignments(u.id).find(a => a.status === 'locked');
+                                
+                                // NEW: SweetAlert Confirmation
+                                Swal.fire({
+                                  title: 'Unlock Test?',
+                                  text: `This will allow ${u.full_name || u.username} to continue the test.`,
+                                  icon: 'warning',
+                                  showCancelButton: true,
+                                  confirmButtonColor: '#3085d6',
+                                  cancelButtonColor: '#d33',
+                                  confirmButtonText: 'Yes, unlock it!'
+                                }).then(async (result) => {
+                                  if (result.isConfirmed) {
+                                    try {
+                                      await axios.post(`http://127.0.0.1:8000/admin/assignments/${lockedA.id}/unlock`, {}, {
+                                        headers: { Authorization: `Bearer ${token}` }
+                                      });
+                                      
+                                      // Success Popup
+                                      Swal.fire(
+                                        'Unlocked!',
+                                        'The test has been unlocked.',
+                                        'success'
+                                      );
+                                      fetchAssignments(); 
+                                    } catch (err) {
+                                      // Error Popup
+                                      Swal.fire('Error', 'Failed to unlock test', 'error');
+                                    }
+                                  }
+                                })
+                              }}
+                              className="bg-red-500 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded"
+                            >
+                              Unlock
+                            </button>
+                         )}
+                         
+                         {/* 2. EXISTING: Assign Dropdown (Always shows) */}
                          <select 
                            className="border rounded px-2 py-1 text-xs"
                            onChange={(e) => setSelectedTest({ ...selectedTest, [u.id]: e.target.value })}

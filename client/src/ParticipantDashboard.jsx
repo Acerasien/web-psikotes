@@ -58,7 +58,7 @@ function ParticipantDashboard({ token, user, onLogout }) {
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-gray-900">{a.test_name}</h3>
                   
-                  {/* Improved Status Badge */}
+                                    {/* Improved Status Badge */}
                   {a.status === 'completed' ? (
                     <span className="flex items-center text-green-600 font-bold text-sm">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -66,7 +66,16 @@ function ParticipantDashboard({ token, user, onLogout }) {
                       </svg>
                       Completed
                     </span>
+                  ) : a.status === 'locked' ? (
+                    // NEW: Locked Status
+                    <span className="flex items-center text-red-600 font-bold text-sm">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      Locked
+                    </span>
                   ) : (
+                    // Default (Pending / In Progress)
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       a.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
                       'bg-blue-100 text-blue-800'

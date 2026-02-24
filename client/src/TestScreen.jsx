@@ -1,6 +1,7 @@
 // client/src/TestScreen.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 function TestScreen({ token, assignmentId, onFinish }) {
   const [testData, setTestData] = useState(null);
@@ -10,8 +11,97 @@ function TestScreen({ token, assignmentId, onFinish }) {
   const [loading, setLoading] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false); // New state for modal
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [exitCount, setExitCount] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true);
 
-  // 1. Load Test Data (Same as before)
+    // --- INTEGRITY LOGIC ---
+
+  // 1. Force Fullscreen on Mount
+  useEffect(() => {
+    const enterFullscreen = () => {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+      }
+    };
+    
+    if (!loading) {
+      enterFullscreen();
+    }
+  }, [loading]);
+
+  // 2. Detect Fullscreen Exit
+    // 2. Detect Fullscreen Exit
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = document.fullscreenElement !== null;
+      
+      if (!isCurrentlyFullscreen && !isLocked && !loading) {
+        const newCount = exitCount + 1;
+        setExitCount(newCount);
+        
+        if (newCount >= 3) {
+          setIsLocked(true);
+          // CALL API TO LOCK IN DATABASE
+          axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/lock`, {}, {
+             headers: { Authorization: `Bearer ${token}` }
+          }).catch(err => console.error("Failed to lock assignment", err));
+          
+          Swal.fire({
+            title: 'Test Locked',
+            text: 'You have exited fullscreen too many times.',
+            icon: 'error',
+            allowOutsideClick: false
+          });
+        } 
+        else {
+          setIsFullscreen(false);
+          // Warning Toast
+          Swal.fire({
+            title: `Warning ${newCount}/3`,
+            text: 'Please return to fullscreen immediately!',
+            icon: 'warning',
+            timer: 3000,
+            timerProgressBar: true
+          });
+        }
+      } else if (isCurrentlyFullscreen) {
+        setIsFullscreen(true);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [exitCount, isLocked, loading, assignmentId, token]); // Add dependencies
+
+  // 3. Disable Right-Click and Shortcuts
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault();
+    const handleKeyDown = (e) => {
+      // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (e.key === "F12" || 
+          (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j")) || 
+          (e.ctrlKey && (e.key === "U" || e.key === "u"))) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+  
+
+    // 1. Load Test Data
   useEffect(() => {
     const loadTest = async () => {
       try {
@@ -22,26 +112,32 @@ function TestScreen({ token, assignmentId, onFinish }) {
         setTimeLeft(res.data.time_limit);
         setLoading(false);
       } catch (err) {
-        console.error("Failed to start test", err);
-        alert("Error loading test");
-        onFinish();
+        // NEW: Check if error is 403 (Locked)
+        if (err.response && err.response.status === 403 && err.response.data.detail.includes("locked")) {
+            setIsLocked(true); // Show locked screen immediately
+            setLoading(false); // Stop loading spinner
+        } else {
+            console.error("Failed to start test", err);
+            onFinish(); // Go back to dashboard for other errors
+        }
       }
     };
     loadTest();
   }, [token, assignmentId]);
 
   // 2. Timer Logic (Same as before)
+    // 2. Timer Logic
   useEffect(() => {
-    if (!loading && timeLeft > 0) {
+    // UPDATE: Only run if NOT loading, time left, AND NOT paused/locked
+    if (!loading && timeLeft > 0 && isFullscreen && !isLocked) {
       const timerId = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
       return () => clearInterval(timerId);
     } else if (timeLeft === 0 && !loading) {
-      // Auto submit when time runs out (No confirmation modal for timeout)
       handleSubmit(answers, true); 
     }
-  }, [timeLeft, loading]);
+  }, [timeLeft, loading, isFullscreen, isLocked]); // Add dependencies
 
   // 3. Handle Answer Selection
   const handleSelect = (optionId) => {
@@ -84,6 +180,24 @@ function TestScreen({ token, assignmentId, onFinish }) {
     };  
 
   if (loading) return <div className="p-8 text-center">Loading Test...</div>;
+
+  // --- NEW SAFETY CHECK ---
+  // If the test is locked, show the lock screen immediately and stop.
+  if (isLocked) {
+    return (
+      <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
+        <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
+        <p className="mb-2">You have exited fullscreen too many times.</p>
+        <p className="text-gray-400">Please contact the administrator to unlock your attempt.</p>
+        <button 
+          onClick={onFinish}
+          className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
   
   const currentQuestion = testData.questions[currentIndex];
   const formatTime = (seconds) => {
@@ -210,6 +324,31 @@ function TestScreen({ token, assignmentId, onFinish }) {
             </div>
           </div>
         </div>
+      )}
+    {/* LOCKOUT OVERLAY */}
+      {isLocked && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
+          <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
+          <p className="mb-2">You have exited fullscreen too many times.</p>
+          <p className="text-gray-400">Please contact the administrator to unlock your attempt.</p>
+        </div>
+      )}
+
+      {/* PAUSE OVERLAY */}
+      {!isFullscreen && !isLocked && !loading && (
+         <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
+            <h2 className="text-2xl font-bold mb-4">Paused</h2>
+            <p>Please click the button below to return to fullscreen mode.</p>
+            <button 
+                onClick={() => {
+                    const elem = document.documentElement;
+                    if (elem.requestFullscreen) elem.requestFullscreen();
+                }}
+                className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold"
+            >
+                Return to Fullscreen
+            </button>
+         </div>
       )}
     </div>
   );
