@@ -258,6 +258,27 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
     
     return {"message": "Test submitted successfully", "score": score}
 
+@app.get("/results/")
+def get_results(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    results = db.query(Result).all()
+    
+    output = []
+    for r in results:
+        # Calculate total questions for this test dynamically
+        total_questions = db.query(Question).filter(Question.test_id == r.test_id).count()
+        
+        output.append({
+            "id": r.id,
+            "username": r.user.username,
+            "full_name": r.user.full_name,
+            "test_name": r.test.name,
+            "score": r.score,
+            "total_questions": total_questions, # NEW FIELD
+            "time_taken": r.time_taken,
+            "completed_at": r.completed_at
+        })
+    return output
+
 @app.get("/tests/")
 def get_tests(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     return db.query(Test).all()
