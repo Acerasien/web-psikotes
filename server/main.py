@@ -7,7 +7,8 @@ from auth import get_current_user, require_admin, hash_password
 from models import User, Test, Assignment
 from datetime import datetime
 
-from database import engine, Base, SessionLocal
+
+from database import engine, Base, SessionLocal, get_db # Add get_db
 from models import User
 from auth import verify_password, create_access_token
 from schemas import Token
@@ -31,14 +32,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Helper to get the DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.get("/")
 def read_root():
@@ -153,6 +146,22 @@ def get_assignments(db: Session = Depends(get_db), admin: User = Depends(require
             "user_id": a.user_id,
             "username": a.user.username,
             "full_name": a.user.full_name,
+            "test_id": a.test_id,
+            "test_name": a.test.name,
+            "status": a.status,
+            "assigned_at": a.assigned_at
+        })
+    return result
+
+# 3. Get Assignments for the CURRENT user (Participant View)
+@app.get("/users/me/assignments")
+def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    assignments = db.query(Assignment).filter(Assignment.user_id == current_user.id).all()
+    
+    result = []
+    for a in assignments:
+        result.append({
+            "id": a.id,
             "test_id": a.test_id,
             "test_name": a.test.name,
             "status": a.status,

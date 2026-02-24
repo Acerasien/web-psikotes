@@ -1,5 +1,6 @@
 # server/auth.py
 from passlib.context import CryptContext
+from database import SessionLocal, get_db
 
 # This context tells passlib to use the bcrypt algorithm
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -37,14 +38,13 @@ from models import User
 # This tells FastAPI where to look for the token (in the Authorization header)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(lambda: SessionLocal())):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # 1. Decode the token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
@@ -52,7 +52,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
     
-    # 2. Find the user in DB
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception

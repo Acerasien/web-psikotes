@@ -10,7 +10,7 @@ function Dashboard({ token, onLogout }) {
   const [assignments, setAssignments] = useState([]);
   const [selectedTest, setSelectedTest] = useState({});
 
-  // 1. Fetch current user profile
+  // ... (Keep existing useEffect and fetch functions exactly as they were) ...
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -18,77 +18,43 @@ function Dashboard({ token, onLogout }) {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUser(response.data);
-      } catch (err) {
-        console.error("Failed to fetch user", err);
-        onLogout();
-      }
+      } catch (err) { onLogout(); }
     };
     fetchUser();
   }, [token]);
 
-  // 2. Fetch Users
   const fetchUsers = async () => {
-    try {
-      const response = await axios.get('http://127.0.0.1:8000/users/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsersList(response.data);
-    } catch (err) {
-      console.error("Failed to fetch users list", err);
-    }
+    try { const r = await axios.get('http://127.0.0.1:8000/users/', { headers: { Authorization: `Bearer ${token}` } }); setUsersList(r.data); } catch (e) { console.error(e); }
   };
-
-  // 3. Fetch Tests
   const fetchTests = async () => {
-    try {
-      const res = await axios.get('http://127.0.0.1:8000/tests/', {
-         headers: { Authorization: `Bearer ${token}` } 
-      });
-      setTests(res.data);
-    } catch (err) {
-      console.error("Failed to fetch tests", err);
-    }
+    try { const r = await axios.get('http://127.0.0.1:8000/tests/', { headers: { Authorization: `Bearer ${token}` } }); setTests(r.data); } catch (e) { console.error(e); }
   };
-
-  // 4. Fetch Assignments
   const fetchAssignments = async () => {
-    try {
-      const res = await axios.get('http://127.0.0.1:8000/assignments/', {
-         headers: { Authorization: `Bearer ${token}` } 
-      });
-      setAssignments(res.data);
-    } catch (err) {
-      console.error("Failed to fetch assignments", err);
-    }
+    try { const r = await axios.get('http://127.0.0.1:8000/assignments/', { headers: { Authorization: `Bearer ${token}` } }); setAssignments(r.data); } catch (e) { console.error(e); }
   };
 
-  // Load data on mount
-  useEffect(() => {
-    fetchUsers();
-    fetchTests();
-    fetchAssignments();
-  }, []);
+  useEffect(() => { fetchUsers(); fetchTests(); fetchAssignments(); }, []);
 
-  // 5. Handle Assign Button Click
   const handleAssign = async (userId) => {
     const testId = selectedTest[userId];
-    if (!testId) {
-      alert("Please select a test first");
-      return;
-    }
-
+    if (!testId) { alert("Select a test first"); return; }
     try {
-      await axios.post(`http://127.0.0.1:8000/assignments/?user_id=${userId}&test_id=${testId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert("Test assigned!");
-      fetchAssignments(); // Refresh list to show "Assigned"
-    } catch (err) {
-      alert("Error assigning test: " + (err.response?.data?.detail || "Unknown error"));
-    }
+      await axios.post(`http://127.0.0.1:8000/assignments/?user_id=${userId}&test_id=${testId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      fetchAssignments(); 
+    } catch (err) { alert("Error: " + (err.response?.data?.detail || "Unknown")); }
   };
 
   if (!user) return <div className="p-8">Loading...</div>;
+
+  // Helper: Get assignments for a specific user
+  const getUserAssignments = (userId) => {
+    return assignments.filter(a => a.user_id === userId);
+  };
+
+  // Helper: Check if a specific test is already assigned to a user
+  const isTestAssigned = (userId, testId) => {
+    return assignments.some(a => a.user_id === userId && a.test_id === testId);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -98,19 +64,13 @@ function Dashboard({ token, onLogout }) {
           <h1 className="text-xl font-bold text-gray-900">Psych Test Platform</h1>
           <div className="flex items-center gap-4">
             <span className="text-gray-600">Welcome, {user.username}</span>
-            <button 
-              onClick={onLogout}
-              className="text-red-500 hover:text-red-700 font-medium"
-            >
-              Logout
-            </button>
+            <button onClick={onLogout} className="text-red-500 hover:text-red-700 font-medium">Logout</button>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
         <CreateUser token={token} onUserCreated={fetchUsers} />
 
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -121,12 +81,11 @@ function Dashboard({ token, onLogout }) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  {/* NEW ACTION COLUMN */}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assign Test</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned Tests</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -136,40 +95,45 @@ function Dashboard({ token, onLogout }) {
                       <div className="text-sm font-medium text-gray-900">{u.full_name || u.username}</div>
                       <div className="text-sm text-gray-500">{u.username}</div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.department || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.position || '-'}</td>
+                    
+                    {/* NEW: Show list of assigned tests */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {u.department || '-'}
+                      {getUserAssignments(u.id).length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {getUserAssignments(u.id).map(a => (
+                            <span key={a.id} className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                              {a.test_name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-xs">None</span>
+                      )}
                     </td>
+
+                    {/* NEW: Improved Assign Logic */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {u.position || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    {/* ACTION COLUMN CELL */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                       {/* Logic to check if already assigned */}
-                       {assignments.some(a => a.user_id === u.id) ? (
-                          <span className="text-green-600 font-medium">Assigned</span>
-                       ) : (
-                          <div className="flex gap-2 items-center">
-                            <select 
-                              className="border rounded px-2 py-1 text-xs"
-                              onChange={(e) => setSelectedTest({ ...selectedTest, [u.id]: e.target.value })}
-                              defaultValue=""
-                            >
-                              <option value="" disabled>Select</option>
-                              {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </select>
-                            <button 
-                              onClick={() => handleAssign(u.id)}
-                              className="bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded"
-                            >
-                              Assign
-                            </button>
-                          </div>
-                       )}
+                      <div className="flex gap-2 items-center">
+                        <select 
+                          className="border rounded px-2 py-1 text-xs"
+                          onChange={(e) => setSelectedTest({ ...selectedTest, [u.id]: e.target.value })}
+                          defaultValue=""
+                        >
+                          <option value="" disabled>Select</option>
+                          {/* Only show tests that are NOT already assigned */}
+                          {tests.filter(t => !isTestAssigned(u.id, t.id)).map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        <button 
+                          onClick={() => handleAssign(u.id)}
+                          className="bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded"
+                        >
+                          Add
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -177,7 +141,6 @@ function Dashboard({ token, onLogout }) {
             </table>
           </div>
         </div>
-
       </main>
     </div>
   );
