@@ -6,8 +6,11 @@ import CreateUser from './CreateUser';
 function Dashboard({ token, onLogout }) {
   const [user, setUser] = useState(null);
   const [usersList, setUsersList] = useState([]);
+  const [tests, setTests] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [selectedTest, setSelectedTest] = useState({});
 
-  // Fetch current user profile
+  // 1. Fetch current user profile
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -23,7 +26,7 @@ function Dashboard({ token, onLogout }) {
     fetchUser();
   }, [token]);
 
-  // Function to fetch all participants
+  // 2. Fetch Users
   const fetchUsers = async () => {
     try {
       const response = await axios.get('http://127.0.0.1:8000/users/', {
@@ -35,10 +38,55 @@ function Dashboard({ token, onLogout }) {
     }
   };
 
-  // Load users list on mount
+  // 3. Fetch Tests
+  const fetchTests = async () => {
+    try {
+      const res = await axios.get('http://127.0.0.1:8000/tests/', {
+         headers: { Authorization: `Bearer ${token}` } 
+      });
+      setTests(res.data);
+    } catch (err) {
+      console.error("Failed to fetch tests", err);
+    }
+  };
+
+  // 4. Fetch Assignments
+  const fetchAssignments = async () => {
+    try {
+      const res = await axios.get('http://127.0.0.1:8000/assignments/', {
+         headers: { Authorization: `Bearer ${token}` } 
+      });
+      setAssignments(res.data);
+    } catch (err) {
+      console.error("Failed to fetch assignments", err);
+    }
+  };
+
+  // Load data on mount
   useEffect(() => {
     fetchUsers();
+    fetchTests();
+    fetchAssignments();
   }, []);
+
+  // 5. Handle Assign Button Click
+  const handleAssign = async (userId) => {
+    const testId = selectedTest[userId];
+    if (!testId) {
+      alert("Please select a test first");
+      return;
+    }
+
+    try {
+      await axios.post(`http://127.0.0.1:8000/assignments/?user_id=${userId}&test_id=${testId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Test assigned!");
+      fetchAssignments(); // Refresh list to show "Assigned"
+    } catch (err) {
+      alert("Error assigning test: " + (err.response?.data?.detail || "Unknown error"));
+    }
+  };
 
   if (!user) return <div className="p-8">Loading...</div>;
 
@@ -77,6 +125,8 @@ function Dashboard({ token, onLogout }) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  {/* NEW ACTION COLUMN */}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assign Test</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -96,6 +146,30 @@ function Dashboard({ token, onLogout }) {
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
                         {u.role}
                       </span>
+                    </td>
+                    {/* ACTION COLUMN CELL */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                       {/* Logic to check if already assigned */}
+                       {assignments.some(a => a.user_id === u.id) ? (
+                          <span className="text-green-600 font-medium">Assigned</span>
+                       ) : (
+                          <div className="flex gap-2 items-center">
+                            <select 
+                              className="border rounded px-2 py-1 text-xs"
+                              onChange={(e) => setSelectedTest({ ...selectedTest, [u.id]: e.target.value })}
+                              defaultValue=""
+                            >
+                              <option value="" disabled>Select</option>
+                              {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                            <button 
+                              onClick={() => handleAssign(u.id)}
+                              className="bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded"
+                            >
+                              Assign
+                            </button>
+                          </div>
+                       )}
                     </td>
                   </tr>
                 ))}

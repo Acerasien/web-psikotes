@@ -1,9 +1,10 @@
 # server/models.py
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, Integer, String, JSON, ForeignKey, Boolean, DateTime
 from database import Base
 import enum
 from sqlalchemy import JSON, ForeignKey
 from sqlalchemy.orm import relationship
+from datetime import datetime
 
 # Define the Role Enum
 class UserRole(enum.Enum):
@@ -67,3 +68,17 @@ class Option(Base):
     
     # Relationship
     question = relationship("Question", back_populates="options")
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    test_id = Column(Integer, ForeignKey("tests.id"))
+    status = Column(String, default="pending") # pending, in_progress, completed, locked
+    pretest_completed = Column(Boolean, default=False) # The Tutorial flag
+    assigned_at = Column(DateTime, default=datetime.utcnow) # Needs import: from datetime import datetime
+    
+    # Relationships
+    user = relationship("User")
+    test = relationship("Test")

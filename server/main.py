@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from auth import get_current_user, require_admin, hash_password
+from models import User, Test, Assignment
+from datetime import datetime
 
 from database import engine, Base, SessionLocal
 from models import User
@@ -115,3 +117,49 @@ def get_users(db: Session = Depends(get_db), admin: User = Depends(require_admin
         } 
         for u in users
     ]
+
+# 1. Assign a Test to a User
+@app.post("/assignments/", status_code=201)
+def create_assignment(user_id: int, test_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    # Check if user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if test exists
+    test = db.query(Test).filter(Test.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    
+    # Check if already assigned
+    existing = db.query(Assignment).filter(Assignment.user_id == user_id, Assignment.test_id == test_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Test already assigned to this user")
+    
+    new_assignment = Assignment(user_id=user_id, test_id=test_id)
+    db.add(new_assignment)
+    db.commit()
+    
+    return {"message": "Test assigned successfully"}
+
+# 2. Get All Assignments (Admin View)
+@app.get("/assignments/")
+def get_assignments(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    assignments = db.query(Assignment).all()
+    result = []
+    for a in assignments:
+        result.append({
+            "id": a.id,
+            "user_id": a.user_id,
+            "username": a.user.username,
+            "full_name": a.user.full_name,
+            "test_id": a.test_id,
+            "test_name": a.test.name,
+            "status": a.status,
+            "assigned_at": a.assigned_at
+        })
+    return result
+
+@app.get("/tests/")
+def get_tests(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    return db.query(Test).all()
