@@ -23,7 +23,8 @@ if not admin_user:
     new_admin = User(
         username="admin",
         password_hash=hash_password("admin123"), # Default password
-        role=UserRole.admin.value
+        role=UserRole.admin.value,
+        full_name="System Administrator"
     )
     
     db.add(new_admin)

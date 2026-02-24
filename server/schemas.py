@@ -21,3 +21,9 @@ class UserCreate(BaseModel):
     username: str
     password: str
     role: str = "participant"  # Default to participant
+    # NEW FIELDS
+    full_name: str
+    age: Optional[int] = None
+    education: Optional[str] = None
+    department: Optional[str] = None
+    position: Optional[str] = None

@@ -77,16 +77,20 @@ def read_users_me(current_user: User = Depends(get_current_user)):
 
 @app.post("/users/", status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    # 1. Check if username already exists
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     
-    # 2. Create the new user
     new_user = User(
         username=user.username,
         password_hash=hash_password(user.password),
-        role=user.role
+        role=user.role,
+        # ADD NEW FIELDS
+        full_name=user.full_name,
+        age=user.age,
+        education=user.education,
+        department=user.department,
+        position=user.position
     )
     
     db.add(new_user)
@@ -99,5 +103,15 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), admin: User = D
 @app.get("/users/")
 def get_users(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     users = db.query(User).all()
-    # Return a list of users (excluding passwords for security)
-    return [{"id": u.id, "username": u.username, "role": u.role} for u in users]
+    # Return all the new fields
+    return [
+        {
+            "id": u.id, 
+            "username": u.username, 
+            "role": u.role,
+            "full_name": u.full_name,
+            "department": u.department,
+            "position": u.position
+        } 
+        for u in users
+    ]
