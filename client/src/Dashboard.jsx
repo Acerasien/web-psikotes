@@ -11,6 +11,8 @@ function Dashboard({ token, onLogout }) {
   const [selectedTest, setSelectedTest] = useState({});
   const [results, setResults] = useState([]); // NEW STATE
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Show 10 users per page
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -42,15 +44,24 @@ function Dashboard({ token, onLogout }) {
     } catch (e) { console.error(e); }
   };
 
-    // Filter users based on search term
+  // Filter users based on search term
+  // 1. Filter users based on search term
   const filteredUsers = usersList
-    .filter(u => u.role === 'participant') // Only show participants
+    .filter(u => u.role === 'participant')
     .filter(u => {
-      if (!searchTerm) return true; // If no search, show all
+      if (!searchTerm) return true;
       const name = (u.full_name || u.username).toLowerCase();
       const dept = (u.department || "").toLowerCase();
       return name.includes(searchTerm.toLowerCase()) || dept.includes(searchTerm.toLowerCase());
     });
+
+  // 2. Pagination Logic
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+
+  // 3. Change Page Function
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   useEffect(() => { fetchUsers(); fetchTests(); fetchAssignments(); fetchResults(); }, []);
 
@@ -116,7 +127,7 @@ function Dashboard({ token, onLogout }) {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {/* CHANGE: map over filteredUsers instead of usersList */}
-                {filteredUsers.map((u) => (
+                {currentUsers.map((u) => (
                   // ... existing table row code remains exactly the same ...
                   <tr key={u.id}>
                     {/* ... keep your existing td cells exactly as they are ... */}
@@ -160,6 +171,35 @@ function Dashboard({ token, onLogout }) {
                 ))}
               </tbody>
             </table>
+                  {/* Pagination Controls */}
+      <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to <span className="font-medium">{Math.min(indexOfLastUser, filteredUsers.length)}</span> of{' '}
+              <span className="font-medium">{filteredUsers.length}</span> results
+            </p>
+          </div>
+          <div>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => (indexOfLastUser < filteredUsers.length ? prev + 1 : prev))}
+                disabled={indexOfLastUser >= filteredUsers.length}
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
           </div>
         </div>
 

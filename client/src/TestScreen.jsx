@@ -103,6 +103,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
       </div>
 
       {/* NEW: Question Indicator Grid */}
+      {testData.settings?.type !== 'speed' && (
       <div className="bg-gray-50 border-b p-2 flex justify-center space-x-1 overflow-x-auto">
         {testData.questions.map((q, idx) => (
           <div 
@@ -120,6 +121,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
           </div>
         ))}
       </div>
+      )}
 
       {/* Question Area */}
       <div className="flex-1 p-8 flex flex-col items-center justify-center">
