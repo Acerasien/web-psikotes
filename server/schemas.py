@@ -15,3 +15,9 @@ class Token(BaseModel):
 # What is inside the token (payload)
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+# Schema for creating a new user
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: str = "participant"  # Default to participant

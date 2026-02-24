@@ -3,12 +3,13 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from auth import get_current_user
+from auth import get_current_user, require_admin, hash_password
 
 from database import engine, Base, SessionLocal
 from models import User
 from auth import verify_password, create_access_token
 from schemas import Token
+from schemas import UserCreate
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -73,3 +74,30 @@ def read_users_me(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "id": current_user.id
     }
+
+@app.post("/users/", status_code=201)
+def create_user(user: UserCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    # 1. Check if username already exists
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    # 2. Create the new user
+    new_user = User(
+        username=user.username,
+        password_hash=hash_password(user.password),
+        role=user.role
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {"message": "User created successfully", "username": new_user.username}
+
+# server/main.py (Add this route)
+@app.get("/users/")
+def get_users(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    users = db.query(User).all()
+    # Return a list of users (excluding passwords for security)
+    return [{"id": u.id, "username": u.username, "role": u.role} for u in users]
