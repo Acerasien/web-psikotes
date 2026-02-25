@@ -7,6 +7,7 @@ from auth import get_current_user, require_admin, hash_password
 from models import User, Test, Assignment
 from models import Response, Result, Question, Option
 from datetime import datetime
+from datetime import date
 from schemas import TestSubmission
 from database import engine, Base, SessionLocal, get_db
 from models import User
@@ -309,28 +310,46 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
 # ---------- MODIFIED: Results endpoint with optional user_id filter and user_id in response ----------
 @app.get("/results/")
 def get_results(
-    user_id: Optional[int] = None,  # <-- ADDED query parameter
-    db: Session = Depends(get_db), 
+    user_id: Optional[int] = None,
+    test_id: Optional[int] = None,           # new
+    search: Optional[str] = None,            # new
+    from_date: Optional[date] = None,        # new
+    to_date: Optional[date] = None,          # new
+    db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    query = db.query(Result)
+    query = db.query(Result).join(User).join(Test)  # need joins for filtering on related fields
+
     if user_id is not None:
         query = query.filter(Result.user_id == user_id)
+    if test_id is not None:
+        query = query.filter(Result.test_id == test_id)
+    if from_date is not None:
+        query = query.filter(Result.completed_at >= from_date)
+    if to_date is not None:
+        query = query.filter(Result.completed_at <= to_date)
+    if search:
+        # search in user.full_name and user.username
+        query = query.filter(
+            (User.full_name.ilike(f"%{search}%")) | (User.username.ilike(f"%{search}%"))
+        )
+
     results = query.all()
     output = []
     for r in results:
         total_questions = db.query(Question).filter(Question.test_id == r.test_id).count()
         output.append({
             "id": r.id,
-            "user_id": r.user_id,  # <-- ADDED for linking
+            "user_id": r.user_id,
             "username": r.user.username,
             "full_name": r.user.full_name,
             "test_name": r.test.name,
+            "test_id": r.test_id,                 # added for frontend filtering
             "score": r.score,
             "total_questions": total_questions,
             "time_taken": r.time_taken,
             "completed_at": r.completed_at,
-            "details": r.details   # <-- ADD THIS LINE
+            "details": r.details
         })
     return output
 
