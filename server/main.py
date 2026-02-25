@@ -171,7 +171,7 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
         })
     return result
 
-# 1. START TEST: Get Questions for an Assignment
+# 1. START TEST: Get Questions for an Assignment (THIS WAS MISSING)
 @app.get("/assignments/{assignment_id}/start")
 def start_test(assignment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Find the assignment
@@ -182,6 +182,10 @@ def start_test(assignment_id: int, db: Session = Depends(get_db), current_user: 
     if assignment.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    # NEW CHECK: Prevent start if locked
+    if assignment.status == "locked":
+        raise HTTPException(status_code=403, detail="This test is locked due to a security violation. Please contact the administrator.")
+
     # Update status to in_progress
     if assignment.status == "pending":
         assignment.status = "in_progress"
@@ -211,14 +215,13 @@ def start_test(assignment_id: int, db: Session = Depends(get_db), current_user: 
     return {
         "test_name": assignment.test.name,
         "time_limit": assignment.test.time_limit,
-        "questions": output,
-        "settings": assignment.test.settings
+        "settings": assignment.test.settings, # Pass settings to frontend
+        "questions": output
     }
 
-# 2. SUBMIT TEST: Save Answers & Calculate Score
+# 2. SUBMIT TEST
 @app.post("/assignments/{assignment_id}/submit")
 def submit_test(assignment_id: int, submission: TestSubmission, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # answers format: { "question_id": "selected_option_id", ... }
     
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment or assignment.user_id != current_user.id:
@@ -226,22 +229,32 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
 
     score = 0
     
-    # Save each response
-    for q_id, opt_id in submission.answers.items():
-        # Save Response
+    # Clear previous responses (optional)
+    
+    # 1. Save all responses first
+    for ans in submission.answers:
         new_resp = Response(
             user_id=current_user.id,
             test_id=assignment.test_id,
-            question_id=int(q_id),
-            selected_option_id=int(opt_id)
+            question_id=ans['question_id'],
+            selected_option_id=ans['option_id'],
+            selection_type=ans.get('type', 'single')
         )
         db.add(new_resp)
-        
-        # Calculate Score (Simple Logic for Speed Test)
-        # Check if the selected option is correct
-        option = db.query(Option).filter(Option.id == int(opt_id)).first()
-        if option and option.scoring_logic.get("correct") == True:
-            score += 1
+
+    # 2. Calculate Score based on Test Type
+    if assignment.test.code == "DISC":
+        # For DISC, "Score" = Number of Questions Answered (Blocks).
+        # Since validation passed, this should be 24.
+        unique_questions = set([ans['question_id'] for ans in submission.answers])
+        score = len(unique_questions)
+    else:
+        # For Speed/IQ, check correctness
+        for ans in submission.answers:
+            if ans.get('type', 'single') == 'single':
+                option = db.query(Option).filter(Option.id == ans['option_id']).first()
+                if option and option.scoring_logic.get("correct") == True:
+                    score += 1
 
     # Save Result
     new_result = Result(
@@ -252,7 +265,6 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
     )
     db.add(new_result)
     
-    # Update Assignment Status
     assignment.status = "completed"
     db.commit()
     
@@ -278,6 +290,28 @@ def get_results(db: Session = Depends(get_db), admin: User = Depends(require_adm
             "completed_at": r.completed_at
         })
     return output
+
+# 1. Endpoint to Lock an Assignment (Called by Frontend on violation)
+@app.post("/assignments/{assignment_id}/lock")
+def lock_assignment(assignment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment or assignment.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    assignment.status = "locked"
+    db.commit()
+    return {"message": "Assignment locked due to integrity violation"}
+
+# 2. Endpoint for Admin to Unlock
+@app.post("/admin/assignments/{assignment_id}/unlock")
+def unlock_assignment(assignment_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    assignment.status = "in_progress" # Reset to in_progress so they can continue
+    db.commit()
+    return {"message": "Assignment unlocked"}
 
 @app.get("/tests/")
 def get_tests(db: Session = Depends(get_db), admin: User = Depends(require_admin)):

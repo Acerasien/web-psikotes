@@ -92,6 +92,9 @@ class Response(Base):
     question_id = Column(Integer, ForeignKey("questions.id"))
     selected_option_id = Column(Integer, ForeignKey("options.id"))
     
+    # NEW FIELD: To distinguish between 'most', 'least', or 'single' (for speed test)
+    selection_type = Column(String, default="single") 
+    
     # Relationships
     user = relationship("User")
     test = relationship("Test")

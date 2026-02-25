@@ -1,6 +1,6 @@
 # server/schemas.py
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 
 # What the user sends to login
 class UserLogin(BaseModel):
@@ -29,5 +29,5 @@ class UserCreate(BaseModel):
     position: Optional[str] = None
 
 class TestSubmission(BaseModel):
-    answers: dict
+    answers: List[dict]  # Make sure this is List[dict], not dict
     time_taken: int
