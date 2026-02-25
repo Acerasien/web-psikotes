@@ -23,20 +23,17 @@ function CreateUser({ token, onUserCreated }) {
     setMessage('');
 
     try {
-      await axios.post('http://127.0.0.1:8000/users/', 
+      await axios.post('http://127.0 refactoring..., http://127.0.0.1:8000/users/',
         {
           ...formData,
           role: 'participant'
         },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setMessage('Participant created successfully!');
       setFormData({ username: '', password: '', full_name: '', age: '', education: '', department: '', position: '' });
       if (onUserCreated) onUserCreated();
-
     } catch (err) {
       setMessage('Error: ' + (err.response?.data?.detail || 'Unknown error'));
     }
@@ -47,10 +44,12 @@ function CreateUser({ token, onUserCreated }) {
       <h3 className="text-xl font-bold mb-4">Add New Participant</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Input fields... */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Username *</label>
             <input type="text" name="username" value={formData.username} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required />
           </div>
+          {/* ... other fields ... */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Password *</label>
             <input type="text" name="password" value={formData.password} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required />

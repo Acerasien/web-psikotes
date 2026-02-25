@@ -1,9 +1,10 @@
 // client/src/App.jsx
 import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './Login'
-import Dashboard from './Dashboard'
+import AdminLayout from './AdminLayout' // New Component
 import ParticipantDashboard from './ParticipantDashboard'
-import './index.css' // Ensure tailwind is loaded
+import './index.css'
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -20,7 +21,6 @@ function App() {
     localStorage.removeItem('token');
   };
 
-  // Fetch user data once we have a token
   useEffect(() => {
     const fetchUser = async () => {
       if (!token) return;
@@ -31,25 +31,24 @@ function App() {
         const data = await response.json();
         setUser(data);
       } catch (err) {
-        console.error("Token invalid or expired");
         handleLogout();
       }
     };
     fetchUser();
   }, [token]);
 
-  if (!token) {
-    return <Login onLogin={handleLogin} />
-  }
+  if (!token) return <Login onLogin={handleLogin} />
+  if (!user) return <div className="min-h-screen flex items-center justify-center bg-gray-100">Loading...</div>;
 
-  // Loading state
-  if (!user) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-100">Loading...</div>;
-  }
-
-  // ROLE-BASED ROUTING
+  // Routing Logic
   if (user.role === 'admin') {
-    return <Dashboard token={token} onLogout={handleLogout} />
+    return (
+      <Router>
+        <Routes>
+          <Route path="/*" element={<AdminLayout token={token} user={user} onLogout={handleLogout} />} />
+        </Routes>
+      </Router>
+    )
   } else {
     return <ParticipantDashboard token={token} user={user} onLogout={handleLogout} />
   }
