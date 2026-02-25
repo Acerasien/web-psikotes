@@ -22,20 +22,31 @@ function CreateUser({ token, onUserCreated }) {
     e.preventDefault();
     setMessage('');
 
-    try {
-      await axios.post('http://127.0 refactoring..., http://127.0.0.1:8000/users/',
-        {
-          ...formData,
-          role: 'participant'
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    // Prepare data: convert age to null if empty, otherwise to number
+    const payload = {
+      ...formData,
+      role: 'participant',
+      age: formData.age === '' ? null : Number(formData.age)
+    };
 
+    try {
+      await axios.post('http://127.0.0.1:8000/users/', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setMessage('Participant created successfully!');
       setFormData({ username: '', password: '', full_name: '', age: '', education: '', department: '', position: '' });
       if (onUserCreated) onUserCreated();
     } catch (err) {
-      setMessage('Error: ' + (err.response?.data?.detail || 'Unknown error'));
+      // Show more detailed error
+      const detail = err.response?.data?.detail;
+      if (typeof detail === 'string') {
+        setMessage('Error: ' + detail);
+      } else if (Array.isArray(detail)) {
+        // Pydantic validation errors
+        setMessage('Error: ' + detail.map(d => d.msg).join(', '));
+      } else {
+        setMessage('Error: ' + (err.response?.data?.detail || 'Unknown error'));
+      }
     }
   };
 

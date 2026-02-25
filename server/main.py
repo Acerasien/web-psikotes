@@ -8,20 +8,22 @@ from models import User, Test, Assignment
 from models import Response, Result, Question, Option
 from datetime import datetime
 from schemas import TestSubmission
-
-
-from database import engine, Base, SessionLocal, get_db # Add get_db
+from database import engine, Base, SessionLocal, get_db
 from models import User
 from auth import verify_password, create_access_token
 from schemas import Token
 from schemas import UserCreate
+from typing import Optional  # <-- ADDED for optional query parameters
+from scoring.disc import score_disc
+from scoring.speed import score_speed
+from sqlalchemy.orm import joinedload  # to load options efficiently
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# CORS settings
+# CORS settings (unchanged)
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173"
@@ -39,29 +41,21 @@ app.add_middleware(
 def read_root():
     return {"message": "Hello from Python Backend!"}
 
-# --- NEW LOGIN ROUTE ---
+# --- LOGIN ROUTE (unchanged) ---
 @app.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # 1. Find user by username
     user = db.query(User).filter(User.username == form_data.username).first()
-    
-    # 2. Check if user exists
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-
-    # 3. Verify password
     if not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-
-    # 4. Create Token
     access_token = create_access_token(data={"sub": user.username})
-    
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.get("/users/me")
@@ -77,30 +71,24 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), admin: User = D
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    
     new_user = User(
         username=user.username,
         password_hash=hash_password(user.password),
         role=user.role,
-        # ADD NEW FIELDS
         full_name=user.full_name,
         age=user.age,
         education=user.education,
         department=user.department,
         position=user.position
     )
-    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
     return {"message": "User created successfully", "username": new_user.username}
 
-# server/main.py (Add this route)
 @app.get("/users/")
 def get_users(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     users = db.query(User).all()
-    # Return all the new fields
     return [
         {
             "id": u.id, 
@@ -113,34 +101,34 @@ def get_users(db: Session = Depends(get_db), admin: User = Depends(require_admin
         for u in users
     ]
 
-# 1. Assign a Test to a User
-@app.post("/assignments/", status_code=201)
-def create_assignment(user_id: int, test_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    # Check if user exists
+# ---------- ADDED: Get single user by ID ----------
+@app.get("/users/{user_id}")
+def get_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Check if test exists
-    test = db.query(Test).filter(Test.id == test_id).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
-    
-    # Check if already assigned
-    existing = db.query(Assignment).filter(Assignment.user_id == user_id, Assignment.test_id == test_id).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Test already assigned to this user")
-    
-    new_assignment = Assignment(user_id=user_id, test_id=test_id)
-    db.add(new_assignment)
-    db.commit()
-    
-    return {"message": "Test assigned successfully"}
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "full_name": user.full_name,
+        "age": user.age,
+        "education": user.education,
+        "department": user.department,
+        "position": user.position
+    }
 
-# 2. Get All Assignments (Admin View)
+# ---------- MODIFIED: Assignments endpoint with optional user_id filter ----------
 @app.get("/assignments/")
-def get_assignments(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    assignments = db.query(Assignment).all()
+def get_assignments(
+    user_id: Optional[int] = None,  # <-- ADDED query parameter
+    db: Session = Depends(get_db), 
+    admin: User = Depends(require_admin)
+):
+    query = db.query(Assignment)
+    if user_id is not None:
+        query = query.filter(Assignment.user_id == user_id)
+    assignments = query.all()
     result = []
     for a in assignments:
         result.append({
@@ -155,11 +143,25 @@ def get_assignments(db: Session = Depends(get_db), admin: User = Depends(require
         })
     return result
 
-# 3. Get Assignments for the CURRENT user (Participant View)
+@app.post("/assignments/", status_code=201)
+def create_assignment(user_id: int, test_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    test = db.query(Test).filter(Test.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    existing = db.query(Assignment).filter(Assignment.user_id == user_id, Assignment.test_id == test_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Test already assigned to this user")
+    new_assignment = Assignment(user_id=user_id, test_id=test_id)
+    db.add(new_assignment)
+    db.commit()
+    return {"message": "Test assigned successfully"}
+
 @app.get("/users/me/assignments")
 def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     assignments = db.query(Assignment).filter(Assignment.user_id == current_user.id).all()
-    
     result = []
     for a in assignments:
         result.append({
@@ -171,30 +173,19 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
         })
     return result
 
-# 1. START TEST: Get Questions for an Assignment (THIS WAS MISSING)
 @app.get("/assignments/{assignment_id}/start")
 def start_test(assignment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # Find the assignment
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
-    
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
     if assignment.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # NEW CHECK: Prevent start if locked
     if assignment.status == "locked":
         raise HTTPException(status_code=403, detail="This test is locked due to a security violation. Please contact the administrator.")
-
-    # Update status to in_progress
     if assignment.status == "pending":
         assignment.status = "in_progress"
         db.commit()
-
-    # Get questions and options
     questions = db.query(Question).filter(Question.test_id == assignment.test_id).order_by(Question.order_index).all()
-    
-    # Format for frontend
     output = []
     for q in questions:
         options_data = []
@@ -203,7 +194,6 @@ def start_test(assignment_id: int, db: Session = Depends(get_db), current_user: 
                 "id": opt.id,
                 "label": opt.label,
                 "content": opt.content
-                # We hide scoring_logic from the user!
             })
         output.append({
             "id": q.id,
@@ -211,27 +201,20 @@ def start_test(assignment_id: int, db: Session = Depends(get_db), current_user: 
             "order": q.order_index,
             "options": options_data
         })
-        
     return {
         "test_name": assignment.test.name,
         "time_limit": assignment.test.time_limit,
-        "settings": assignment.test.settings, # Pass settings to frontend
+        "settings": assignment.test.settings,
         "questions": output
     }
 
-# 2. SUBMIT TEST
 @app.post("/assignments/{assignment_id}/submit")
 def submit_test(assignment_id: int, submission: TestSubmission, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment or assignment.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-
-    score = 0
     
-    # Clear previous responses (optional)
-    
-    # 1. Save all responses first
+    # Save all responses first
     for ans in submission.answers:
         new_resp = Response(
             user_id=current_user.id,
@@ -241,75 +224,131 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
             selection_type=ans.get('type', 'single')
         )
         db.add(new_resp)
+    
+    # Calculate score based on test type
+    @app.post("/assignments/{assignment_id}/submit")
+    def submit_test(
+    assignment_id: int,
+    submission: TestSubmission,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+        assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment or assignment.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
 
-    # 2. Calculate Score based on Test Type
-    if assignment.test.code == "DISC":
-        # For DISC, "Score" = Number of Questions Answered (Blocks).
-        # Since validation passed, this should be 24.
-        unique_questions = set([ans['question_id'] for ans in submission.answers])
-        score = len(unique_questions)
-    else:
-        # For Speed/IQ, check correctness
+    if assignment.status != "in_progress":
+        raise HTTPException(status_code=400, detail="Test is not in progress")
+
+    # 1. Save all user responses
+    for ans in submission.answers:
+        resp = Response(
+            user_id=current_user.id,
+            test_id=assignment.test_id,
+            question_id=ans["question_id"],
+            selected_option_id=ans.get("option_id"),
+            selection_type=ans.get("type", "single"),
+        )
+        db.add(resp)
+
+    # 2. Score based on test type
+    test_code = assignment.test.code
+    score = 0
+    details = None
+
+    if test_code == "DISC":
+        questions = (
+            db.query(Question)
+            .options(joinedload(Question.options))
+            .filter(Question.test_id == assignment.test_id)
+            .all()
+        )
+        details = score_disc(submission.answers, questions)
+        score = len({ans["question_id"] for ans in submission.answers})  # usually 24
+
+    elif test_code == "SPEED":
+        questions = (
+            db.query(Question)
+            .options(joinedload(Question.options))
+            .filter(Question.test_id == assignment.test_id)
+            .all()
+        )
+        details = score_speed(submission.answers, questions)
+        score = details["score"]
+
+    else:  # Default: IQ, Memory, Logic, etc.
         for ans in submission.answers:
-            if ans.get('type', 'single') == 'single':
-                option = db.query(Option).filter(Option.id == ans['option_id']).first()
-                if option and option.scoring_logic.get("correct") == True:
+            if ans.get("type", "single") == "single":
+                option = db.query(Option).filter(Option.id == ans["option_id"]).first()
+                if option and option.scoring_logic.get("correct"):
                     score += 1
 
-    # Save Result
-    new_result = Result(
+    # 3. Create Result (common for all test types)
+    result = Result(
         user_id=current_user.id,
         test_id=assignment.test_id,
         score=score,
-        time_taken=submission.time_taken
+        time_taken=submission.time_taken,
+        details=details,                    # None for regular tests
+        completed_at=datetime.utcnow()
     )
-    db.add(new_result)
-    
-    assignment.status = "completed"
-    db.commit()
-    
-    return {"message": "Test submitted successfully", "score": score}
+    db.add(result)
 
+    # 4. Mark assignment as completed
+    assignment.status = "completed"
+    assignment.completed_at = datetime.utcnow()
+
+    db.commit()
+
+    return {
+        "message": "Test submitted successfully",
+        "score": score,
+        "test_type": test_code
+    }
+
+# ---------- MODIFIED: Results endpoint with optional user_id filter and user_id in response ----------
 @app.get("/results/")
-def get_results(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    results = db.query(Result).all()
-    
+def get_results(
+    user_id: Optional[int] = None,  # <-- ADDED query parameter
+    db: Session = Depends(get_db), 
+    admin: User = Depends(require_admin)
+):
+    query = db.query(Result)
+    if user_id is not None:
+        query = query.filter(Result.user_id == user_id)
+    results = query.all()
     output = []
     for r in results:
-        # Calculate total questions for this test dynamically
         total_questions = db.query(Question).filter(Question.test_id == r.test_id).count()
-        
         output.append({
             "id": r.id,
+            "user_id": r.user_id,  # <-- ADDED for linking
             "username": r.user.username,
             "full_name": r.user.full_name,
             "test_name": r.test.name,
             "score": r.score,
-            "total_questions": total_questions, # NEW FIELD
+            "total_questions": total_questions,
             "time_taken": r.time_taken,
-            "completed_at": r.completed_at
+            "completed_at": r.completed_at,
+            "details": r.details   # <-- ADD THIS LINE
         })
     return output
 
-# 1. Endpoint to Lock an Assignment (Called by Frontend on violation)
 @app.post("/assignments/{assignment_id}/lock")
 def lock_assignment(assignment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment or assignment.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Assignment not found")
-    
     assignment.status = "locked"
     db.commit()
     return {"message": "Assignment locked due to integrity violation"}
 
-# 2. Endpoint for Admin to Unlock
 @app.post("/admin/assignments/{assignment_id}/unlock")
 def unlock_assignment(assignment_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
-    
-    assignment.status = "in_progress" # Reset to in_progress so they can continue
+    assignment.status = "in_progress"
     db.commit()
     return {"message": "Assignment unlocked"}
 

@@ -110,6 +110,7 @@ class Result(Base):
     score = Column(Integer, default=0)
     time_taken = Column(Integer) # in seconds
     completed_at = Column(DateTime, default=datetime.utcnow)
+    details = Column(JSON, nullable=True)  # <-- ADD THIS LINE
     
     # Relationships
     user = relationship("User")
