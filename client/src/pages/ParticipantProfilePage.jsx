@@ -106,11 +106,14 @@ function ParticipantProfilePage({ token }) {
                                         }`}>
                                         {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
                                     </p>
-                                    {result && (
+                                    {result && a.test_name === "Temperament Test" && (
                                         <p className="text-sm text-gray-700 mt-1">
-                                            {a.test_name === "Temperament Test"
-                                                ? `Raw score: ${result.score}`
-                                                : `Score: ${result.score} / ${result.total_questions}`}
+                                            <span className="font-medium">Type:</span> {result.details?.primary || 'Unknown'}
+                                        </p>
+                                    )}
+                                    {result && a.test_name !== "Temperament Test" && (
+                                        <p className="text-sm text-gray-700 mt-1">
+                                            Score: {result.score} / {result.total_questions}
                                         </p>
                                     )}
                                 </div>
