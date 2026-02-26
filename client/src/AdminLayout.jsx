@@ -3,6 +3,7 @@ import ParticipantsPage from './pages/ParticipantsPage';
 import ResultsPage from './pages/ResultsPage';
 import AddParticipantPage from './pages/AddParticipantPage';
 import ParticipantProfilePage from './pages/ParticipantProfilePage';
+import SecurityDashboard from './pages/SecurityDashboard';
 
 function AdminLayout({ token, user, onLogout }) {
     const location = useLocation();
@@ -29,6 +30,12 @@ function AdminLayout({ token, user, onLogout }) {
                     >
                         Results
                     </Link>
+                    <Link
+                        to="/security"
+                        className={`block py-2 px-4 rounded transition ${location.pathname === '/security' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+                    >
+                        Security
+                    </Link>
                 </nav>
 
                 <div className="p-4 border-t border-gray-800">
@@ -54,6 +61,7 @@ function AdminLayout({ token, user, onLogout }) {
                         <Route path="/participants" element={<ParticipantsPage token={token} />} />
                         <Route path="/participants/new" element={<AddParticipantPage token={token} />} />
                         <Route path="/results" element={<ResultsPage token={token} />} />
+                        <Route path="/security" element={<SecurityDashboard token={token} />} />
                         <Route path="/participants/:id" element={<ParticipantProfilePage token={token} />} />
                     </Routes>
                 </main>

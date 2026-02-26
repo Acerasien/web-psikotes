@@ -68,6 +68,11 @@ function TestScreen({ token, assignmentId, onFinish }) {
       if (!isCurrentlyFullscreen && !isLocked && !loading) {
         const newCount = exitCount + 1;
         setExitCount(newCount);
+
+        // Log this exit to the server
+        axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/exit-log`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(err => console.error("Failed to log exit", err));
         if (newCount >= 3) {
           setIsLocked(true);
           axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/lock`, {}, {

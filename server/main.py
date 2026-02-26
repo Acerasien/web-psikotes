@@ -4,13 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from auth import get_current_user, require_admin, hash_password
-from models import User, Test, Assignment
-from models import Response, Result, Question, Option
+from models import User, Test, Assignment, Response, Result, Question, Option, ExitLog
 from datetime import datetime
 from datetime import date
 from schemas import TestSubmission
 from database import engine, Base, SessionLocal, get_db
-from models import User
 from auth import verify_password, create_access_token
 from schemas import Token
 from schemas import UserCreate
@@ -374,3 +372,61 @@ def unlock_assignment(assignment_id: int, db: Session = Depends(get_db), admin: 
 @app.get("/tests/")
 def get_tests(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     return db.query(Test).all()
+
+@app.post("/assignments/{assignment_id}/exit-log")
+def log_exit(assignment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment or assignment.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    log = ExitLog(user_id=current_user.id, assignment_id=assignment_id)
+    db.add(log)
+    db.commit()
+    return {"message": "Exit logged"}
+
+@app.get("/admin/locked-assignments")
+def get_locked_assignments(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    assignments = db.query(Assignment).filter(Assignment.status == "locked").all()
+    result = []
+    for a in assignments:
+        result.append({
+            "id": a.id,
+            "user_id": a.user_id,
+            "username": a.user.username,
+            "full_name": a.user.full_name,
+            "test_name": a.test.name,
+            "status": a.status,
+            "assigned_at": a.assigned_at,
+        })
+    return result
+
+@app.get("/admin/exit-logs")
+def get_exit_logs(
+    user_id: Optional[int] = None,
+    assignment_id: Optional[int] = None,
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    query = db.query(ExitLog).join(User).join(Assignment)
+    if user_id:
+        query = query.filter(ExitLog.user_id == user_id)
+    if assignment_id:
+        query = query.filter(ExitLog.assignment_id == assignment_id)
+    if from_date:
+        query = query.filter(ExitLog.timestamp >= from_date)
+    if to_date:
+        query = query.filter(ExitLog.timestamp <= to_date)
+    logs = query.order_by(ExitLog.timestamp.desc()).all()
+    output = []
+    for log in logs:
+        output.append({
+            "id": log.id,
+            "user_id": log.user_id,
+            "username": log.user.username,
+            "full_name": log.user.full_name,
+            "assignment_id": log.assignment_id,
+            "test_name": log.assignment.test.name,
+            "timestamp": log.timestamp
+        })
+    return output

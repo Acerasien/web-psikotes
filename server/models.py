@@ -115,3 +115,13 @@ class Result(Base):
     # Relationships
     user = relationship("User")
     test = relationship("Test")
+    
+class ExitLog(Base):
+    __tablename__ = "exit_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    assignment_id = Column(Integer, ForeignKey("assignments.id"))
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    assignment = relationship("Assignment")
