@@ -108,7 +108,9 @@ function ParticipantProfilePage({ token }) {
                                     </p>
                                     {result && (
                                         <p className="text-sm text-gray-700 mt-1">
-                                            Score: {result.score} / {result.total_questions}
+                                            {a.test_name === "Temperament Test"
+                                                ? `Raw score: ${result.score}`
+                                                : `Score: ${result.score} / ${result.total_questions}`}
                                         </p>
                                     )}
                                 </div>
@@ -127,12 +129,15 @@ function ParticipantProfilePage({ token }) {
                     <div className="p-4 divide-y">
                         {results.map((r) => (
                             <div key={r.id} className="py-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="font-medium text-lg">{r.test_name}</span>
-                                    <span className="text-green-600 font-bold text-xl">
-                                        {r.score} / {r.total_questions}
-                                    </span>
-                                </div>
+                                {/* Conditionally render score header for non-Temperament tests */}
+                                {r.test_name !== "Temperament Test" && (
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="font-medium text-lg">{r.test_name}</span>
+                                        <span className="text-green-600 font-bold text-xl">
+                                            {r.score} / {r.total_questions}
+                                        </span>
+                                    </div>
+                                )}
 
                                 {/* DISC Specific Details */}
                                 {r.test_name === "DISC Assessment" && r.details && (
@@ -167,6 +172,7 @@ function ParticipantProfilePage({ token }) {
                                         )}
                                     </div>
                                 )}
+
                                 {/* Speed Test Specific Details */}
                                 {r.test_name === "Speed Test" && r.details && (
                                     <div className="mt-2 bg-gray-50 p-3 rounded">
@@ -195,6 +201,41 @@ function ParticipantProfilePage({ token }) {
                                         {r.details.flag && (
                                             <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
                                                 ⚠️ {r.details.flag}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Temperament Test Details */}
+                                {r.test_name === "Temperament Test" && r.details && (
+                                    <div className="mt-2 bg-gray-50 p-3 rounded">
+                                        <h4 className="font-semibold mb-2">Temperament Profile</h4>
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div><span className="font-medium">Primary:</span> {r.details.primary}</div>
+                                            <div><span className="font-medium">Secondary:</span> {r.details.secondary}</div>
+                                        </div>
+                                        <div className="mt-2">
+                                            <span className="font-medium">Trait Intensities:</span>
+                                            <div className="grid grid-cols-2 gap-1 mt-1">
+                                                {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
+                                                    <div key={trait} className="flex justify-between">
+                                                        <span>{trait}:</span>
+                                                        <span className="font-bold">{Math.round(pct)}%</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {r.details.straight_line_flag && (
+                                            <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+                                                ⚠️ Straight-lining detected (all answers identical)
+                                            </div>
+                                        )}
+                                        {r.details.interactions?.length > 0 && (
+                                            <div className="mt-2 text-sm">
+                                                <span className="font-medium">Interactions:</span>
+                                                <ul className="list-disc list-inside">
+                                                    {r.details.interactions.map((item, i) => <li key={i}>{item}</li>)}
+                                                </ul>
                                             </div>
                                         )}
                                     </div>

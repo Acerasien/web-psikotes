@@ -15,6 +15,7 @@ from schemas import UserCreate
 from typing import Optional  # <-- ADDED for optional query parameters
 from scoring.disc import score_disc
 from scoring.speed import score_speed
+from scoring.temperament import score_temperament
 from sqlalchemy.orm import joinedload  # to load options efficiently
 
 # Create tables
@@ -208,38 +209,20 @@ def start_test(assignment_id: int, db: Session = Depends(get_db), current_user: 
     }
 
 @app.post("/assignments/{assignment_id}/submit")
-def submit_test(assignment_id: int, submission: TestSubmission, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
-    if not assignment or assignment.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Save all responses first
-    for ans in submission.answers:
-        new_resp = Response(
-            user_id=current_user.id,
-            test_id=assignment.test_id,
-            question_id=ans['question_id'],
-            selected_option_id=ans['option_id'],
-            selection_type=ans.get('type', 'single')
-        )
-        db.add(new_resp)
-    
-    # Calculate score based on test type
-    @app.post("/assignments/{assignment_id}/submit")
-    def submit_test(
+def submit_test(
     assignment_id: int,
     submission: TestSubmission,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-        assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    # 1. Find the assignment
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment or assignment.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-
     if assignment.status != "in_progress":
         raise HTTPException(status_code=400, detail="Test is not in progress")
 
-    # 1. Save all user responses
+    # 2. Save all responses
     for ans in submission.answers:
         resp = Response(
             user_id=current_user.id,
@@ -250,7 +233,7 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
         )
         db.add(resp)
 
-    # 2. Score based on test type
+    # 3. Score based on test code
     test_code = assignment.test.code
     score = 0
     details = None
@@ -263,7 +246,7 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
             .all()
         )
         details = score_disc(submission.answers, questions)
-        score = len({ans["question_id"] for ans in submission.answers})  # usually 24
+        score = len({ans["question_id"] for ans in submission.answers})  # 24
 
     elif test_code == "SPEED":
         questions = (
@@ -275,28 +258,38 @@ def submit_test(assignment_id: int, submission: TestSubmission, db: Session = De
         details = score_speed(submission.answers, questions)
         score = details["score"]
 
-    else:  # Default: IQ, Memory, Logic, etc.
+    elif test_code == "TEMP":
+        questions = (
+            db.query(Question)
+            .options(joinedload(Question.options))
+            .filter(Question.test_id == assignment.test_id)
+            .all()
+        )
+        details = score_temperament(submission.answers, questions)
+        # Optional: you could set score to something meaningful, e.g., sum of raw scores
+        score = sum(details["raw_scores"].values()) if details["raw_scores"] else 0
+
+    else:
+        # Default: IQ, Memory, Logic, etc. (simple correct count)
         for ans in submission.answers:
             if ans.get("type", "single") == "single":
                 option = db.query(Option).filter(Option.id == ans["option_id"]).first()
                 if option and option.scoring_logic.get("correct"):
                     score += 1
 
-    # 3. Create Result (common for all test types)
+    # 4. Create Result record
     result = Result(
         user_id=current_user.id,
         test_id=assignment.test_id,
         score=score,
         time_taken=submission.time_taken,
-        details=details,                    # None for regular tests
+        details=details,
         completed_at=datetime.utcnow()
     )
     db.add(result)
 
-    # 4. Mark assignment as completed
+    # 5. Mark assignment as completed
     assignment.status = "completed"
-    assignment.completed_at = datetime.utcnow()
-
     db.commit()
 
     return {

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import TestScreen from './TestScreen'; // Import the new component
+import TemperamentTest from './components/TemperamentTest'; // adjust path
 
 function ParticipantDashboard({ token, user, onLogout }) {
   const [assignments, setAssignments] = useState([]);
@@ -25,9 +26,9 @@ function ParticipantDashboard({ token, user, onLogout }) {
   // If a test is active, show TestScreen
   if (activeTest) {
     return <TestScreen token={token} assignmentId={activeTest} onFinish={() => {
-        setActiveTest(null); // Clear active test
-        // Optional: Refresh assignments to show 'completed' status
-        window.location.reload(); 
+      setActiveTest(null); // Clear active test
+      // Optional: Refresh assignments to show 'completed' status
+      window.location.reload();
     }} />;
   }
 
@@ -46,19 +47,19 @@ function ParticipantDashboard({ token, user, onLogout }) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {assignments.length === 0 && (
             <p className="text-gray-500 col-span-3 text-center py-10">No tests assigned yet.</p>
           )}
-          
-                    {assignments.map((a) => (
+
+          {assignments.map((a) => (
             <div key={a.id} className={`bg-white overflow-hidden shadow rounded-lg ${a.status === 'completed' ? 'opacity-75 border-l-4 border-green-500' : ''}`}>
               <div className="p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-gray-900">{a.test_name}</h3>
-                  
-                                    {/* Improved Status Badge */}
+
+                  {/* Improved Status Badge */}
                   {a.status === 'completed' ? (
                     <span className="flex items-center text-green-600 font-bold text-sm">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -76,10 +77,9 @@ function ParticipantDashboard({ token, user, onLogout }) {
                     </span>
                   ) : (
                     // Default (Pending / In Progress)
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      a.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs rounded-full ${a.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
                       {a.status === 'in_progress' ? 'In Progress' : 'Not Started'}
                     </span>
                   )}
@@ -88,13 +88,13 @@ function ParticipantDashboard({ token, user, onLogout }) {
                   Assigned: {new Date(a.assigned_at).toLocaleDateString()}
                 </p>
               </div>
-              
+
               {/* Footer Logic */}
               <div className="px-5 py-3 bg-gray-50 text-right">
                 {a.status === 'completed' ? (
                   <span className="text-sm text-gray-500 italic">No actions available</span>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => setActiveTest(a.id)}
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm"
                   >

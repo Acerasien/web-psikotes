@@ -108,7 +108,7 @@ function ResultsTable({ token }) {
                                 <span className="font-bold">{trait}</span>
                                 <div>{Math.round(d.percentages?.[trait] || 0)}%</div>
                                 <span className={`text-xs px-1 rounded ${d.intensity_zones?.[trait] === 'High' ? 'bg-green-200' :
-                                        d.intensity_zones?.[trait] === 'Low' ? 'bg-red-200' : 'bg-yellow-200'
+                                    d.intensity_zones?.[trait] === 'Low' ? 'bg-red-200' : 'bg-yellow-200'
                                     }`}>
                                     {d.intensity_zones?.[trait] || 'Medium'}
                                 </span>
@@ -128,6 +128,30 @@ function ResultsTable({ token }) {
                     <div><span className="font-medium">Accuracy:</span> {d.accuracy}%</div>
                     <div><span className="font-medium">Band:</span> {d.band}</div>
                     {d.flag && <div className="text-red-600">⚠️ {d.flag}</div>}
+                </div>
+            );
+        }
+        if (result.test_name.includes('Temperament')) {
+            const d = result.details;
+            if (!d) return null;
+            return (
+                <div className="p-2 bg-gray-50 rounded text-sm">
+                    <div><span className="font-medium">Primary:</span> {d.primary}</div>
+                    <div><span className="font-medium">Secondary:</span> {d.secondary}</div>
+                    <div className="mt-1">
+                        <span className="font-medium">Percentages:</span>
+                        <div className="grid grid-cols-2 gap-1 mt-1">
+                            {Object.entries(d.percentages || {}).map(([trait, pct]) => (
+                                <div key={trait} className="flex justify-between">
+                                    <span>{trait}:</span>
+                                    <span>{Math.round(pct)}%</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {d.straight_line_flag && (
+                        <div className="mt-2 text-red-600">⚠️ Straight-lining detected</div>
+                    )}
                 </div>
             );
         }

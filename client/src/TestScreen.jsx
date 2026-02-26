@@ -73,6 +73,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
         axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/exit-log`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(err => console.error("Failed to log exit", err));
+
         if (newCount >= 3) {
           setIsLocked(true);
           axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/lock`, {}, {
@@ -154,8 +155,18 @@ function TestScreen({ token, assignmentId, onFinish }) {
         if (currentIndex < testData.questions.length - 1) setCurrentIndex(currentIndex + 1);
         else setShowConfirmModal(true);
       }, 200);
+    } else if (testData.settings?.type === 'temperament') {
+      // Temperament: auto‑next after selection
+      setAnswers({ ...answers, [currentQuestionId]: optionId });
+      setTimeout(() => {
+        if (currentIndex < testData.questions.length - 1) {
+          setCurrentIndex(currentIndex + 1);
+        } else {
+          setShowConfirmModal(true);
+        }
+      }, 200);
     } else {
-      // Default Logic (IQ, Logic, etc)
+      // Default (IQ, Logic, etc.): just store answer, no auto‑next
       setAnswers({ ...answers, [currentQuestionId]: optionId });
     }
   };
