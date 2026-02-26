@@ -20,22 +20,27 @@ function AdminLayout({ token, user, onLogout }) {
                 <nav className="flex-1 p-4 space-y-2">
                     <Link
                         to="/participants"
-                        className={`block py-2 px-4 rounded transition ${location.pathname === '/participants' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+                        className={`block py-2 px-4 rounded transition ${location.pathname.includes('/participants') ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
                     >
                         Participants
                     </Link>
-                    <Link
-                        to="/results"
-                        className={`block py-2 px-4 rounded transition ${location.pathname === '/results' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
-                    >
-                        Results
-                    </Link>
-                    <Link
-                        to="/security"
-                        className={`block py-2 px-4 rounded transition ${location.pathname === '/security' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
-                    >
-                        Security
-                    </Link>
+
+                    {user.role === 'superadmin' && (
+                        <>
+                            <Link
+                                to="/results"
+                                className={`block py-2 px-4 rounded transition ${location.pathname === '/results' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+                            >
+                                Results
+                            </Link>
+                            <Link
+                                to="/security"
+                                className={`block py-2 px-4 rounded transition ${location.pathname === '/security' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+                            >
+                                Security
+                            </Link>
+                        </>
+                    )}
                 </nav>
 
                 <div className="p-4 border-t border-gray-800">
@@ -57,12 +62,12 @@ function AdminLayout({ token, user, onLogout }) {
 
                 <main className="flex-1 p-6 overflow-y-auto">
                     <Routes>
-                        <Route path="/" element={<ParticipantsPage token={token} />} />
-                        <Route path="/participants" element={<ParticipantsPage token={token} />} />
-                        <Route path="/participants/new" element={<AddParticipantPage token={token} />} />
-                        <Route path="/results" element={<ResultsPage token={token} />} />
-                        <Route path="/security" element={<SecurityDashboard token={token} />} />
-                        <Route path="/participants/:id" element={<ParticipantProfilePage token={token} />} />
+                        <Route path="/" element={<ParticipantsPage token={token} currentUserRole={user.role} />} />
+                        <Route path="/participants" element={<ParticipantsPage token={token} currentUserRole={user.role} />} />
+                        <Route path="/participants/new" element={<AddParticipantPage token={token} currentUserRole={user.role} />} />
+                        <Route path="/results" element={<ResultsPage token={token} currentUserRole={user.role} />} />
+                        <Route path="/security" element={<SecurityDashboard token={token} currentUserRole={user.role} />} />
+                        <Route path="/participants/:id" element={<ParticipantProfilePage token={token} currentUserRole={user.role} />} />
                     </Routes>
                 </main>
             </div>

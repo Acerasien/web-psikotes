@@ -12,8 +12,8 @@ if not temp_test:
     temp_test = Test(
         name="Temperament Test",
         code="TEMP",
-        time_limit=0,  # no timer
-        settings={"type": "temperament", "randomize_options": False}  # Likert scale order should be fixed
+        time_limit=300,          # 5 minutes
+        settings={"type": "temperament", "randomize_options": False}
     )
     db.add(temp_test)
     db.commit()
@@ -21,11 +21,13 @@ if not temp_test:
     print("Created Temperament Test container.")
 else:
     # Clear old data
+    temp_test.time_limit = 300
     old_qs = db.query(Question).filter(Question.test_id == temp_test.id).all()
     for q in old_qs:
         db.query(Option).filter(Option.question_id == q.id).delete()
     db.query(Question).filter(Question.test_id == temp_test.id).delete()
     db.commit()
+    print("Updated timer for existing Temperament Test.")
     print("Cleared old Temperament data.")
 
 # 2. Define questions (7 per trait)

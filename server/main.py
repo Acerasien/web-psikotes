@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from auth import get_current_user, require_admin, hash_password
+from auth import get_current_user, require_admin, require_superadmin, hash_password
 from models import User, Test, Assignment, Response, Result, Question, Option, ExitLog
 from datetime import datetime
 from datetime import date
@@ -68,10 +68,22 @@ def read_users_me(current_user: User = Depends(get_current_user)):
     }
 
 @app.post("/users/", status_code=201)
-def create_user(user: UserCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def create_user(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)  # both superadmin and admin allowed
+):
+    # If current user is not superadmin, they cannot create admin/superadmin
+    if current_user.role != "superadmin" and user.role in ["admin", "superadmin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only superadmin can create admin users"
+        )
+    
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
+    
     new_user = User(
         username=user.username,
         password_hash=hash_password(user.password),
@@ -104,7 +116,7 @@ def get_users(db: Session = Depends(get_db), admin: User = Depends(require_admin
 
 # ---------- ADDED: Get single user by ID ----------
 @app.get("/users/{user_id}")
-def get_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_user(user_id: int, db: Session = Depends(get_db), superadmin: User = Depends(require_superadmin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -124,13 +136,27 @@ def update_user(
     user_id: int,
     user_update: UserUpdate,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    current_user: User = Depends(require_admin)
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Update only provided fields
+    # If current user is not superadmin, they cannot change roles
+    if current_user.role != "superadmin" and user_update.role is not None:
+        raise HTTPException(
+            status_code=403,
+            detail="Only superadmin can change user roles"
+        )
+
+    # Also prevent a non-superadmin from elevating someone to admin/superadmin
+    if current_user.role != "superadmin" and user_update.role in ["admin", "superadmin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only superadmin can assign admin or superadmin roles"
+        )
+
+    # Update fields (same as before)
     if user_update.username is not None:
         if user_update.username != user.username:
             existing = db.query(User).filter(User.username == user_update.username).first()
@@ -154,14 +180,13 @@ def update_user(
 
     db.commit()
     db.refresh(user)
-
     return {"message": "User updated successfully", "user": user}
 
 @app.delete("/users/{user_id}")
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    superadmin: User = Depends(require_superadmin)
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -366,7 +391,7 @@ def get_results(
     from_date: Optional[date] = None,        # new
     to_date: Optional[date] = None,          # new
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    superadmin: User = Depends(require_superadmin)
 ):
     query = db.query(Result).join(User).join(Test)  # need joins for filtering on related fields
 
@@ -413,7 +438,7 @@ def lock_assignment(assignment_id: int, db: Session = Depends(get_db), current_u
     return {"message": "Assignment locked due to integrity violation"}
 
 @app.post("/admin/assignments/{assignment_id}/unlock")
-def unlock_assignment(assignment_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def unlock_assignment(assignment_id: int, db: Session = Depends(get_db), superadmin: User = Depends(require_superadmin)):
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
@@ -436,7 +461,7 @@ def log_exit(assignment_id: int, db: Session = Depends(get_db), current_user: Us
     return {"message": "Exit logged"}
 
 @app.get("/admin/locked-assignments")
-def get_locked_assignments(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_locked_assignments(db: Session = Depends(get_db), superadmin: User = Depends(require_superadmin)):
     assignments = db.query(Assignment).filter(Assignment.status == "locked").all()
     result = []
     for a in assignments:
@@ -458,7 +483,7 @@ def get_exit_logs(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    superadmin: User = Depends(require_superadmin)
 ):
     query = db.query(ExitLog).join(User).join(Assignment)
     if user_id:

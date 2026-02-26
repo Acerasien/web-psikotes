@@ -5,7 +5,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import EditParticipantModal from '../components/EditParticipantModal';
 
-function ParticipantsPage({ token }) {
+function ParticipantsPage({ token, currentUserRole }) {
     const [usersList, setUsersList] = useState([]);
     const [tests, setTests] = useState([]);
     const [assignments, setAssignments] = useState([]);
@@ -21,7 +21,6 @@ function ParticipantsPage({ token }) {
     const getUserAssignments = (userId) => assignments.filter(a => a.user_id === userId);
     const isTestAssigned = (userId, testId) => assignments.some(a => a.user_id === userId && a.test_id === testId);
 
-    // Fetch tests
     const fetchTests = async () => {
         try {
             const r = await axios.get('http://127.0.0.1:8000/tests/', {
@@ -33,7 +32,6 @@ function ParticipantsPage({ token }) {
         }
     };
 
-    // Refresh assignments
     const refreshAssignments = async () => {
         try {
             const r = await axios.get('http://127.0.0.1:8000/assignments/', {
@@ -45,7 +43,6 @@ function ParticipantsPage({ token }) {
         }
     };
 
-    // Refresh users
     const refreshUsers = async () => {
         try {
             const r = await axios.get('http://127.0.0.1:8000/users/', {
@@ -57,7 +54,6 @@ function ParticipantsPage({ token }) {
         }
     };
 
-    // Initial data load
     useEffect(() => {
         refreshUsers();
         fetchTests();
@@ -144,20 +140,25 @@ function ParticipantsPage({ token }) {
 
     return (
         <div className="space-y-6">
-            {/* Add Button and Search */}
+            {/* Header with Add button and Search */}
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+                <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">Manage Participants</h3>
-                    <Link to="/participants/new" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
-                        + Add Participant
-                    </Link>
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="border rounded px-3 py-1 text-sm"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                    <div className="flex gap-4 items-center">
+                        <input
+                            type="text"
+                            placeholder="Search by name or department..."
+                            className="border rounded px-3 py-2 text-sm w-64 focus:ring-blue-500 focus:border-blue-500"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <Link
+                            to="/participants/new"
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm whitespace-nowrap"
+                        >
+                            + Add Participant
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Table */}
@@ -165,101 +166,136 @@ function ParticipantsPage({ token }) {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dept</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tests</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tests</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {currentUsers.map((u) => (
-                                <tr
-                                    key={u.id}
-                                    className="hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => navigate(`/participants/${u.id}`)}
-                                >
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">{u.full_name || u.username}</div>
-                                        <div className="text-sm text-gray-500">{u.username}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.department || '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <div className="flex flex-col gap-1">
-                                            {getUserAssignments(u.id).length > 0 ? (
-                                                getUserAssignments(u.id).map(a => (
-                                                    <span
-                                                        key={a.id}
-                                                        className={`px-2 py-1 rounded text-xs inline-block ${a.status === 'locked' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                            }`}
-                                                    >
-                                                        {a.test_name} ({a.status})
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-gray-400 text-xs">None</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <div className="flex gap-2 items-center">
-                                            {getUserAssignments(u.id).some(a => a.status === 'locked') && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        const lockedA = getUserAssignments(u.id).find(a => a.status === 'locked');
-                                                        handleUnlock(lockedA.id, e);
-                                                    }}
-                                                    className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600"
-                                                >
-                                                    Unlock
-                                                </button>
-                                            )}
-                                            <select
-                                                className="border rounded px-2 py-1 text-xs"
-                                                value={selectedTest[u.id] || ''}
-                                                onChange={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedTest({ ...selectedTest, [u.id]: e.target.value });
-                                                }}
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <option value="" disabled>Select test</option>
-                                                {tests
-                                                    .filter(t => !isTestAssigned(u.id, t.id))
-                                                    .map(t => (
-                                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                                    ))}
-                                            </select>
-                                            <button
-                                                onClick={(e) => handleAssign(u.id, e)}
-                                                className="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600"
-                                            >
-                                                Add
-                                            </button>
-                                            {/* Edit button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingUser(u);
-                                                    setShowEditModal(true);
-                                                }}
-                                                className="bg-yellow-500 text-white text-xs px-2 py-1 rounded hover:bg-yellow-600"
-                                            >
-                                                Edit
-                                            </button>
-                                            {/* Delete button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(u.id, u.full_name || u.username);
-                                                }}
-                                                className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
+                            {currentUsers.length === 0 ? (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                                        No participants found.
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                currentUsers.map((u) => {
+                                    const userAssignments = getUserAssignments(u.id);
+                                    const hasLocked = userAssignments.some(a => a.status === 'locked');
+                                    const availableTests = tests.filter(t => !isTestAssigned(u.id, t.id));
+
+                                    return (
+                                        <tr
+                                            key={u.id}
+                                            className="hover:bg-gray-50 cursor-pointer"
+                                            onClick={() => navigate(`/participants/${u.id}`)}
+                                        >
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-medium text-gray-900">{u.full_name || u.username}</div>
+                                                <div className="text-sm text-gray-500">{u.username}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {u.department || '-'}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {userAssignments.length > 0 ? (
+                                                        userAssignments.map(a => {
+                                                            let bgColor = 'bg-green-100 text-green-800';
+                                                            if (a.status === 'locked') bgColor = 'bg-red-100 text-red-800';
+                                                            else if (a.status === 'in_progress') bgColor = 'bg-yellow-100 text-yellow-800';
+                                                            return (
+                                                                <span
+                                                                    key={a.id}
+                                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor}`}
+                                                                >
+                                                                    {a.test_name} ({a.status})
+                                                                </span>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <span className="text-gray-400 text-xs">No tests assigned</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {/* Unlock button (if locked) */}
+                                                    {currentUserRole === 'superadmin' && hasLocked && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const lockedA = userAssignments.find(a => a.status === 'locked');
+                                                                handleUnlock(lockedA.id, e);
+                                                            }}
+                                                            className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded"
+                                                            title="Unlock test"
+                                                        >
+                                                            Unlock
+                                                        </button>
+                                                    )}
+
+                                                    {/* Assignment group: dropdown + add button */}
+                                                    <div className="flex items-center gap-1 bg-gray-50 rounded p-1">
+                                                        <select
+                                                            className="border rounded px-2 py-1 text-xs w-28 focus:ring-blue-500 focus:border-blue-500"
+                                                            value={selectedTest[u.id] || ''}
+                                                            onChange={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedTest({ ...selectedTest, [u.id]: e.target.value });
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <option value="" disabled>Assign test</option>
+                                                            {availableTests.map(t => (
+                                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            onClick={(e) => handleAssign(u.id, e)}
+                                                            className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                                                            title="Add selected test"
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Edit & Delete icons, only for superadmin */}
+                                                    {currentUserRole === 'superadmin' && (
+                                                        <>
+                                                            {/* Edit icon */}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setEditingUser(u);
+                                                                    setShowEditModal(true);
+                                                                }}
+                                                                className="text-yellow-600 hover:text-yellow-800 text-lg"
+                                                                title="Edit participant"
+                                                            >
+                                                                ✏️
+                                                            </button>
+
+                                                            {/* Delete icon */}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDelete(u.id, u.full_name || u.username);
+                                                                }}
+                                                                className="text-red-600 hover:text-red-800 text-lg"
+                                                                title="Delete participant"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -267,20 +303,21 @@ function ParticipantsPage({ token }) {
                 {/* Pagination */}
                 <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                     <div className="text-sm text-gray-700">
-                        Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length}
+                        Showing {filteredUsers.length > 0 ? indexOfFirstUser + 1 : 0} to{' '}
+                        {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} participants
                     </div>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                            className="px-3 py-1 border rounded"
+                            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
                         >
-                            Prev
+                            Previous
                         </button>
                         <button
                             onClick={() => setCurrentPage(prev => prev + 1)}
                             disabled={indexOfLastUser >= filteredUsers.length}
-                            className="px-3 py-1 border rounded"
+                            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
                         >
                             Next
                         </button>

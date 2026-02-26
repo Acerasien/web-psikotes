@@ -12,7 +12,7 @@ if not disc_test:
     disc_test = Test(
         name="DISC Assessment",
         code="DISC",
-        time_limit=0, # Untimed
+        time_limit=600,          # 10 minutes
         settings={"type": "disc"}
     )
     db.add(disc_test)
@@ -20,6 +20,7 @@ if not disc_test:
     db.refresh(disc_test)
 else:
     # Clear old data
+    disc_test.time_limit = 600
     old_qs = db.query(Question).filter(Question.test_id == disc_test.id).all()
     for q in old_qs:
         db.query(Option).filter(Option.question_id == q.id).delete()
@@ -62,7 +63,7 @@ print("Seeding DISC Questions (Indonesian)...")
 for idx, block_statements in enumerate(blocks):
     new_q = Question(
         test_id=disc_test.id,
-        content=f"Pilih kata yang PALING SESUIA dan PALING TIDAK SESUAI dengan diri Anda.",
+        content=f"Pilih kata yang PALING SESUAI dan PALING TIDAK SESUAI dengan diri Anda.",
         order_index=idx + 1
     )
     db.add(new_q)

@@ -41,7 +41,7 @@ function App() {
   if (!user) return <div className="min-h-screen flex items-center justify-center bg-gray-100">Loading...</div>;
 
   // Routing Logic
-  if (user.role === 'admin') {
+  if (user.role === 'admin' || user.role === 'superadmin') {
     return (
       <Router>
         <Routes>

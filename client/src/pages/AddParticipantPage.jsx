@@ -2,11 +2,10 @@
 import { useNavigate } from 'react-router-dom';
 import CreateUser from '../CreateUser';
 
-function AddParticipantPage({ token }) {
+function AddParticipantPage({ token, currentUserRole }) {
     const navigate = useNavigate();
 
     const handleSuccess = () => {
-        // Go back to the list after adding
         navigate('/participants');
     };
 
@@ -19,14 +18,9 @@ function AddParticipantPage({ token }) {
                 </p>
             </div>
             <div className="px-4 py-5 sm:p-6">
-                {/* We pass a custom onSuccess to redirect back */}
-                <CreateUser token={token} onUserCreated={handleSuccess} />
-
+                <CreateUser token={token} onUserCreated={handleSuccess} currentUserRole={currentUserRole} />
                 <div className="mt-4 text-right">
-                    <button
-                        onClick={() => navigate('/participants')}
-                        className="text-sm text-gray-500 hover:text-gray-700"
-                    >
+                    <button onClick={() => navigate('/participants')} className="text-sm text-gray-500 hover:text-gray-700">
                         &larr; Back to List
                     </button>
                 </div>
