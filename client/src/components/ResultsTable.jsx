@@ -242,7 +242,11 @@ function ResultsTable({ token }) {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.test_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
-                                        {result.score} / {result.total_questions}
+                                        {result.test_name.includes('Temperament') && result.details?.primary ? (
+                                            <span>{result.details.primary}</span>
+                                        ) : (
+                                            <span>{result.score} / {result.total_questions}</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {Math.floor(result.time_taken / 60)}m {result.time_taken % 60}s
