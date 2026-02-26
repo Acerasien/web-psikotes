@@ -4,6 +4,7 @@ import ResultsPage from './pages/ResultsPage';
 import AddParticipantPage from './pages/AddParticipantPage';
 import ParticipantProfilePage from './pages/ParticipantProfilePage';
 import SecurityDashboard from './pages/SecurityDashboard';
+import ManageAdmins from './pages/ManageAdmins';
 
 function AdminLayout({ token, user, onLogout }) {
     const location = useLocation();
@@ -39,6 +40,12 @@ function AdminLayout({ token, user, onLogout }) {
                             >
                                 Security
                             </Link>
+                            <Link
+                                to="/admins"
+                                className={`block py-2 px-4 rounded transition ${location.pathname === '/admins' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+                            >
+                                Admins
+                            </Link>
                         </>
                     )}
                 </nav>
@@ -67,6 +74,7 @@ function AdminLayout({ token, user, onLogout }) {
                         <Route path="/participants/new" element={<AddParticipantPage token={token} currentUserRole={user.role} />} />
                         <Route path="/results" element={<ResultsPage token={token} currentUserRole={user.role} />} />
                         <Route path="/security" element={<SecurityDashboard token={token} currentUserRole={user.role} />} />
+                        <Route path="/admins" element={<ManageAdmins token={token} currentUserRole={user.role} />} />
                         <Route path="/participants/:id" element={<ParticipantProfilePage token={token} currentUserRole={user.role} />} />
                     </Routes>
                 </main>

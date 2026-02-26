@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import TestScreen from './TestScreen'; // Import the new component
 import TemperamentTest from './components/TemperamentTest'; // adjust path
+import MemoryTest from './components/MemoryTest';
 
 function ParticipantDashboard({ token, user, onLogout }) {
   const [assignments, setAssignments] = useState([]);
@@ -25,11 +26,33 @@ function ParticipantDashboard({ token, user, onLogout }) {
 
   // If a test is active, show TestScreen
   if (activeTest) {
-    return <TestScreen token={token} assignmentId={activeTest} onFinish={() => {
-      setActiveTest(null); // Clear active test
-      // Optional: Refresh assignments to show 'completed' status
-      window.location.reload();
-    }} />;
+    // Find the assignment to get its test_code
+    const activeAssignment = assignments.find(a => a.id === activeTest);
+
+    if (activeAssignment?.test_code === 'MEM') {
+      return (
+        <MemoryTest
+          token={token}
+          assignmentId={activeTest}
+          onFinish={() => {
+            setActiveTest(null);
+            window.location.reload(); // or refresh assignments
+          }}
+        />
+      );
+    } else {
+      // For all other tests, use the generic TestScreen
+      return (
+        <TestScreen
+          token={token}
+          assignmentId={activeTest}
+          onFinish={() => {
+            setActiveTest(null);
+            window.location.reload();
+          }}
+        />
+      );
+    }
   }
 
   return (
@@ -78,7 +101,7 @@ function ParticipantDashboard({ token, user, onLogout }) {
                   ) : (
                     // Default (Pending / In Progress)
                     <span className={`px-2 py-1 text-xs rounded-full ${a.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-blue-100 text-blue-800'
+                      'bg-blue-100 text-blue-800'
                       }`}>
                       {a.status === 'in_progress' ? 'In Progress' : 'Not Started'}
                     </span>

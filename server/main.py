@@ -18,6 +18,9 @@ from scoring.speed import score_speed
 from scoring.temperament import score_temperament
 from sqlalchemy.orm import joinedload  # to load options efficiently
 from schemas import UserUpdate
+from scoring.memory import score_memory
+import secrets
+import string
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -113,6 +116,26 @@ def get_users(db: Session = Depends(get_db), admin: User = Depends(require_admin
         } 
         for u in users
     ]
+    
+@app.post("/admin/reset-password/{user_id}")
+def reset_password(
+    user_id: int,
+    db: Session = Depends(get_db),
+    superadmin: User = Depends(require_superadmin)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Generate a random 10-character password
+    alphabet = string.ascii_letters + string.digits
+    new_password = ''.join(secrets.choice(alphabet) for _ in range(10))
+
+    # Hash and update
+    user.password_hash = hash_password(new_password)
+    db.commit()
+
+    return {"new_password": new_password}
 
 # ---------- ADDED: Get single user by ID ----------
 @app.get("/users/{user_id}")
@@ -252,6 +275,7 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
             "id": a.id,
             "test_id": a.test_id,
             "test_name": a.test.name,
+            "test_code": a.test.code,
             "status": a.status,
             "assigned_at": a.assigned_at
         })
@@ -352,6 +376,16 @@ def submit_test(
         details = score_temperament(submission.answers, questions)
         # Optional: you could set score to something meaningful, e.g., sum of raw scores
         score = sum(details["raw_scores"].values()) if details["raw_scores"] else 0
+    
+    elif test_code == "MEM":
+        questions = (
+            db.query(Question)
+            .options(joinedload(Question.options))
+            .filter(Question.test_id == assignment.test_id)
+            .all()
+        )
+        details = score_memory(submission.answers, questions)
+        score = details["score"]
 
     else:
         # Default: IQ, Memory, Logic, etc. (simple correct count)
