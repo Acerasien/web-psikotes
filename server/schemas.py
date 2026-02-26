@@ -31,3 +31,13 @@ class UserCreate(BaseModel):
 class TestSubmission(BaseModel):
     answers: List[dict]  # Make sure this is List[dict], not dict
     time_taken: int
+    
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+    full_name: Optional[str] = None
+    age: Optional[int] = None
+    education: Optional[str] = None
+    department: Optional[str] = None
+    position: Optional[str] = None

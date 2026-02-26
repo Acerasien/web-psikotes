@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import EditParticipantModal from '../components/EditParticipantModal';
 
 function ParticipantsPage({ token }) {
     const [usersList, setUsersList] = useState([]);
@@ -13,10 +14,55 @@ function ParticipantsPage({ token }) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const navigate = useNavigate();
+    const [editingUser, setEditingUser] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     // Helper functions
     const getUserAssignments = (userId) => assignments.filter(a => a.user_id === userId);
     const isTestAssigned = (userId, testId) => assignments.some(a => a.user_id === userId && a.test_id === testId);
+
+    // Fetch tests
+    const fetchTests = async () => {
+        try {
+            const r = await axios.get('http://127.0.0.1:8000/tests/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTests(r.data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    // Refresh assignments
+    const refreshAssignments = async () => {
+        try {
+            const r = await axios.get('http://127.0.0.1:8000/assignments/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setAssignments(r.data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    // Refresh users
+    const refreshUsers = async () => {
+        try {
+            const r = await axios.get('http://127.0.0.1:8000/users/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUsersList(r.data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    // Initial data load
+    useEffect(() => {
+        refreshUsers();
+        fetchTests();
+        refreshAssignments();
+    }, [token]);
 
     // Filtering
     const filteredUsers = usersList
@@ -33,41 +79,8 @@ function ParticipantsPage({ token }) {
     const indexOfFirstUser = indexOfLastUser - itemsPerPage;
     const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
-    // Refresh assignments after actions
-    const refreshAssignments = async () => {
-        try {
-            const r = await axios.get('http://127.0.0.1:8000/assignments/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setAssignments(r.data);
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    // Data fetching effect
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const r = await axios.get('http://127.0.0.1:8000/users/', { headers: { Authorization: `Bearer ${token}` } });
-                setUsersList(r.data);
-            } catch (e) { console.error(e); }
-        };
-
-        const fetchTests = async () => {
-            try {
-                const r = await axios.get('http://127.0.0.1:8000/tests/', { headers: { Authorization: `Bearer ${token}` } });
-                setTests(r.data);
-            } catch (e) { console.error(e); }
-        };
-
-        fetchUsers();
-        fetchTests();
-        refreshAssignments(); // use the reusable function
-    }, [token]);
-
     const handleAssign = async (userId, e) => {
-        e.stopPropagation(); // Prevent row click
+        e.stopPropagation();
         const testId = selectedTest[userId];
         if (!testId) {
             Swal.fire("Error", "Select a test first", "error");
@@ -78,7 +91,6 @@ function ParticipantsPage({ token }) {
                 headers: { Authorization: `Bearer ${token}` }
             });
             refreshAssignments();
-            // Clear the selected test for this user after assignment
             setSelectedTest(prev => ({ ...prev, [userId]: '' }));
         } catch (err) {
             Swal.fire("Error", err.response?.data?.detail || "Unknown", "error");
@@ -86,7 +98,7 @@ function ParticipantsPage({ token }) {
     };
 
     const handleUnlock = async (assignmentId, e) => {
-        e.stopPropagation(); // Prevent row click
+        e.stopPropagation();
         const result = await Swal.fire({
             title: 'Unlock this test?',
             icon: 'warning',
@@ -106,9 +118,33 @@ function ParticipantsPage({ token }) {
         }
     };
 
+    const handleDelete = async (userId, userName) => {
+        const result = await Swal.fire({
+            title: 'Delete Participant?',
+            text: `Are you sure you want to delete ${userName}? This will permanently remove all their data.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await axios.delete(`http://127.0.0.1:8000/users/${userId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                Swal.fire('Deleted!', 'Participant has been deleted.', 'success');
+                refreshUsers();
+            } catch (err) {
+                Swal.fire('Error', 'Could not delete participant.', 'error');
+            }
+        }
+    };
+
     return (
         <div className="space-y-6">
-            {/* Add Button */}
+            {/* Add Button and Search */}
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">Manage Participants</h3>
@@ -181,10 +217,10 @@ function ParticipantsPage({ token }) {
                                                 className="border rounded px-2 py-1 text-xs"
                                                 value={selectedTest[u.id] || ''}
                                                 onChange={(e) => {
-                                                    e.stopPropagation(); // Prevent row click
+                                                    e.stopPropagation();
                                                     setSelectedTest({ ...selectedTest, [u.id]: e.target.value });
                                                 }}
-                                                onClick={(e) => e.stopPropagation()} // Also stop click on the select itself
+                                                onClick={(e) => e.stopPropagation()}
                                             >
                                                 <option value="" disabled>Select test</option>
                                                 {tests
@@ -199,6 +235,27 @@ function ParticipantsPage({ token }) {
                                             >
                                                 Add
                                             </button>
+                                            {/* Edit button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingUser(u);
+                                                    setShowEditModal(true);
+                                                }}
+                                                className="bg-yellow-500 text-white text-xs px-2 py-1 rounded hover:bg-yellow-600"
+                                            >
+                                                Edit
+                                            </button>
+                                            {/* Delete button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(u.id, u.full_name || u.username);
+                                                }}
+                                                className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600"
+                                            >
+                                                Delete
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -207,7 +264,7 @@ function ParticipantsPage({ token }) {
                     </table>
                 </div>
 
-                {/* Pagination Controls */}
+                {/* Pagination */}
                 <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                     <div className="text-sm text-gray-700">
                         Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length}
@@ -230,6 +287,22 @@ function ParticipantsPage({ token }) {
                     </div>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {showEditModal && (
+                <EditParticipantModal
+                    token={token}
+                    user={editingUser}
+                    onClose={() => {
+                        setShowEditModal(false);
+                        setEditingUser(null);
+                    }}
+                    onSaved={() => {
+                        refreshUsers();
+                        refreshAssignments();
+                    }}
+                />
+            )}
         </div>
     );
 }

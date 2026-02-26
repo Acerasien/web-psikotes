@@ -17,6 +17,7 @@ from scoring.disc import score_disc
 from scoring.speed import score_speed
 from scoring.temperament import score_temperament
 from sqlalchemy.orm import joinedload  # to load options efficiently
+from schemas import UserUpdate
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -117,6 +118,64 @@ def get_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(
         "department": user.department,
         "position": user.position
     }
+
+@app.put("/users/{user_id}")
+def update_user(
+    user_id: int,
+    user_update: UserUpdate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update only provided fields
+    if user_update.username is not None:
+        if user_update.username != user.username:
+            existing = db.query(User).filter(User.username == user_update.username).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Username already taken")
+        user.username = user_update.username
+    if user_update.full_name is not None:
+        user.full_name = user_update.full_name
+    if user_update.age is not None:
+        user.age = user_update.age
+    if user_update.education is not None:
+        user.education = user_update.education
+    if user_update.department is not None:
+        user.department = user_update.department
+    if user_update.position is not None:
+        user.position = user_update.position
+    if user_update.role is not None:
+        user.role = user_update.role
+    if user_update.password is not None and user_update.password != "":
+        user.password_hash = hash_password(user_update.password)
+
+    db.commit()
+    db.refresh(user)
+
+    return {"message": "User updated successfully", "user": user}
+
+@app.delete("/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete related records (cascade manually)
+    db.query(ExitLog).filter(ExitLog.user_id == user_id).delete()
+    db.query(Response).filter(Response.user_id == user_id).delete()
+    db.query(Result).filter(Result.user_id == user_id).delete()
+    db.query(Assignment).filter(Assignment.user_id == user_id).delete()
+    db.delete(user)
+    db.commit()
+
+    return {"message": "User deleted successfully"}
 
 # ---------- MODIFIED: Assignments endpoint with optional user_id filter ----------
 @app.get("/assignments/")
