@@ -22,6 +22,7 @@ class User(Base):
     
     # NEW FIELDS FOR REPORT
     full_name = Column(String, nullable=True)
+    gender = Column(String, nullable=True)  # e.g., "L" or "P", or "Male"/"Female"
     age = Column(Integer, nullable=True)
     education = Column(String, nullable=True)
     department = Column(String, nullable=True)
@@ -91,13 +92,14 @@ class Response(Base):
     test_id = Column(Integer, ForeignKey("tests.id"))
     question_id = Column(Integer, ForeignKey("questions.id"))
     selected_option_id = Column(Integer, ForeignKey("options.id"))
-    
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)  # new
     # NEW FIELD: To distinguish between 'most', 'least', or 'single' (for speed test)
     selection_type = Column(String, default="single") 
     
     # Relationships
     user = relationship("User")
     test = relationship("Test")
+    assignment = relationship("Assignment")
     question = relationship("Question")
     option = relationship("Option")
 
@@ -107,6 +109,7 @@ class Result(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     test_id = Column(Integer, ForeignKey("tests.id"))
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)  # new
     score = Column(Integer, default=0)
     time_taken = Column(Integer) # in seconds
     completed_at = Column(DateTime, default=datetime.utcnow)
@@ -115,6 +118,7 @@ class Result(Base):
     # Relationships
     user = relationship("User")
     test = relationship("Test")
+    assignment = relationship("Assignment")
     
 class ExitLog(Base):
     __tablename__ = "exit_logs"

@@ -28,6 +28,42 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     };
 
+    // Handle answer selection (auto‑next)
+    const handleSelect = (optionId) => {
+        const qId = questions[currentIndex]?.id;
+        if (!qId) return;
+
+        setAnswers(prev => ({ ...prev, [qId]: optionId }));
+
+        // Auto‑next after 200ms (only if not last question)
+        setTimeout(() => {
+            if (currentIndex < questions.length - 1) {
+                setCurrentIndex(prev => prev + 1);
+            } else {
+                setShowConfirm(true);
+            }
+        }, 200);
+    };
+
+    // Navigation functions
+    const goToQuestion = (index) => {
+        if (index >= 0 && index < questions.length) {
+            setCurrentIndex(index);
+        }
+    };
+
+    const goNext = () => {
+        if (currentIndex < questions.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        }
+    };
+
+    const goPrev = () => {
+        if (currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+        }
+    };
+
     // --- Load test data ---
     useEffect(() => {
         const loadTest = async () => {
@@ -36,7 +72,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setTestData(res.data);
-                setQuestions(res.data.questions);
+                setQuestions(res.data.questions || []);
                 setEncodingTimeLeft(res.data.settings?.encoding_time || 180);
                 setRecallTimeLeft(res.data.settings?.recall_time || 600);
                 setLoading(false);
@@ -48,18 +84,22 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                     setIsLocked(true);
                     setLoading(false);
                 } else {
+                    // Show alert if API fails completely
+                    Swal.fire('Error', 'Gagal memuat tes.', 'error');
                     onFinish();
                 }
             }
         };
         loadTest();
-    }, [token, assignmentId]);
+    }, [token, assignmentId, onFinish]);
 
     // --- Fullscreen change listener ---
     useEffect(() => {
         const handleFullscreenChange = () => {
             const isCurrentlyFullscreen = document.fullscreenElement !== null;
-            if (!isCurrentlyFullscreen && !isLocked && !loading) {
+
+            // Only warn if we aren't locked, loading, or just started
+            if (!isCurrentlyFullscreen && !isLocked && !loading && testData) {
                 const newCount = exitCount + 1;
                 setExitCount(newCount);
 
@@ -95,7 +135,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         };
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, [exitCount, isLocked, loading, assignmentId, token]);
+    }, [exitCount, isLocked, loading, testData, assignmentId, token]);
 
     // --- Prevent context menu and dev tools ---
     useEffect(() => {
@@ -148,19 +188,6 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         return () => clearInterval(timer);
     }, [phase, recallTimeLeft, isLocked]);
 
-    const handleSelect = (optionId) => {
-        const qId = questions[currentIndex].id;
-        setAnswers({ ...answers, [qId]: optionId });
-        // Auto-next after selection
-        setTimeout(() => {
-            if (currentIndex < questions.length - 1) {
-                setCurrentIndex(currentIndex + 1);
-            } else {
-                setShowConfirm(true);
-            }
-        }, 200);
-    };
-
     const handleSubmit = async (isTimeout = false) => {
         setIsSubmitting(true);
         try {
@@ -170,7 +197,6 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                     option_id: answers[qId],
                     type: 'single'
                 })),
-                // Time taken in recall phase (or total? we'll use recall time taken)
                 time_taken: testData.settings?.recall_time - recallTimeLeft
             };
             await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`, payload, {
@@ -190,9 +216,19 @@ function MemoryTest({ token, assignmentId, onFinish }) {
     };
 
     const formatTime = (seconds) => {
+        if (seconds < 0) return "0:00";
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    const getTableRows = (tableData) => {
+        if (!tableData) return 0;
+        let maxLength = 0;
+        Object.values(tableData).forEach(arr => {
+            if (arr && arr.length > maxLength) maxLength = arr.length;
+        });
+        return maxLength;
     };
 
     // --- Locked screen ---
@@ -201,70 +237,84 @@ function MemoryTest({ token, assignmentId, onFinish }) {
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
                 <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
                 <p className="mb-2">You have exited fullscreen too many times.</p>
-                <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">
                     Back to Dashboard
                 </button>
             </div>
         );
     }
 
-    if (loading) return <div className="p-8 text-center">Loading tes...</div>;
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
     // --- Encoding Phase ---
     if (phase === 'encoding') {
         const tableData = testData.settings?.table_data;
+        const maxRows = getTableRows(tableData);
+
         return (
             <div className="min-h-screen bg-gray-100 flex flex-col">
-                <div className="bg-white shadow p-4 flex justify-between items-center">
+                <div className="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-10">
                     <h1 className="font-bold text-lg">Memory Test - Fase Menghafal</h1>
                     <div className="text-xl font-mono bg-red-100 text-red-700 px-3 py-1 rounded">
                         {formatTime(encodingTimeLeft)}
                     </div>
                 </div>
-                <div className="flex-1 p-8 overflow-auto">
+
+                <div className="flex-1 p-8 overflow-auto pb-24">
                     <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
                         <h2 className="text-xl font-bold mb-4 text-center">Tabel Hafalan</h2>
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse border border-gray-300">
-                                <thead>
-                                    <tr className="bg-gray-100">
-                                        {tableData && Object.keys(tableData).map(cat => (
-                                            <th key={cat} className="border border-gray-300 px-4 py-2 text-sm font-semibold">
-                                                {cat}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tableData && [...Array(5)].map((_, rowIdx) => (
-                                        <tr key={rowIdx}>
-                                            {Object.keys(tableData).map(cat => {
-                                                const items = tableData[cat];
-                                                return (
-                                                    <td key={cat} className="border border-gray-300 px-4 py-2 text-sm">
-                                                        {items[rowIdx] || ''}
-                                                    </td>
-                                                );
-                                            })}
+                        {tableData ? (
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse border border-gray-300">
+                                    <thead>
+                                        <tr className="bg-gray-100">
+                                            {Object.keys(tableData).map((cat, catIdx) => (
+                                                <th key={catIdx} className="border border-gray-300 px-4 py-2 text-sm font-semibold">
+                                                    {cat}
+                                                </th>
+                                            ))}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {[...Array(maxRows)].map((_, rowIdx) => (
+                                            <tr key={rowIdx}>
+                                                {Object.keys(tableData).map((cat, colIdx) => {
+                                                    const items = tableData[cat];
+                                                    const item = items && items[rowIdx] !== undefined ? items[rowIdx] : '';
+                                                    return (
+                                                        <td key={`${cat}-${rowIdx}`} className="border border-gray-300 px-4 py-2 text-sm text-center">
+                                                            {item}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500">No table data available.</p>
+                        )}
                         <p className="mt-4 text-center text-gray-600">
-                            Hafalkan tabel di atas. Anda akan diberikan 50 pertanyaan setelah waktu habis.
+                            Hafalkan tabel di atas. Anda akan diberikan {questions.length} pertanyaan setelah waktu habis.
                         </p>
                     </div>
                 </div>
 
-                {/* Fullscreen overlay when not in fullscreen */}
+                {/* Fullscreen overlay warning */}
                 {!isFullscreen && !isLocked && (
-                    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
+                    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white pointer-events-auto">
                         <h2 className="text-2xl font-bold mb-4">Paused</h2>
                         <p>Please return to fullscreen mode.</p>
                         <button
                             onClick={() => enterFullscreen()}
-                            className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold"
+                            className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600"
                         >
                             Return to Fullscreen
                         </button>
@@ -274,76 +324,174 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         );
     }
 
-    // --- Recall Phase ---
-    const currentQ = questions[currentIndex];
-    const progress = ((Object.keys(answers).length) / questions.length * 100).toFixed(0);
+    // Recall Phase – Refined without Flagging
+    if (phase === 'recall') {
+        const currentQ = questions[currentIndex] || {};
+        const answeredCount = Object.keys(answers).length;
+        const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-    return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
-            <div className="bg-white shadow p-4 flex justify-between items-center">
-                <h1 className="font-bold text-lg">Memory Test - Fase Menjawab</h1>
-                <div className="text-xl font-mono bg-red-100 text-red-700 px-3 py-1 rounded">
-                    {formatTime(recallTimeLeft)}
-                </div>
-            </div>
-            <div className="w-full bg-gray-200 h-2">
-                <div className="bg-blue-500 h-2 transition-all" style={{ width: `${progress}%` }}></div>
-            </div>
-            <div className="flex-1 p-8 flex flex-col items-center">
-                <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
-                    <p className="text-sm text-gray-500 mb-2">Pertanyaan {currentIndex + 1} dari {questions.length}</p>
-                    <h2 className="text-xl font-semibold mb-6">{currentQ.content}</h2>
-                    <div className="space-y-3">
-                        {currentQ.options.map(opt => (
-                            <button
-                                key={opt.id}
-                                onClick={() => handleSelect(opt.id)}
-                                className={`w-full text-left p-4 border rounded-lg transition ${answers[currentQ.id] === opt.id ? 'bg-blue-500 text-white' : 'bg-white hover:bg-gray-50'
-                                    }`}
-                            >
-                                <span className="font-bold mr-2">{opt.label}.</span> {opt.content}
-                            </button>
-                        ))}
+        return (
+            <div className="min-h-screen bg-gray-100 flex flex-col">
+                {/* Header */}
+                <div className="bg-white shadow px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+                    <h1 className="font-semibold text-lg">Memory Test - Fase Menjawab</h1>
+                    <div className="bg-red-100 text-red-700 px-3 py-1 rounded-md font-mono text-lg">
+                        {formatTime(recallTimeLeft)}
                     </div>
                 </div>
-            </div>
-            {showConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-8 rounded-lg max-w-md w-full text-center">
-                        <h3 className="text-xl font-bold mb-4">Selesaikan Tes?</h3>
-                        <p className="mb-6">Anda telah menjawab {Object.keys(answers).length} pertanyaan.</p>
-                        <div className="flex gap-4 justify-center">
-                            <button onClick={() => setShowConfirm(false)} className="px-4 py-2 bg-gray-200 rounded">
-                                Batal
-                            </button>
-                            <button
-                                onClick={() => handleSubmit()}
-                                disabled={isSubmitting}
-                                className={`px-4 py-2 text-white rounded ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
-                                    }`}
-                            >
-                                {isSubmitting ? 'Mengirim...' : 'Kirim'}
-                            </button>
+
+                {/* Question Navigation – wrap‑able grid (removed flag logic) */}
+                <div className="bg-white border-b px-4 py-3">
+                    <div className="flex flex-wrap gap-1.5 justify-center">
+                        {questions.map((q, idx) => {
+                            let btnClass = 'w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors ';
+
+                            if (answers[q.id]) {
+                                btnClass += 'bg-green-500 text-white hover:bg-green-600';
+                            } else {
+                                btnClass += 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+                            }
+
+                            if (idx === currentIndex) {
+                                btnClass += ' ring-2 ring-blue-500 ring-offset-2';
+                            }
+                            return (
+                                <button key={q.id} onClick={() => goToQuestion(idx)} className={btnClass}>
+                                    {idx + 1}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 h-2">
+                    <div className="bg-blue-500 h-2 transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                </div>
+
+                {/* Main Question Area */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="bg-white rounded-xl shadow-md p-6 md:p-8">
+                            {/* Question Header */}
+                            <div className="flex justify-between items-start mb-6">
+                                <span className="text-sm text-gray-500">
+                                    Pertanyaan {currentIndex + 1} dari {questions.length}
+                                </span>
+                            </div>
+
+                            {/* Question Text */}
+                            <h2 className="text-xl font-medium text-gray-800 mb-8 leading-relaxed">
+                                {currentQ.content}
+                            </h2>
+
+                            {/* Options */}
+                            <div className="space-y-3">
+                                {currentQ.options?.map(opt => {
+                                    const isSelected = answers[currentQ.id] === opt.id;
+                                    return (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => handleSelect(opt.id)}
+                                            className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
+                                                ? 'bg-blue-500 text-white border-blue-600'
+                                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                }`}
+                                        >
+                                            <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
+                                                {opt.label}.
+                                            </span>
+                                            <span>{opt.content}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
 
-            {/* Fullscreen overlay during recall phase */}
-            {!isFullscreen && !isLocked && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
-                    <h2 className="text-2xl font-bold mb-4">Paused</h2>
-                    <p>Please return to fullscreen mode.</p>
+                {/* Footer Navigation */}
+                <div className="bg-white border-t px-4 py-3 flex items-center justify-between">
                     <button
-                        onClick={() => enterFullscreen()}
-                        className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold"
+                        onClick={goPrev}
+                        disabled={currentIndex === 0}
+                        className={`px-4 py-2 rounded-md font-medium transition ${currentIndex === 0
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
                     >
-                        Return to Fullscreen
+                        ← Sebelumnya
                     </button>
+                    <span className="text-sm text-gray-600 font-mono">
+                        {answeredCount} / {questions.length}
+                    </span>
+                    {currentIndex === questions.length - 1 ? (
+                        <button
+                            onClick={() => setShowConfirm(true)}
+                            className="px-5 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 shadow-sm transition"
+                        >
+                            Selesai
+                        </button>
+                    ) : (
+                        <button
+                            onClick={goNext}
+                            className="px-5 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 shadow-sm transition"
+                        >
+                            Selanjutnya →
+                        </button>
+                    )}
                 </div>
-            )}
-        </div>
-    );
+
+                {/* Confirmation Modal */}
+                {showConfirm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+                        <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full transform transition-all scale-100">
+                            <h3 className="text-2xl font-bold mb-4 text-gray-800">Selesaikan Tes?</h3>
+                            <p className="mb-6 text-gray-600">Anda telah menjawab {Object.keys(answers).length} dari {questions.length} pertanyaan.</p>
+                            <div className="flex gap-4 justify-center">
+                                <button
+                                    onClick={() => setShowConfirm(false)}
+                                    className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowConfirm(false);
+                                        handleSubmit();
+                                    }}
+                                    disabled={isSubmitting}
+                                    className={`px-5 py-2.5 text-white rounded-lg shadow-sm transition ${isSubmitting
+                                            ? 'bg-blue-400 cursor-wait'
+                                            : 'bg-green-500 hover:bg-green-600'
+                                        }`}
+                                >
+                                    {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Fullscreen overlay */}
+                {!isFullscreen && !isLocked && (
+                    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white pointer-events-auto">
+                        <h2 className="text-2xl font-bold mb-4">Paused</h2>
+                        <p>Please return to fullscreen mode.</p>
+                        <button
+                            onClick={() => enterFullscreen()}
+                            className="mt-4 px-6 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600 transition"
+                        >
+                            Return to Fullscreen
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Fallback
+    return <div>Loading...</div>;
 }
 
 export default MemoryTest;

@@ -23,6 +23,7 @@ class UserCreate(BaseModel):
     role: str = "participant"  # Default to participant
     # NEW FIELDS
     full_name: str
+    gender: Optional[str] = None
     age: Optional[int] = None
     education: Optional[str] = None
     department: Optional[str] = None
@@ -37,6 +38,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: Optional[str] = None
     full_name: Optional[str] = None
+    gender: Optional[str] = None
     age: Optional[int] = None
     education: Optional[str] = None
     department: Optional[str] = None

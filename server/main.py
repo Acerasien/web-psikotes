@@ -21,6 +21,7 @@ from schemas import UserUpdate
 from scoring.memory import score_memory
 import secrets
 import string
+from scoring.logic import score_logic
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -92,6 +93,7 @@ def create_user(
         password_hash=hash_password(user.password),
         role=user.role,
         full_name=user.full_name,
+        gender=user.gender,
         age=user.age,
         education=user.education,
         department=user.department,
@@ -148,6 +150,7 @@ def get_user(user_id: int, db: Session = Depends(get_db), superadmin: User = Dep
         "username": user.username,
         "role": user.role,
         "full_name": user.full_name,
+        "gender": user.gender,
         "age": user.age,
         "education": user.education,
         "department": user.department,
@@ -188,6 +191,8 @@ def update_user(
         user.username = user_update.username
     if user_update.full_name is not None:
         user.full_name = user_update.full_name
+    if user_update.gender is not None:
+        user.gender = user_update.gender
     if user_update.age is not None:
         user.age = user_update.age
     if user_update.education is not None:
@@ -335,6 +340,7 @@ def submit_test(
         resp = Response(
             user_id=current_user.id,
             test_id=assignment.test_id,
+            assignment_id=assignment.id,
             question_id=ans["question_id"],
             selected_option_id=ans.get("option_id"),
             selection_type=ans.get("type", "single"),
@@ -386,6 +392,16 @@ def submit_test(
         )
         details = score_memory(submission.answers, questions)
         score = details["score"]
+        
+    elif test_code == "LOGIC":
+        questions = (
+            db.query(Question)
+            .options(joinedload(Question.options))
+            .filter(Question.test_id == assignment.test_id)
+            .all()
+        )
+        details = score_logic(submission.answers, questions)
+        score = details["score"]
 
     else:
         # Default: IQ, Memory, Logic, etc. (simple correct count)
@@ -399,6 +415,7 @@ def submit_test(
     result = Result(
         user_id=current_user.id,
         test_id=assignment.test_id,
+        assignment_id=assignment.id,
         score=score,
         time_taken=submission.time_taken,
         details=details,
@@ -447,15 +464,30 @@ def get_results(
     output = []
     for r in results:
         total_questions = db.query(Question).filter(Question.test_id == r.test_id).count()
+        # Determine max possible score based on test code
+        if r.test.code == "DISC":
+            max_score = 24
+        elif r.test.code == "SPEED":
+            max_score = 100
+        elif r.test.code == "TEMP":
+            max_score = 168  # Not used in generic display
+        elif r.test.code == "MEM":
+            max_score = 100
+        elif r.test.code == "LOGIC":
+            max_score = 100
+        else:
+            max_score = total_questions  # fallback for IQ, Leadership, etc.
+
         output.append({
             "id": r.id,
             "user_id": r.user_id,
             "username": r.user.username,
             "full_name": r.user.full_name,
             "test_name": r.test.name,
-            "test_id": r.test_id,                 # added for frontend filtering
+            "test_id": r.test_id,
             "score": r.score,
             "total_questions": total_questions,
+            "max_score": max_score,          # <-- new field
             "time_taken": r.time_taken,
             "completed_at": r.completed_at,
             "details": r.details
@@ -541,3 +573,26 @@ def get_exit_logs(
             "timestamp": log.timestamp
         })
     return output
+
+@app.post("/admin/assignments/{assignment_id}/reset")
+def reset_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)          # both admin and superadmin can reset
+):
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+
+    # Delete all responses for this assignment
+    db.query(Response).filter(Response.assignment_id == assignment_id).delete()
+    # Delete the result for this assignment (if any)
+    db.query(Result).filter(Result.assignment_id == assignment_id).delete()
+
+    # Reset assignment status
+    assignment.status = "pending"
+    # Optionally reset the pretest flag so they see tutorial again
+    assignment.pretest_completed = False
+
+    db.commit()
+    return {"message": "Assignment reset successfully"}

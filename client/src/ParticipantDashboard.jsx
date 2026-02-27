@@ -1,57 +1,81 @@
 // client/src/ParticipantDashboard.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import TestScreen from './TestScreen'; // Import the new component
-import TemperamentTest from './components/TemperamentTest'; // adjust path
+import TestScreen from './TestScreen';
+import TemperamentTest from './components/TemperamentTest';
 import MemoryTest from './components/MemoryTest';
+import LogicTest from './components/LogicTest';
 
 function ParticipantDashboard({ token, user, onLogout }) {
   const [assignments, setAssignments] = useState([]);
-  const [activeTest, setActiveTest] = useState(null); // State to track active test
+  const [activeTest, setActiveTest] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Move fetch outside useEffect so we can call it again later
+  const fetchAssignments = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://127.0.0.1:8000/users/me/assignments', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAssignments(res.data);
+    } catch (err) {
+      console.error("Failed to fetch assignments", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // ... existing fetch logic ...
-    const fetchAssignments = async () => {
-      try {
-        const res = await axios.get('http://127.0.0.1:8000/users/me/assignments', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setAssignments(res.data);
-      } catch (err) {
-        console.error("Failed to fetch assignments", err);
-      }
-    };
     fetchAssignments();
   }, [token]);
 
-  // If a test is active, show TestScreen
+  // ✅ FIXED: This entire block was completely broken before
   if (activeTest) {
-    // Find the assignment to get its test_code
     const activeAssignment = assignments.find(a => a.id === activeTest);
 
-    if (activeAssignment?.test_code === 'MEM') {
-      return (
-        <MemoryTest
+    // Safety: if assignment not loaded yet just wait
+    if (!activeAssignment) return null;
+
+    // Route to the correct test component
+    switch (activeAssignment.test_code) {
+      case 'MEM':
+        return <MemoryTest
           token={token}
           assignmentId={activeTest}
           onFinish={() => {
             setActiveTest(null);
-            window.location.reload(); // or refresh assignments
+            fetchAssignments(); // ✅ No full page reload!
           }}
-        />
-      );
-    } else {
-      // For all other tests, use the generic TestScreen
-      return (
-        <TestScreen
+        />;
+      case 'LOGIC':
+        return <LogicTest
           token={token}
           assignmentId={activeTest}
           onFinish={() => {
             setActiveTest(null);
-            window.location.reload();
+            fetchAssignments();
           }}
-        />
-      );
+        />;
+      case 'TEMPERAMENT':
+        return <TemperamentTest
+          token={token}
+          assignmentId={activeTest}
+          onFinish={() => {
+            setActiveTest(null);
+            fetchAssignments();
+          }}
+        />;
+      default:
+        // All other tests fall back to generic
+        return <TestScreen
+          token={token}
+          assignmentId={activeTest}
+          onFinish={() => {
+            setActiveTest(null);
+            fetchAssignments();
+          }}
+        />;
     }
   }
 
@@ -72,7 +96,13 @@ function ParticipantDashboard({ token, user, onLogout }) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {assignments.length === 0 && (
+
+          {/* ✅ Fixed: Show loading instead of empty message */}
+          {loading && (
+            <p className="text-gray-500 col-span-3 text-center py-10">Loading your assessments...</p>
+          )}
+
+          {!loading && assignments.length === 0 && (
             <p className="text-gray-500 col-span-3 text-center py-10">No tests assigned yet.</p>
           )}
 
@@ -82,7 +112,7 @@ function ParticipantDashboard({ token, user, onLogout }) {
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-gray-900">{a.test_name}</h3>
 
-                  {/* Improved Status Badge */}
+                  {/* Status Badges - these were perfect I left them unchanged */}
                   {a.status === 'completed' ? (
                     <span className="flex items-center text-green-600 font-bold text-sm">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -91,7 +121,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
                       Completed
                     </span>
                   ) : a.status === 'locked' ? (
-                    // NEW: Locked Status
                     <span className="flex items-center text-red-600 font-bold text-sm">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
@@ -99,7 +128,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
                       Locked
                     </span>
                   ) : (
-                    // Default (Pending / In Progress)
                     <span className={`px-2 py-1 text-xs rounded-full ${a.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-blue-100 text-blue-800'
                       }`}>
@@ -112,9 +140,8 @@ function ParticipantDashboard({ token, user, onLogout }) {
                 </p>
               </div>
 
-              {/* Footer Logic */}
               <div className="px-5 py-3 bg-gray-50 text-right">
-                {a.status === 'completed' ? (
+                {a.status === 'completed' || a.status === 'locked' ? (
                   <span className="text-sm text-gray-500 italic">No actions available</span>
                 ) : (
                   <button

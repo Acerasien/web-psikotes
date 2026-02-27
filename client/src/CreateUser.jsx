@@ -103,6 +103,19 @@ function CreateUser({ token, onUserCreated, currentUserRole }) {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700">Gender</label>
+            <select
+              name="gender"
+              value={formData.gender || ''}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+            >
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">Age</label>
             <input
               type="number"

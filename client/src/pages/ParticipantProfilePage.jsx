@@ -1,161 +1,255 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Swal from 'sweetalert2';  // <-- ADDED
 
 function ParticipantProfilePage({ token }) {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [assignments, setAssignments] = useState([]);
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
+    // Define loadParticipantData FIRST using useCallback
+    const loadParticipantData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const userRes = await axios.get(`http://127.0.0.1:8000/users/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUser(userRes.data);
 
-                // Fetch user details
-                const userRes = await axios.get(`http://127.0.0.1:8000/users/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setUser(userRes.data);
+            const assignRes = await axios.get(`http://127.0.0.1:8000/assignments/?user_id=${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setAssignments(assignRes.data);
 
-                // Fetch assignments for this user
-                const assignRes = await axios.get(`http://127.0.0.1:8000/assignments/?user_id=${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setAssignments(assignRes.data);
-
-                // Fetch results for this user
-                const resultsRes = await axios.get(`http://127.0.0.1:8000/results/?user_id=${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setResults(resultsRes.data);
-
-            } catch (err) {
-                console.error('Error fetching participant data:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
+            const resultsRes = await axios.get(`http://127.0.0.1:8000/results/?user_id=${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setResults(resultsRes.data);
+        } catch (err) {
+            console.error('Error loading participant data:', err);
+        } finally {
+            setLoading(false);
+        }
     }, [id, token]);
 
-    if (loading) {
-        return <div className="p-8 text-center">Loading...</div>;
-    }
+    // Load data on mount and when id/token changes
+    useEffect(() => {
+        loadParticipantData();
+    }, [loadParticipantData]);
 
-    if (!user) {
-        return <div className="p-8 text-center text-red-600">User not found</div>;
-    }
-
-    // Helper to get the result for a specific test
     const getResultForTest = (testId) => {
         return results.find(r => r.test_id === testId);
     };
 
+    // Define handleReset AFTER loadParticipantData
+    const handleReset = async (assignmentId, testName) => {
+        const result = await Swal.fire({
+            title: 'Reset Test?',
+            text: `Are you sure you want to reset "${testName}"? All answers and results will be deleted, and the participant can retake it.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, reset'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await axios.post(`http://127.0.0.1:8000/admin/assignments/${assignmentId}/reset`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                Swal.fire('Reset!', 'Test has been reset.', 'success');
+                loadParticipantData(); // refresh data
+            } catch (err) {
+                console.error('Reset error:', err);
+                Swal.fire('Error', 'Could not reset test.', 'error');
+            }
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="p-8 text-center text-red-600 bg-red-50 rounded-lg max-w-xl mx-auto my-8">
+                ❌ User not found
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-6 p-4 max-w-6xl mx-auto">
+        <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto font-sans">
+            {/* Back Button */}
+            <button
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 mb-2"
+            >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back
+            </button>
+
             {/* Profile Header */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        Profile: {user.full_name || user.username}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-sm overflow-hidden">
+                <div className="px-6 py-5 border-b border-blue-100">
+                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                        <span>{user.full_name || user.username}</span>
+                        <span className="text-sm text-gray-500">({user.role})</span>
                     </h3>
-                    <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                        {user.position} - {user.department}
-                    </p>
+                    <p className="mt-1 text-gray-600">{user.position} • {user.department}</p>
                 </div>
-                <div className="px-4 py-5 sm:p-6">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span className="font-medium text-gray-500">Username:</span> {user.username}
-                        </div>
-                        <div>
-                            <span className="font-medium text-gray-500">Age:</span> {user.age || '-'}
-                        </div>
-                        <div>
-                            <span className="font-medium text-gray-500">Education:</span> {user.education || '-'}
-                        </div>
-                        <div>
-                            <span className="font-medium text-gray-500">Role:</span> {user.role}
-                        </div>
+                <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+                    <div>
+                        <span className="font-medium text-gray-500">Username</span>
+                        <p className="text-gray-800 font-mono">{user.username}</p>
+                    </div>
+                    <div>
+                        <span className="font-medium text-gray-500">Gender:</span> {user.gender || '-'}
+                    </div>
+                    <div>
+                        <span className="font-medium text-gray-500">Age</span>
+                        <p className="text-gray-800">{user.age || '–'}</p>
+                    </div>
+                    <div>
+                        <span className="font-medium text-gray-500">Education</span>
+                        <p className="text-gray-800">{user.education || '–'}</p>
+                    </div>
+                    <div>
+                        <span className="font-medium text-gray-500">Role</span>
+                        <p className="text-gray-800 capitalize">{user.role?.replace('_', ' ') || '–'}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Test Status Cards */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">Assigned Tests</h3>
-                </div>
-                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {assignments.length === 0 ? (
-                        <p className="text-gray-500 col-span-full text-center">No tests assigned yet.</p>
-                    ) : (
-                        assignments.map((a) => {
+            {/* Assigned Tests - Cards */}
+            <section>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                    📋 Assigned Tests
+                </h2>
+                {assignments.length === 0 ? (
+                    <div className="text-center py-10 bg-gray-50 rounded-xl border">
+                        <p className="text-gray-500 text-lg">No tests assigned yet.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {assignments.map((a) => {
                             const result = getResultForTest(a.test_id);
+                            let statusColor, icon;
+                            switch (a.status) {
+                                case 'completed':
+                                    statusColor = 'text-green-600 bg-green-50 border-green-200';
+                                    icon = '✅';
+                                    break;
+                                case 'in_progress':
+                                    statusColor = 'text-yellow-600 bg-yellow-50 border-yellow-200';
+                                    icon = '🔄';
+                                    break;
+                                case 'locked':
+                                    statusColor = 'text-red-600 bg-red-50 border-red-200';
+                                    icon = '🔒';
+                                    break;
+                                default:
+                                    statusColor = 'text-gray-500 bg-gray-50 border-gray-200';
+                                    icon = '📄';
+                            }
+
                             return (
-                                <div key={a.id} className="border rounded-lg p-4">
-                                    <h4 className="font-bold text-lg">{a.test_name}</h4>
-                                    <p className={`mt-2 text-sm font-bold ${a.status === 'completed' ? 'text-green-600' :
-                                        a.status === 'locked' ? 'text-red-600' :
-                                            a.status === 'in_progress' ? 'text-yellow-600' :
-                                                'text-gray-600'
-                                        }`}>
-                                        {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
-                                    </p>
-                                    {result && a.test_name === "Temperament Test" && (
-                                        <p className="text-sm text-gray-700 mt-1">
-                                            <span className="font-medium">Type:</span> {result.details?.primary || 'Unknown'}
+                                <div
+                                    key={a.id}
+                                    className={`border-l-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 ${statusColor} p-5`}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <h4 className="font-bold text-lg text-gray-800">{a.test_name}</h4>
+                                        <span className="text-lg">{icon}</span>
+                                    </div>
+                                    <div className="mt-2 flex items-center justify-between">
+                                        <p className="text-sm font-medium capitalize">
+                                            Status: <span className="font-semibold">{a.status.replace('_', ' ')}</span>
                                         </p>
-                                    )}
+                                        {a.status !== 'pending' && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleReset(a.id, a.test_name);
+                                                }}
+                                                className="text-xs text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition"
+                                                title="Reset this test"
+                                            >
+                                                Reset
+                                            </button>
+                                        )}
+                                    </div>
+
                                     {result && a.test_name !== "Temperament Test" && (
-                                        <p className="text-sm text-gray-700 mt-1">
-                                            Score: {result.score} / {result.total_questions}
-                                        </p>
+                                        <div className="mt-2 text-sm text-gray-700">
+                                            Score: <span className="font-bold text-green-600">{result.score}</span> / {result.max_score}
+                                        </div>
+                                    )}
+
+                                    {result && a.test_name === "Temperament Test" && (
+                                        <div className="mt-2 text-sm">
+                                            <span className="font-medium">Type:</span>{' '}
+                                            <span className="font-bold text-purple-600">{result.details?.primary || 'Unknown'}</span>
+                                        </div>
                                     )}
                                 </div>
                             );
-                        })
-                    )}
-                </div>
-            </div>
+                        })}
+                    </div>
+                )}
+            </section>
 
             {/* Detailed Results */}
             {results.length > 0 && (
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                    <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                        <h3 className="text-lg leading-6 font-medium text-gray-900">Test Results</h3>
-                    </div>
-                    <div className="p-4 divide-y">
+                <section>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                        📊 Test Results
+                    </h2>
+                    <div className="space-y-5">
                         {results.map((r) => (
-                            <div key={r.id} className="py-4">
-                                {/* Conditionally render score header for non-Temperament tests */}
-                                {r.test_name !== "Temperament Test" && (
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="font-medium text-lg">{r.test_name}</span>
-                                        <span className="text-green-600 font-bold text-xl">
-                                            {r.score} / {r.total_questions}
-                                        </span>
+                            <div
+                                key={r.id}
+                                className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden bg-white"
+                            >
+                                {/* Test Header */}
+                                <div className="bg-gray-50 px-5 py-4 border-b">
+                                    <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                                        <h3 className="text-xl font-semibold text-gray-800">{r.test_name}</h3>
+                                        {r.test_name !== "Temperament Test" && (
+                                            <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
+                                                {r.score} / {r.max_score}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
 
-                                {/* DISC Specific Details */}
+                                {/* DISC Assessment */}
                                 {r.test_name === "DISC Assessment" && r.details && (
-                                    <div className="mt-2 bg-gray-50 p-3 rounded">
-                                        <h4 className="font-semibold mb-2">DISC Profile</h4>
-                                        <div className="grid grid-cols-4 gap-2 text-center">
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-3">DISC Profile</h4>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {['D', 'I', 'S', 'C'].map(trait => (
-                                                <div key={trait}>
-                                                    <div className="text-sm font-bold text-gray-600">{trait}</div>
-                                                    <div className="text-lg">
+                                                <div key={trait} className="text-center">
+                                                    <div className="text-2xl font-bold text-blue-600">{trait}</div>
+                                                    <div className="text-lg font-semibold text-gray-700">
                                                         {Math.round(r.details.percentages?.[trait] || 0)}%
                                                     </div>
-                                                    <div className={`text-xs px-2 py-1 rounded ${r.details.intensity_zones?.[trait] === 'High' ? 'bg-green-100 text-green-800' :
-                                                        r.details.intensity_zones?.[trait] === 'Low' ? 'bg-red-100 text-red-800' :
-                                                            'bg-yellow-100 text-yellow-800'
+                                                    <div className={`text-xs mt-1 px-2 py-1 rounded-full ${r.details.intensity_zones?.[trait] === 'High'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : r.details.intensity_zones?.[trait] === 'Low'
+                                                            ? 'bg-red-100 text-red-800'
+                                                            : 'bg-yellow-100 text-yellow-800'
                                                         }`}>
                                                         {r.details.intensity_zones?.[trait] || 'Medium'}
                                                     </div>
@@ -163,24 +257,92 @@ function ParticipantProfilePage({ token }) {
                                             ))}
                                         </div>
                                         {r.details.stress_gap !== undefined && (
-                                            <div className="mt-3 text-sm">
-                                                <span className="font-medium">Stress Gap: </span>
-                                                <span className={r.details.stress_gap > 10 ? 'text-red-600 font-bold' : 'text-green-600'}>
+                                            <div className="mt-4 text-sm border-t pt-3">
+                                                <span className="font-medium">Stress Gap:</span>{' '}
+                                                <span className={`font-bold ${r.details.stress_gap > 10 ? 'text-red-600' : 'text-green-600'
+                                                    }`}>
                                                     {Math.round(r.details.stress_gap)}
                                                 </span>
                                                 <span className="text-gray-500 ml-2">
-                                                    {r.details.stress_gap > 10 ? '(Significant masking)' : '(Normal range)'}
+                                                    ({r.details.stress_gap > 10 ? 'Significant masking detected' : 'Within normal range'})
                                                 </span>
                                             </div>
                                         )}
                                     </div>
                                 )}
 
-                                {/* Speed Test Specific Details */}
+                                {/* Speed Test */}
                                 {r.test_name === "Speed Test" && r.details && (
-                                    <div className="mt-2 bg-gray-50 p-3 rounded">
-                                        <h4 className="font-semibold mb-2">Speed Test Details</h4>
-                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-3">Speed Test Performance</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div><span className="font-medium">Score:</span> {r.details.score}</div>
+                                            <div><span className="font-medium">Accuracy:</span> {r.details.accuracy}%</div>
+                                            <div><span className="font-medium">Answered:</span> {r.details.total_answered}</div>
+                                            <div>
+                                                <span className="font-medium">Performance:</span>{' '}
+                                                <span className={`ml-1 px-2 py-1 rounded-full text-xs ${r.details.band?.includes('Excellent')
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : r.details.band?.includes('Good')
+                                                        ? 'bg-blue-100 text-blue-800'
+                                                        : r.details.band?.includes('Average')
+                                                            ? 'bg-yellow-100 text-yellow-800'
+                                                            : 'bg-red-100 text-red-800'
+                                                    }`}>
+                                                    {r.details.band}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {r.details.flag && (
+                                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700 flex items-start">
+                                                ⚠️ <span className="ml-1">{r.details.flag}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Temperament Test */}
+                                {r.test_name === "Temperament Test" && r.details && (
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-3">Temperament Breakdown</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div><span className="font-medium">Primary:</span> {r.details.primary}</div>
+                                            <div><span className="font-medium">Secondary:</span> {r.details.secondary}</div>
+                                        </div>
+                                        <div className="mt-4">
+                                            <h5 className="font-medium text-gray-700 mb-2">Trait Intensities</h5>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+                                                {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
+                                                    <div key={trait} className="flex justify-between">
+                                                        <span className="capitalize">{trait}:</span>
+                                                        <span className="font-bold">{Math.round(pct)}%</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {r.details.straight_line_flag && (
+                                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                                                ⚠️ All answers were identical – straight-lining detected
+                                            </div>
+                                        )}
+                                        {r.details.interactions?.length > 0 && (
+                                            <div className="mt-3">
+                                                <h5 className="font-medium text-gray-700">Interaction Notes</h5>
+                                                <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
+                                                    {r.details.interactions.map((item, i) => (
+                                                        <li key={i}>{item}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Memory Test */}
+                                {r.test_name === "Memory Test" && r.details && (
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-3">Memory Test Summary</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                             <div>
                                                 <span className="font-medium">Score:</span> {r.details.score}
                                             </div>
@@ -188,11 +350,22 @@ function ParticipantProfilePage({ token }) {
                                                 <span className="font-medium">Accuracy:</span> {r.details.accuracy}%
                                             </div>
                                             <div>
-                                                <span className="font-medium">Questions Answered:</span> {r.details.total_answered}
+                                                <span className="font-medium">Band:</span> {r.details.band}
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+                                {/* Logic & Arithmetic Test */}
+                                {r.test_name === "Logic & Arithmetic Test" && r.details && (
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-3">Logic & Arithmetic Performance</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div><span className="font-medium">Score:</span> {r.details.score} / 100</div>
+                                            <div><span className="font-medium">Correct:</span> {r.details.correct_count} / 25</div>
+                                            <div><span className="font-medium">Percentage:</span> {r.details.percentage}%</div>
                                             <div>
-                                                <span className="font-medium">Performance:</span>
-                                                <span className={`ml-1 px-2 py-0.5 rounded ${r.details.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
+                                                <span className="font-medium">Band:</span>{' '}
+                                                <span className={`ml-1 px-2 py-1 rounded-full text-xs ${r.details.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
                                                     r.details.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
                                                         r.details.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
                                                             'bg-red-100 text-red-800'
@@ -201,54 +374,12 @@ function ParticipantProfilePage({ token }) {
                                                 </span>
                                             </div>
                                         </div>
-                                        {r.details.flag && (
-                                            <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
-                                                ⚠️ {r.details.flag}
-                                            </div>
-                                        )}
                                     </div>
                                 )}
-
-                                {/* Temperament Test Details */}
-                                {r.test_name === "Temperament Test" && r.details && (
-                                    <div className="mt-2 bg-gray-50 p-3 rounded">
-                                        <h4 className="font-semibold mb-2">Temperament Profile</h4>
-                                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                            <div><span className="font-medium">Primary:</span> {r.details.primary}</div>
-                                            <div><span className="font-medium">Secondary:</span> {r.details.secondary}</div>
-                                        </div>
-                                        <div className="mt-2">
-                                            <span className="font-medium">Trait Intensities:</span>
-                                            <div className="grid grid-cols-2 gap-1 mt-1">
-                                                {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
-                                                    <div key={trait} className="flex justify-between">
-                                                        <span>{trait}:</span>
-                                                        <span className="font-bold">{Math.round(pct)}%</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        {r.details.straight_line_flag && (
-                                            <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
-                                                ⚠️ Straight-lining detected (all answers identical)
-                                            </div>
-                                        )}
-                                        {r.details.interactions?.length > 0 && (
-                                            <div className="mt-2 text-sm">
-                                                <span className="font-medium">Interactions:</span>
-                                                <ul className="list-disc list-inside">
-                                                    {r.details.interactions.map((item, i) => <li key={i}>{item}</li>)}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* You can add similar sections for other test types */}
                             </div>
                         ))}
                     </div>
-                </div>
+                </section>
             )}
         </div>
     );
