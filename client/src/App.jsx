@@ -7,18 +7,18 @@ import ParticipantDashboard from './ParticipantDashboard'
 import './index.css'
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(sessionStorage.getItem('token'));
   const [user, setUser] = useState(null);
 
   const handleLogin = (newToken) => {
     setToken(newToken);
-    localStorage.setItem('token', newToken);
+    sessionStorage.setItem('token', newToken);
   };
 
   const handleLogout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
   };
 
   useEffect(() => {
