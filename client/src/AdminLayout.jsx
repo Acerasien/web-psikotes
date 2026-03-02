@@ -94,7 +94,7 @@ function AdminLayout({ token, user, onLogout }) {
 
                 <main className="flex-1 p-6 overflow-y-auto">
                     <Routes>
-                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/" element={<Dashboard token={token} currentUserRole={user.role} />} />
                         <Route path="/participants" element={<ParticipantsPage token={token} currentUserRole={user.role} />} />
                         <Route path="/participants/new" element={<AddParticipantPage token={token} currentUserRole={user.role} />} />
                         <Route path="/participants/:id" element={<ParticipantProfilePage token={token} currentUserRole={user.role} />} />

@@ -22,6 +22,7 @@ from scoring.memory import score_memory
 import secrets
 import string
 from scoring.logic import score_logic
+from sqlalchemy import func, desc
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -41,6 +42,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Helper for max score per test (optional, used in charts)
+def get_max_score(test_code):
+    return {
+        "DISC": 24,
+        "SPEED": 100,
+        "TEMP": 168,
+        "MEM": 100,
+        "LOGIC": 100,
+    }.get(test_code, 100)
 
 @app.get("/")
 def read_root():
@@ -626,3 +637,51 @@ def assign_all_tests(
         "message": f"Assigned {len(created)} tests",
         "assigned_tests": created
     }
+    
+@app.get("/admin/stats/summary")
+def get_stats_summary(db: Session = Depends(get_db), superadmin: User = Depends(require_superadmin)):
+    total_participants = db.query(User).filter(User.role == "participant").count()
+    total_assignments = db.query(Assignment).count()
+    completed_assignments = db.query(Assignment).filter(Assignment.status == "completed").count()
+    completion_rate = (completed_assignments / total_assignments * 100) if total_assignments else 0
+    avg_score = db.query(func.avg(Result.score)).scalar() or 0
+
+    return {
+        "total_participants": total_participants,
+        "total_assignments": total_assignments,
+        "completed_assignments": completed_assignments,
+        "completion_rate": round(completion_rate, 2),
+        "average_score": round(avg_score, 2)
+    }
+
+@app.get("/admin/stats/tests")
+def get_test_stats(db: Session = Depends(get_db), superadmin: User = Depends(require_superadmin)):
+    tests = db.query(Test).all()
+    result = []
+    for test in tests:
+        completed_count = db.query(Assignment).filter(Assignment.test_id == test.id, Assignment.status == "completed").count()
+        avg_score = db.query(func.avg(Result.score)).filter(Result.test_id == test.id).scalar() or 0
+        result.append({
+            "test_id": test.id,
+            "test_name": test.name,
+            "completed_count": completed_count,
+            "avg_score": round(avg_score, 2),
+            "max_score": get_max_score(test.code)
+        })
+    return result
+
+@app.get("/admin/stats/recent")
+def get_recent_activity(limit: int = 10, db: Session = Depends(get_db), superadmin: User = Depends(require_superadmin)):
+    recent_results = db.query(Result).order_by(desc(Result.completed_at)).limit(limit).all()
+    output = []
+    for r in recent_results:
+        total_questions = db.query(Question).filter(Question.test_id == r.test_id).count()
+        output.append({
+            "id": r.id,
+            "participant_name": r.user.full_name or r.user.username,
+            "test_name": r.test.name,
+            "score": r.score,
+            "total_questions": total_questions,
+            "completed_at": r.completed_at.isoformat() if r.completed_at else None
+        })
+    return output
