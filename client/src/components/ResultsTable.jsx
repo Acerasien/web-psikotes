@@ -246,7 +246,7 @@ function ResultsTable({ token }) {
                                         {result.test_name.includes('Temperament') && result.details?.primary ? (
                                             <span>{result.details.primary}</span>
                                         ) : (
-                                            <span>{result.score} / {result.total_questions}</span>
+                                            <span>{result.score} / {result.max_score}</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
