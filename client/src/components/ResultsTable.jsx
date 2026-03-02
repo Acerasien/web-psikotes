@@ -156,6 +156,29 @@ function ResultsTable({ token }) {
                 </div>
             );
         }
+        if (result.test_name.includes('Memory')) {
+            const d = result.details;
+            if (!d) return null;
+            return (
+                <div className="p-3 bg-gray-50 rounded text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div><span className="font-medium">Score:</span> {d.score} / 100</div>
+                        <div><span className="font-medium">Correct:</span> {d.correct_count} / 25</div>
+                        <div><span className="font-medium">Accuracy:</span> {d.accuracy}%</div>
+                        <div>
+                            <span className="font-medium">Band:</span>{' '}
+                            <span className={`ml-1 px-2 py-0.5 rounded ${d.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
+                                    d.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
+                                        d.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                }`}>
+                                {d.band}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
         return <div className="text-sm text-gray-500">No additional details</div>;
     };
 
