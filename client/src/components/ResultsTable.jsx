@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+// import { format } from 'date-fns';
+import { formatLocalDateTime } from '../utils/dateUtils';
 
 function ResultsTable({ token }) {
     const [results, setResults] = useState([]);
@@ -252,7 +253,7 @@ function ResultsTable({ token }) {
                                         {Math.floor(result.time_taken / 60)}m {result.time_taken % 60}s
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {format(new Date(result.completed_at), 'dd MMM yyyy')}
+                                        {formatLocalDateTime(result.completed_at, 'dd MMM yyyy')}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <button

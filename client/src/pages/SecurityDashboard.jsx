@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { format } from 'date-fns'; // for nice date formatting
+import { formatLocalDateTime } from '../utils/dateUtils';
 
 function SecurityDashboard({ token }) {
     const [lockedAssignments, setLockedAssignments] = useState([]);
@@ -143,7 +144,7 @@ function SecurityDashboard({ token }) {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.test_name}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {format(new Date(log.timestamp), 'dd MMM yyyy HH:mm:ss')}
+                                            {formatLocalDateTime(log.timestamp, 'dd MMM yyyy HH:mm:ss')}
                                         </td>
                                     </tr>
                                 ))
