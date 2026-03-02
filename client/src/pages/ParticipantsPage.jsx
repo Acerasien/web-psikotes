@@ -138,6 +138,29 @@ function ParticipantsPage({ token, currentUserRole }) {
         }
     };
 
+    const handleAssignAll = async (userId) => {
+        const result = await Swal.fire({
+            title: 'Assign All Tests?',
+            text: 'This will assign every available test to this participant (except those already assigned). Continue?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, assign all',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await axios.post(`http://127.0.0.1:8000/assignments/assign-all/${userId}`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                Swal.fire('Success', 'All tests assigned successfully!', 'success');
+                refreshAssignments();   // refresh assignments list
+            } catch (err) {
+                Swal.fire('Error', 'Could not assign tests.', 'error');
+            }
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header with Add button and Search */}
@@ -258,6 +281,16 @@ function ParticipantsPage({ token, currentUserRole }) {
                                                             title="Add selected test"
                                                         >
                                                             Add
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleAssignAll(u.id);
+                                                            }}
+                                                            className="bg-purple-500 text-white text-xs px-2 py-1 rounded hover:bg-purple-600"
+                                                            title="Assign all tests"
+                                                        >
+                                                            All
                                                         </button>
                                                     </div>
 

@@ -596,3 +596,33 @@ def reset_assignment(
 
     db.commit()
     return {"message": "Assignment reset successfully"}
+
+@app.post("/assignments/assign-all/{user_id}")
+def assign_all_tests(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)   # both admin and superadmin allowed
+):
+    # Check user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get all tests
+    all_tests = db.query(Test).all()
+    # Get already assigned test IDs for this user
+    assigned_test_ids = {a.test_id for a in db.query(Assignment).filter(Assignment.user_id == user_id).all()}
+
+    # Create assignments for missing tests
+    created = []
+    for test in all_tests:
+        if test.id not in assigned_test_ids:
+            new_assignment = Assignment(user_id=user_id, test_id=test.id)
+            db.add(new_assignment)
+            created.append(test.name)
+
+    db.commit()
+    return {
+        "message": f"Assigned {len(created)} tests",
+        "assigned_tests": created
+    }
