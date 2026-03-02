@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';  // <-- ADDED
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function ParticipantProfilePage({ token }) {
     const { id } = useParams();
@@ -237,35 +238,75 @@ function ParticipantProfilePage({ token }) {
                                 {/* DISC Assessment */}
                                 {r.test_name === "DISC Assessment" && r.details && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">DISC Profile</h4>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {['D', 'I', 'S', 'C'].map(trait => (
-                                                <div key={trait} className="text-center">
-                                                    <div className="text-2xl font-bold text-blue-600">{trait}</div>
-                                                    <div className="text-lg font-semibold text-gray-700">
-                                                        {Math.round(r.details.percentages?.[trait] || 0)}%
+                                        <h4 className="font-bold text-gray-700 mb-4">DISC Profile</h4>
+
+                                        {/* Prepare data for Recharts */}
+                                        {(() => {
+                                            const traits = ['D', 'I', 'S', 'C'];
+                                            const chartData = traits.map(trait => ({
+                                                trait,
+                                                'Graph I (Public)': r.details.graph_i?.[trait] || 0,
+                                                'Graph II (Natural)': r.details.graph_ii?.[trait] || 0,
+                                                'Graph III (Integrated)': r.details.graph_iii?.[trait] || 0,
+                                            }));
+
+                                            return (
+                                                <ResponsiveContainer width="100%" height={300}>
+                                                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis dataKey="trait" />
+                                                        <YAxis domain={[0, 24]} />
+                                                        <Tooltip />
+                                                        <Legend />
+                                                        <Bar dataKey="Graph I (Public)" fill="#3b82f6" />
+                                                        <Bar dataKey="Graph II (Natural)" fill="#22c55e" />
+                                                        <Bar dataKey="Graph III (Integrated)" fill="#a855f7" />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            );
+                                        })()}
+
+                                        {/* Numeric summary */}
+                                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            {['D', 'I', 'S', 'C'].map(trait => {
+                                                const pct = r.details.percentages?.[trait] || 0;
+                                                const zone = r.details.intensity_zones?.[trait] || 'Medium';
+                                                const i_raw = r.details.graph_i?.[trait] || 0;
+                                                const ii_raw = r.details.graph_ii?.[trait] || 0;
+                                                const iii_raw = r.details.graph_iii?.[trait] || 0;
+                                                return (
+                                                    <div key={trait} className="bg-gray-50 p-3 rounded-lg text-center">
+                                                        <div className="text-lg font-bold text-gray-700">{trait}</div>
+                                                        <div className="text-2xl font-semibold text-blue-600">{Math.round(pct)}%</div>
+                                                        <div className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${zone === 'High' ? 'bg-green-100 text-green-800' :
+                                                            zone === 'Low' ? 'bg-red-100 text-red-800' :
+                                                                'bg-yellow-100 text-yellow-800'
+                                                            }`}>
+                                                            {zone}
+                                                        </div>
+                                                        {/* <div className="text-xs text-gray-400 mt-1">
+                                                            I:{i_raw} II:{ii_raw} III:{iii_raw}
+                                                        </div> */}
                                                     </div>
-                                                    <div className={`text-xs mt-1 px-2 py-1 rounded-full ${r.details.intensity_zones?.[trait] === 'High'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : r.details.intensity_zones?.[trait] === 'Low'
-                                                            ? 'bg-red-100 text-red-800'
-                                                            : 'bg-yellow-100 text-yellow-800'
-                                                        }`}>
-                                                        {r.details.intensity_zones?.[trait] || 'Medium'}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
+
+                                        {/* Stress Gap Indicator (same as before) */}
                                         {r.details.stress_gap !== undefined && (
-                                            <div className="mt-4 text-sm border-t pt-3">
-                                                <span className="font-medium">Stress Gap:</span>{' '}
-                                                <span className={`font-bold ${r.details.stress_gap > 10 ? 'text-red-600' : 'text-green-600'
-                                                    }`}>
-                                                    {Math.round(r.details.stress_gap)}
-                                                </span>
-                                                <span className="text-gray-500 ml-2">
-                                                    ({r.details.stress_gap > 10 ? 'Significant masking detected' : 'Within normal range'})
-                                                </span>
+                                            <div className="mt-6 p-4 bg-gray-50 rounded-lg border flex items-center">
+                                                <div className="flex-1">
+                                                    <span className="font-medium">Stress Gap:</span>
+                                                    <span className={`ml-2 font-bold ${r.details.stress_gap > 10 ? 'text-red-600' : 'text-green-600'}`}>
+                                                        {Math.round(r.details.stress_gap)}
+                                                    </span>
+                                                    <span className="ml-2 text-sm text-gray-600">
+                                                        ({r.details.stress_gap > 10 ? 'Significant masking – may indicate stress' : 'Within normal range'})
+                                                    </span>
+                                                </div>
+                                                {r.details.stress_gap > 5 && (
+                                                    <div className="text-2xl ml-2 text-orange-500" title="Gap between Public and Natural">⚠️</div>
+                                                )}
                                             </div>
                                         )}
                                     </div>

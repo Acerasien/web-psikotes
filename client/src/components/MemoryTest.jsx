@@ -266,44 +266,58 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                     </div>
                 </div>
 
-                <div className="flex-1 p-8 overflow-auto pb-24">
-                    <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
-                        <h2 className="text-xl font-bold mb-4 text-center">Tabel Hafalan</h2>
+                {/* Encoding Phase Table */}
+                <div className="flex-1 p-8 overflow-auto pb-24 bg-gray-50">
+                    <div className="max-w-6xl mx-auto">
+                        <h2 className="text-2xl font-bold mb-8 text-center uppercase tracking-widest">Tabel Hafalan</h2>
+
                         {tableData ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse border border-gray-300">
-                                    <thead>
-                                        <tr className="bg-gray-100">
-                                            {Object.keys(tableData).map((cat, catIdx) => (
-                                                <th key={catIdx} className="border border-gray-300 px-4 py-2 text-sm font-semibold">
-                                                    {cat}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[...Array(maxRows)].map((_, rowIdx) => (
-                                            <tr key={rowIdx}>
-                                                {Object.keys(tableData).map((cat, colIdx) => {
-                                                    const items = tableData[cat];
-                                                    const item = items && items[rowIdx] !== undefined ? items[rowIdx] : '';
+                            /* Grid Layout: Displays tables side-by-side on large screens */
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-center">
+                                {Object.entries(tableData).map(([category, entries], catIdx) => (
+                                    <div key={catIdx} className="flex justify-center">
+                                        <table className="border-2 border-black border-collapse w-full max-w-[200px] bg-white shadow-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th
+                                                        colSpan={2}
+                                                        className="border-2 border-black px-2 py-1 text-center font-black text-lg uppercase bg-white"
+                                                    >
+                                                        {category}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {entries.map((entry, entryIdx) => {
+                                                    const lastSpace = entry.lastIndexOf(' ');
+                                                    const name = lastSpace !== -1 ? entry.substring(0, lastSpace).trim() : entry;
+                                                    const code = lastSpace !== -1 ? entry.substring(lastSpace + 1).trim() : '';
+
                                                     return (
-                                                        <td key={`${cat}-${rowIdx}`} className="border border-gray-300 px-4 py-2 text-sm text-center">
-                                                            {item}
-                                                        </td>
+                                                        <tr key={entryIdx}>
+                                                            <td className="border-2 border-black px-3 py-1 text-center font-bold text-md uppercase w-1/2">
+                                                                {name}
+                                                            </td>
+                                                            <td className="border-2 border-black px-3 py-1 text-center font-bold text-md uppercase w-1/2">
+                                                                {code}
+                                                            </td>
+                                                        </tr>
                                                     );
                                                 })}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
                             <p className="text-center text-gray-500">No table data available.</p>
                         )}
-                        <p className="mt-4 text-center text-gray-600">
-                            Hafalkan tabel di atas. Anda akan diberikan {questions.length} pertanyaan setelah waktu habis.
-                        </p>
+
+                        <div className="mt-12 p-4 bg-white rounded-lg border border-gray-200 shadow-sm max-w-2xl mx-auto">
+                            <p className="text-center text-gray-700 font-medium">
+                                Hafalkan tabel di atas. Anda akan diberikan <span className="text-blue-600 font-bold">{questions.length}</span> pertanyaan setelah waktu habis.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -462,8 +476,8 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                                     }}
                                     disabled={isSubmitting}
                                     className={`px-5 py-2.5 text-white rounded-lg shadow-sm transition ${isSubmitting
-                                            ? 'bg-blue-400 cursor-wait'
-                                            : 'bg-green-500 hover:bg-green-600'
+                                        ? 'bg-blue-400 cursor-wait'
+                                        : 'bg-green-500 hover:bg-green-600'
                                         }`}
                                 >
                                     {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
