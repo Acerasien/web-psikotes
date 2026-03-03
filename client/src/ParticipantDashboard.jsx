@@ -5,13 +5,14 @@ import TestScreen from './TestScreen';
 import TemperamentTest from './components/TemperamentTest';
 import MemoryTest from './components/MemoryTest';
 import LogicTest from './components/LogicTest';
+import Tutorial from './components/Tutorial';
 
 function ParticipantDashboard({ token, user, onLogout }) {
   const [assignments, setAssignments] = useState([]);
   const [activeTest, setActiveTest] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tutorialAssignment, setTutorialAssignment] = useState(null);
 
-  // Move fetch outside useEffect so we can call it again later
   const fetchAssignments = async () => {
     try {
       setLoading(true);
@@ -26,59 +27,89 @@ function ParticipantDashboard({ token, user, onLogout }) {
     }
   };
 
+  const handleStartTest = (assignment) => {
+    // If test is pending and tutorial not completed, show tutorial first
+    if (assignment.status === 'pending' && !assignment.pretest_completed) {
+      setTutorialAssignment(assignment);
+    } else {
+      setActiveTest(assignment.id);
+    }
+  };
+
   useEffect(() => {
     fetchAssignments();
   }, [token]);
 
-  // ✅ FIXED: This entire block was completely broken before
+  // Priority 1: Show tutorial if one is pending
+  if (tutorialAssignment) {
+    return (
+      <Tutorial
+        token={token}
+        assignmentId={tutorialAssignment.id}
+        testCode={tutorialAssignment.test_code}
+        testName={tutorialAssignment.test_name}
+        onComplete={() => {
+          setTutorialAssignment(null);
+          setActiveTest(tutorialAssignment.id);
+        }}
+      />
+    );
+  }
+
+  // Priority 2: Show active test if one is selected
   if (activeTest) {
     const activeAssignment = assignments.find(a => a.id === activeTest);
+    if (!activeAssignment) return null; // Wait for assignments to load
 
-    // Safety: if assignment not loaded yet just wait
-    if (!activeAssignment) return null;
-
-    // Route to the correct test component
     switch (activeAssignment.test_code) {
       case 'MEM':
-        return <MemoryTest
-          token={token}
-          assignmentId={activeTest}
-          onFinish={() => {
-            setActiveTest(null);
-            fetchAssignments(); // ✅ No full page reload!
-          }}
-        />;
+        return (
+          <MemoryTest
+            token={token}
+            assignmentId={activeTest}
+            onFinish={() => {
+              setActiveTest(null);
+              fetchAssignments();
+            }}
+          />
+        );
       case 'LOGIC':
-        return <LogicTest
-          token={token}
-          assignmentId={activeTest}
-          onFinish={() => {
-            setActiveTest(null);
-            fetchAssignments();
-          }}
-        />;
-      case 'TEMPERAMENT':
-        return <TemperamentTest
-          token={token}
-          assignmentId={activeTest}
-          onFinish={() => {
-            setActiveTest(null);
-            fetchAssignments();
-          }}
-        />;
+        return (
+          <LogicTest
+            token={token}
+            assignmentId={activeTest}
+            onFinish={() => {
+              setActiveTest(null);
+              fetchAssignments();
+            }}
+          />
+        );
+      case 'TEMP': // Use consistent code from backend (TEMP for Temperament)
+        return (
+          <TemperamentTest
+            token={token}
+            assignmentId={activeTest}
+            onFinish={() => {
+              setActiveTest(null);
+              fetchAssignments();
+            }}
+          />
+        );
       default:
-        // All other tests fall back to generic
-        return <TestScreen
-          token={token}
-          assignmentId={activeTest}
-          onFinish={() => {
-            setActiveTest(null);
-            fetchAssignments();
-          }}
-        />;
+        return (
+          <TestScreen
+            token={token}
+            assignmentId={activeTest}
+            onFinish={() => {
+              setActiveTest(null);
+              fetchAssignments();
+            }}
+          />
+        );
     }
   }
 
+  // Priority 3: Show the dashboard
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navbar */}
@@ -87,50 +118,76 @@ function ParticipantDashboard({ token, user, onLogout }) {
           <h1 className="text-xl font-bold text-gray-900">My Assessments</h1>
           <div className="flex items-center gap-4">
             <span className="text-gray-600">Welcome, {user.username}</span>
-            <button onClick={onLogout} className="text-red-500 hover:text-red-700 font-medium">Logout</button>
+            <button onClick={onLogout} className="text-red-500 hover:text-red-700 font-medium">
+              Logout
+            </button>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-
-          {/* ✅ Fixed: Show loading instead of empty message */}
           {loading && (
-            <p className="text-gray-500 col-span-3 text-center py-10">Loading your assessments...</p>
+            <p className="text-gray-500 col-span-3 text-center py-10">
+              Loading your assessments...
+            </p>
           )}
 
           {!loading && assignments.length === 0 && (
-            <p className="text-gray-500 col-span-3 text-center py-10">No tests assigned yet.</p>
+            <p className="text-gray-500 col-span-3 text-center py-10">
+              No tests assigned yet.
+            </p>
           )}
 
           {assignments.map((a) => (
-            <div key={a.id} className={`bg-white overflow-hidden shadow rounded-lg ${a.status === 'completed' ? 'opacity-75 border-l-4 border-green-500' : ''}`}>
+            <div
+              key={a.id}
+              className={`bg-white overflow-hidden shadow rounded-lg ${a.status === 'completed' ? 'opacity-75 border-l-4 border-green-500' : ''
+                }`}
+            >
               <div className="p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-gray-900">{a.test_name}</h3>
 
-                  {/* Status Badges - these were perfect I left them unchanged */}
+                  {/* Status badges */}
                   {a.status === 'completed' ? (
                     <span className="flex items-center text-green-600 font-bold text-sm">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       Completed
                     </span>
                   ) : a.status === 'locked' ? (
                     <span className="flex items-center text-red-600 font-bold text-sm">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       Locked
                     </span>
                   ) : (
-                    <span className={`px-2 py-1 text-xs rounded-full ${a.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
-                      }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${a.status === 'in_progress'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-blue-100 text-blue-800'
+                        }`}
+                    >
                       {a.status === 'in_progress' ? 'In Progress' : 'Not Started'}
                     </span>
                   )}
@@ -145,7 +202,7 @@ function ParticipantDashboard({ token, user, onLogout }) {
                   <span className="text-sm text-gray-500 italic">No actions available</span>
                 ) : (
                   <button
-                    onClick={() => setActiveTest(a.id)}
+                    onClick={() => handleStartTest(a)}
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm"
                   >
                     {a.status === 'in_progress' ? 'Continue Test' : 'Start Test'}
@@ -155,7 +212,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
             </div>
           ))}
         </div>
-
       </main>
     </div>
   );

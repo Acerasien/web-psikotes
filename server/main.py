@@ -293,6 +293,7 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
             "test_name": a.test.name,
             "test_code": a.test.code,
             "status": a.status,
+            "pretest_completed": a.pretest_completed,
             "assigned_at": a.assigned_at
         })
     return result
@@ -685,3 +686,16 @@ def get_recent_activity(limit: int = 10, db: Session = Depends(get_db), superadm
             "completed_at": r.completed_at.isoformat() if r.completed_at else None
         })
     return output
+
+@app.post("/assignments/{assignment_id}/complete-tutorial")
+def complete_tutorial(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment or assignment.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    assignment.pretest_completed = True
+    db.commit()
+    return {"message": "Tutorial marked as completed"}
