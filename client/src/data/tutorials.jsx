@@ -52,10 +52,41 @@ export const tutorials = {
     },
     MEM: {
         title: "Tutorial Memory Test",
-        instructions: "Anda akan melihat tabel selama 3 menit. Hafalkan pasangan nama dan kode. Setelah itu, Anda akan menjawab 50 pertanyaan tentang tabel tersebut.",
+        instructions: "Tes ini terdiri dari dua fase: menghafal dan menjawab.",
         samples: [
             {
-                question: "Apa kode dari ESKORT?",
+                // Step 1: Explanation + table preview (non‑interactive)
+                question: "Fase 1: Menghafal",
+                content: (
+                    <div>
+                        <p className="mb-4">Anda akan melihat tabel berikut selama <strong>3 menit</strong>. Hafalkan pasangan nama dan kode.</p>
+                        <div className="overflow-x-auto my-6">
+                            <table className="border-collapse border border-gray-400 mx-auto">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="border border-gray-400 px-3 py-2">Kategori</th>
+                                        <th className="border border-gray-400 px-3 py-2">Nama</th>
+                                        <th className="border border-gray-400 px-3 py-2">Kode</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td className="border border-gray-400 px-3 py-2">KOTAK ROKOK</td><td className="border border-gray-400 px-3 py-2">ESKORT</td><td className="border border-gray-400 px-3 py-2">703</td></tr>
+                                    <tr><td className="border border-gray-400 px-3 py-2">PENERBANGAN</td><td className="border border-gray-400 px-3 py-2">BARAT</td><td className="border border-gray-400 px-3 py-2">MG</td></tr>
+                                    <tr><td className="border border-gray-400 px-3 py-2">JURU BAYAR</td><td className="border border-gray-400 px-3 py-2">SABUN</td><td className="border border-gray-400 px-3 py-2">2B</td></tr>
+                                    <tr><td className="border border-gray-400 px-3 py-2">NOMOR TILPUN</td><td className="border border-gray-400 px-3 py-2">ADI</td><td className="border border-gray-400 px-3 py-2">23</td></tr>
+                                    <tr><td className="border border-gray-400 px-3 py-2">BUKU GUDANG</td><td className="border border-gray-400 px-3 py-2">KAWAT</td><td className="border border-gray-400 px-3 py-2">Q40</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p>Setelah waktu habis, tabel akan ditutup dan Anda akan menjawab 50 pertanyaan.</p>
+                    </div>
+                ),
+                options: [{ label: "Lanjut", next: true }]   // special flag
+            },
+            {
+                // Step 2: Sample recall question (interactive)
+                question: "Contoh pertanyaan:",
+                content: "Apa kode dari ESKORT?",
                 options: [
                     { label: "A", content: "703", correct: true },
                     { label: "B", content: "618" },
