@@ -32,20 +32,19 @@ function Login({ onLogin }) {
       <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-10 rounded-2xl shadow-2xl border border-white/20">
         {/* Logo / Title */}
         <div>
-          <div className="flex justify-center mb-6">
-            {/* Logo */}
+          {/* <div className="flex justify-center mb-6">
             <img
               src="/Logo_Login.png"
               alt="Web Psikotes Logo"
               className="h-20 w-auto"  // adjust height as needed
             />
-          </div>
+          </div> */}
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Web Psikotes
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          {/* <p className="mt-2 text-center text-sm text-gray-600">
             Andamas Group
-          </p>
+          </p> */}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
