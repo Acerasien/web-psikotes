@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';  // <-- ADDED
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function ParticipantProfilePage({ token }) {
     const { id } = useParams();
@@ -240,10 +240,50 @@ function ParticipantProfilePage({ token }) {
                                     <div className="p-5">
                                         <h4 className="font-bold text-gray-700 mb-4">DISC Profile</h4>
 
-                                        {/* Prepare data for Recharts */}
+                                        {/* Legend */}
+                                        <div className="flex gap-4 mb-6 text-xs">
+                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-blue-500 mr-1"></span> Graph I (Public)</div>
+                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-green-500 mr-1"></span> Graph II (Natural)</div>
+                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-purple-500 mr-1"></span> Graph III (Integrated)</div>
+                                        </div>
+
+                                        {/* Tally Table */}
+                                        <div className="overflow-x-auto mb-6">
+                                            <table className="min-w-full border-collapse border border-gray-300">
+                                                <thead>
+                                                    <tr className="bg-gray-100">
+                                                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Dimensi</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Graph I (Most)</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Graph II (Least)</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Graph III (Int.)</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Change (I–II)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {['D', 'I', 'S', 'C'].map(trait => {
+                                                        const i = r.details.graph_i?.[trait] || 0;
+                                                        const ii = r.details.graph_ii?.[trait] || 0;
+                                                        const iii = r.details.graph_iii?.[trait] || 0;
+                                                        const change = i - ii;
+                                                        return (
+                                                            <tr key={trait} className="hover:bg-gray-50">
+                                                                <td className="border border-gray-300 px-3 py-2 font-medium">{trait}</td>
+                                                                <td className="border border-gray-300 px-3 py-2 text-center">{i}</td>
+                                                                <td className="border border-gray-300 px-3 py-2 text-center">{ii}</td>
+                                                                <td className="border border-gray-300 px-3 py-2 text-center">{iii}</td>
+                                                                <td className={`border border-gray-300 px-3 py-2 text-center ${change < 0 ? 'text-red-600' : change > 0 ? 'text-green-600' : ''}`}>
+                                                                    {change}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Line Chart */}
                                         {(() => {
-                                            const traits = ['D', 'I', 'S', 'C'];
-                                            const chartData = traits.map(trait => ({
+                                            const chartData = ['D', 'I', 'S', 'C'].map(trait => ({
                                                 trait,
                                                 'Graph I (Public)': r.details.graph_i?.[trait] || 0,
                                                 'Graph II (Natural)': r.details.graph_ii?.[trait] || 0,
@@ -252,47 +292,21 @@ function ParticipantProfilePage({ token }) {
 
                                             return (
                                                 <ResponsiveContainer width="100%" height={300}>
-                                                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                                         <CartesianGrid strokeDasharray="3 3" />
                                                         <XAxis dataKey="trait" />
                                                         <YAxis domain={[0, 24]} />
                                                         <Tooltip />
                                                         <Legend />
-                                                        <Bar dataKey="Graph I (Public)" fill="#3b82f6" />
-                                                        <Bar dataKey="Graph II (Natural)" fill="#22c55e" />
-                                                        <Bar dataKey="Graph III (Integrated)" fill="#a855f7" />
-                                                    </BarChart>
+                                                        <Line type="monotone" dataKey="Graph I (Public)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+                                                        <Line type="monotone" dataKey="Graph II (Natural)" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
+                                                        <Line type="monotone" dataKey="Graph III (Integrated)" stroke="#a855f7" strokeWidth={2} dot={{ r: 4 }} />
+                                                    </LineChart>
                                                 </ResponsiveContainer>
                                             );
                                         })()}
 
-                                        {/* Numeric summary */}
-                                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                            {['D', 'I', 'S', 'C'].map(trait => {
-                                                const pct = r.details.percentages?.[trait] || 0;
-                                                const zone = r.details.intensity_zones?.[trait] || 'Medium';
-                                                const i_raw = r.details.graph_i?.[trait] || 0;
-                                                const ii_raw = r.details.graph_ii?.[trait] || 0;
-                                                const iii_raw = r.details.graph_iii?.[trait] || 0;
-                                                return (
-                                                    <div key={trait} className="bg-gray-50 p-3 rounded-lg text-center">
-                                                        <div className="text-lg font-bold text-gray-700">{trait}</div>
-                                                        <div className="text-2xl font-semibold text-blue-600">{Math.round(pct)}%</div>
-                                                        <div className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${zone === 'High' ? 'bg-green-100 text-green-800' :
-                                                            zone === 'Low' ? 'bg-red-100 text-red-800' :
-                                                                'bg-yellow-100 text-yellow-800'
-                                                            }`}>
-                                                            {zone}
-                                                        </div>
-                                                        {/* <div className="text-xs text-gray-400 mt-1">
-                                                            I:{i_raw} II:{ii_raw} III:{iii_raw}
-                                                        </div> */}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {/* Stress Gap Indicator (same as before) */}
+                                        {/* Stress Gap Indicator */}
                                         {r.details.stress_gap !== undefined && (
                                             <div className="mt-6 p-4 bg-gray-50 rounded-lg border flex items-center">
                                                 <div className="flex-1">

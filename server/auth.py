@@ -1,6 +1,12 @@
 # server/auth.py
 from passlib.context import CryptContext
 from database import SessionLocal, get_db
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+from database import SessionLocal
+from models import User
 
 # This context tells passlib to use the bcrypt algorithm
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -27,13 +33,6 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-# server/auth.py (Add this to the bottom)
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import User
 
 # This tells FastAPI where to look for the token (in the Authorization header)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")

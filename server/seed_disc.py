@@ -19,7 +19,7 @@ if not disc_test:
     db.commit()
     db.refresh(disc_test)
 else:
-    # Clear old data
+    # Clear old data and update timer
     disc_test.time_limit = 600
     old_qs = db.query(Question).filter(Question.test_id == disc_test.id).all()
     for q in old_qs:
@@ -30,46 +30,46 @@ else:
 # 2. Define Indonesian Blocks (Positive/Neutral Valence)
 # Format: [D, I, S, C]
 blocks = [
-    ["Berani mengambil risiko", "Antusias dan enerjik", "Pendengar yang sabar", "Teliti dan cermat"],
-    ["Tegas dalam keputusan", "Mudah bergaul", "Setia dan mendukung", "Sistematis dalam bekerja"],
-    ["Fokus pada hasil", "Optimis dan ceria", "Tenang dan sabar", "Analitis dan mendalam"],
-    ["Berorientasi pada tujuan", "Pembawa suasana", "Penuh empati", "Perhatian terhadap detail"],
-    ["Berani menghadapi tantangan", "Meyakinkan dalam bicara", "Penuh pengertian", "Taat pada prosedur"],
-    ["Kompetitif", "Terbuka dan ekspresif", "Penyantun", "Akurat dan presisi"],
-    ["Langsung ke pokok masalah", "Mudah mempengaruhi orang", "Menciptakan keharmonisan", "Mengikuti standar tinggi"],
-    ["Memimpin dengan tangan besi", "Memotivasi tim", "Menghindari konflik", "Berhati-hati"],
-    ["Mengambil inisiatif", "Ramah tamah", "Dapat diandalkan", "Disiplin tinggi"],
-    ["Berani bersuara lantang", "Suka bersenang-senang", "Pendengar yang baik", "Logis dan faktual"],
-    ["Berkeinginan kuat", "Riang gembira", "Penolong", "Perfeksionis"],
-    ["Independent", "Suka bicara", "Sabar menunggu", "Kritis terhadap kualitas"],
-    ["Berani memerintah", "Hangat dan bersahabat", "Mudah menyesuaikan diri", "Tepat waktu"],
-    ["Tangguh", "Mudah akrab", "Lembut hati", "Konsekuen"],
-    ["Pemberani", "Memukau pendengar", "Stabil secara emosi", "Konsekuen dengan aturan"],
-    ["Aktif dan lincah", "Mudah memaafkan", "Rendah hati", "Teliti dengan fakta"],
-    ["Mengendalikan situasi", "Mudah berteman", "Konsisten", "Memeriksa segala sesuatu"],
-    ["Dominan", "Penuh semangat", "Penyabar", "Penyihir data"],
-    ["Dorongan kuat", "Suka bergaul", "Suka membantu", "Fokus pada kualitas"],
-    ["Berwibawa", "Menginspirasi orang lain", "Penasihat yang baik", "Perencana yang baik"],
-    ["Berpikiran besar", "Ramah", "Calm", "Berhati-hati dalam bertindak"],
-    ["Pengambil keputusan", "Hiburan kelompok", "Penjaga perdamaian", "Penyusun kebijakan"],
-    ["Pemimpin alami", "Pembicara yang fasih", "Kerja sama tim", "Peneliti yang tekun"],
-    ["Berani tampil beda", "Ceria", "Moderat", "Pemeriksa ketat"]
+    ["Saya cenderung mengambil keputusan dengan cepat", "Saya mudah bergaul dan menyapa orang baru", "Saya sabar dalam mendengarkan keluhan orang lain", "Saya suka memeriksa detail pekerjaan dengan teliti"],
+    ["Saya tegas dalam mempertahankan pendapat", "Saya mampu menghidupkan suasana dalam pertemuan", "Saya setia dan dapat diandalkan oleh rekan kerja", "Saya mengikuti prosedur yang telah ditetapkan"],
+    ["Saya fokus pada pencapaian target", "Saya optimis menghadapi tantangan baru", "Saya tenang meskipun dalam tekanan", "Saya menganalisis masalah secara mendalam sebelum bertindak"],
+    ["Saya berorientasi pada hasil akhir", "Saya mudah mencairkan suasana ketika tegang", "Saya peka terhadap perasaan orang lain", "Saya cermat dalam menyusun laporan"],
+    ["Saya berani mengambil risiko yang diperhitungkan", "Saya pandai membujuk orang lain", "Saya penuh pengertian terhadap kesulitan rekan", "Saya konsisten mengikuti aturan yang berlaku"],
+    ["Saya memiliki jiwa kompetitif yang tinggi", "Saya ekspresif dalam menyampaikan ide", "Saya penyantun dan tidak suka menyakiti hati orang", "Saya akurat dalam mengolah data"],
+    ["Saya langsung mengemukakan masalah tanpa basa-basi", "Saya mampu mempengaruhi pendapat orang lain", "Saya menciptakan harmoni dalam tim", "Saya bekerja sesuai standar mutu"],
+    ["Saya berani memimpin dan mengarahkan tim", "Saya mudah memotivasi orang di sekitar", "Saya menghindari konflik yang tidak perlu", "Saya berhati-hati sebelum mengambil keputusan"],
+    ["Saya suka mengambil inisiatif dalam pekerjaan", "Saya ramah dan terbuka pada siapa pun", "Saya dapat diandalkan untuk menyelesaikan tugas", "Saya disiplin terhadap waktu dan jadwal"],
+    ["Saya berani menyuarakan pendapat di forum", "Saya senang bercanda dan bersenang-senang", "Saya pendengar yang baik bagi teman", "Saya berpikir logis dan faktual"],
+    ["Saya memiliki dorongan kuat untuk maju", "Saya ceria dan mudah tersenyum", "Saya suka menolong orang yang kesusahan", "Saya perfeksionis dalam pekerjaan"],
+    ["Saya mandiri dalam menyelesaikan tugas", "Saya senang berbicara di depan umum", "Saya sabar menunggu proses berjalan", "Saya kritis terhadap kualitas hasil kerja"],
+    ["Saya berani memberi perintah jika diperlukan", "Saya hangat dan bersahabat dengan kolega", "Saya mudah menyesuaikan diri dengan perubahan", "Saya selalu tepat waktu dalam mengumpulkan tugas"],
+    ["Saya tangguh menghadapi tekanan", "Saya mudah akrab dengan orang baru", "Saya lembut hati dan tidak suka konflik", "Saya konsekuen dengan komitmen"],
+    ["Saya pemberani dalam situasi sulit", "Saya mampu memikat perhatian audiens", "Saya stabil secara emosi dalam krisis", "Saya taat pada peraturan perusahaan"],
+    ["Saya aktif bergerak dan tidak suka diam", "Saya mudah memaafkan kesalahan orang lain", "Saya rendah hati dan tidak mencari pujian", "Saya teliti memeriksa setiap detail"],
+    ["Saya mampu mengendalikan situasi yang kacau", "Saya mudah berteman di mana pun", "Saya konsisten dalam bersikap", "Saya selalu memeriksa ulang pekerjaan saya"],
+    ["Saya dominan dalam diskusi kelompok", "Saya penuh semangat dalam bekerja", "Saya penyabar terhadap kelambatan orang", "Saya suka mengumpulkan dan menganalisis data"],
+    ["Saya memiliki dorongan kuat untuk mencapai target", "Saya suka bergaul dan bersosialisasi", "Saya suka membantu rekan yang kesulitan", "Saya fokus pada kualitas, bukan kuantitas"],
+    ["Saya berwibawa sehingga orang segan", "Saya mampu menginspirasi orang lain", "Saya penasihat yang baik bagi teman", "Saya perencana yang matang sebelum bertindak"],
+    ["Saya berpikiran besar dan visioner", "Saya ramah kepada semua orang", "Saya kalem dan tidak mudah terpancing emosi", "Saya berhati-hati dalam mengambil langkah"],
+    ["Saya cepat mengambil keputusan", "Saya menjadi pusat perhatian dalam kelompok", "Saya penjaga perdamaian dalam tim", "Saya penyusun kebijakan yang sistematis"],
+    ["Saya pemimpin alami yang disegani", "Saya pembicara yang fasih dan meyakinkan", "Saya suka bekerja sama dalam tim", "Saya peneliti yang tekun dan detail"],
+    ["Saya berani tampil beda dari kebanyakan orang", "Saya ceria dan penuh energi positif", "Saya moderat dan tidak ekstrem dalam pandangan", "Saya pemeriksa ketat terhadap setiap kesalahan"]
 ]
 
 traits = ["D", "I", "S", "C"]
 
-print("Seeding DISC Questions (Indonesian)...")
+print("Seeding DISC Questions (Indonesian) with improved phrasing...")
 
 for idx, block_statements in enumerate(blocks):
     new_q = Question(
         test_id=disc_test.id,
-        content=f"Pilih kata yang PALING SESUAI dan PALING TIDAK SESUAI dengan diri Anda.",
+        content=f"Pilih satu pernyataan yang PALING SESUAI dan satu yang PALING TIDAK SESUAI dengan diri Anda.",
         order_index=idx + 1
     )
     db.add(new_q)
     db.commit()
     db.refresh(new_q)
-    
+
     labels = ["A", "B", "C", "D"]
     for i, statement in enumerate(block_statements):
         new_opt = Option(
@@ -81,5 +81,5 @@ for idx, block_statements in enumerate(blocks):
         db.add(new_opt)
 
 db.commit()
-print("Successfully seeded 24 DISC blocks in Indonesian!")
+print("Successfully seeded 24 DISC blocks with improved Indonesian phrasing!")
 db.close()
