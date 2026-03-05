@@ -11,14 +11,38 @@ db: Session = SessionLocal()
 def random_chars(char_set, length):
     return ''.join(random.choices(char_set, k=length))
 
-def create_typo(s):
-    """Swap two random characters to create a wrong option."""
-    if len(s) < 2:
-        return s
-    s_list = list(s)
-    i, j = random.sample(range(len(s_list)), 2)
-    s_list[i], s_list[j] = s_list[j], s_list[i]
-    return "".join(s_list)
+def create_different_string(original, char_set):
+    """
+    Create a string that is guaranteed to be different from the original,
+    by either swapping two distinct characters or, if that's impossible (all chars same),
+    by replacing one character with a random different one.
+    """
+    # If all characters are the same, replace one
+    if all(ch == original[0] for ch in original):
+        idx = random.randint(0, len(original)-1)
+        new_char = random.choice(char_set)
+        # Ensure it's different
+        while new_char == original[idx]:
+            new_char = random.choice(char_set)
+        return original[:idx] + new_char + original[idx+1:]
+
+    # Otherwise, try swapping two distinct characters
+    # First, collect indices of characters that are different
+    # But simpler: random swap until we get a change
+    lst = list(original)
+    max_attempts = 10
+    for _ in range(max_attempts):
+        i, j = random.sample(range(len(original)), 2)
+        if original[i] != original[j]:
+            # Swap them
+            lst[i], lst[j] = lst[j], lst[i]
+            return "".join(lst)
+    # Fallback: replace one character
+    idx = random.randint(0, len(original)-1)
+    new_char = random.choice(char_set)
+    while new_char == original[idx]:
+        new_char = random.choice(char_set)
+    return original[:idx] + new_char + original[idx+1:]
 
 # --- Main Seeding Logic ---
 speed_test = db.query(Test).filter(Test.code == "SPEED").first()
@@ -45,10 +69,9 @@ else:
     db.commit()
     print("Old data cleared.")
 
-print("Generating 100 Speed Test questions with adjusted difficulty...")
+print("Generating 100 Speed Test questions with guaranteed distinct wrong options...")
 
 # --- Define Question Types and Quotas ---
-# Format: (count, character_set, name)
 question_types = [
     (30, string.digits, "Numeric"),
     (30, string.ascii_uppercase, "Alphabet"),
@@ -91,11 +114,11 @@ for count, char_set, type_name in question_types:
             "is_correct": True
         })
 
-        # 2. Three wrong options (typo in second half)
+        # 2. Three wrong options – each guaranteed different from correct
         for _ in range(3):
-            typo_str = create_typo(correct_str)
+            wrong_str = create_different_string(correct_str, char_set)
             options_data.append({
-                "content": f"{correct_str} || {typo_str}",
+                "content": f"{correct_str} || {wrong_str}",
                 "is_correct": False
             })
 
@@ -116,5 +139,5 @@ for count, char_set, type_name in question_types:
         question_index += 1
 
 db.commit()
-print("Successfully generated 100 questions with adjusted difficulty progression!")
+print("Successfully generated 100 questions with distinct wrong options!")
 db.close()
