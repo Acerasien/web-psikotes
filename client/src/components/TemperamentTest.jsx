@@ -7,6 +7,7 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
     const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,6 +17,7 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
     const [isLocked, setIsLocked] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(true);
 
+    // Fullscreen helpers
     const enterFullscreen = () => {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
@@ -23,6 +25,7 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     };
 
+    // Load test data
     useEffect(() => {
         const loadTest = async () => {
             try {
@@ -30,8 +33,10 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setTestData(res.data);
+                if (res.data.time_limit === 0) setTimeLeft(null);
+                else setTimeLeft(res.data.time_limit);
                 setLoading(false);
-                enterFullscreen(); // Enter fullscreen after load
+                enterFullscreen();
             } catch (err) {
                 console.error(err);
                 if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
@@ -104,25 +109,31 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
         };
     }, []);
 
-    // Auto‑next after answer selection
+    // Timer
     useEffect(() => {
-        if (isLocked || loading) return;
-        // Check if we just answered the current question and auto‑next should trigger
-        // We'll rely on a flag or simply after setting answers, we move.
-        // This effect runs when answers changes, but we need to know if it was a new answer.
-        // We'll use a ref to track if auto‑next is pending.
-        // Simpler: handle auto‑next inside handleSelect with setTimeout.
-    }, []); // We'll implement inside handleSelect
+        if (timeLeft === null || loading || isLocked) return;
+        if (timeLeft > 0) {
+            const timerId = setInterval(() => {
+                setTimeLeft(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timerId);
+                        handleSubmit(true);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            return () => clearInterval(timerId);
+        }
+    }, [timeLeft, loading, isLocked]);
 
     const handleSelect = (optionId) => {
-        if (isLocked) return;
         const qId = testData.questions[currentIndex].id;
-        setAnswers(prev => ({ ...prev, [qId]: optionId }));
-
-        // Auto‑next after 200ms (if not last question)
+        setAnswers({ ...answers, [qId]: optionId });
+        // Auto‑next after selection
         setTimeout(() => {
             if (currentIndex < testData.questions.length - 1) {
-                setCurrentIndex(prev => prev + 1);
+                setCurrentIndex(currentIndex + 1);
             } else {
                 setShowConfirm(true);
             }
@@ -141,9 +152,10 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
         }
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (isTimeout = false) => {
+        // Check if all questions answered
         const answeredCount = Object.keys(answers).length;
-        if (answeredCount < testData.questions.length) {
+        if (!isTimeout && answeredCount < testData.questions.length) {
             Swal.fire({
                 title: 'Belum Lengkap',
                 text: `Anda baru menjawab ${answeredCount} dari ${testData.questions.length} pertanyaan.`,
@@ -154,27 +166,35 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
 
         setIsSubmitting(true);
         try {
+            const timeTaken = testData.time_limit === 0 ? 0 : testData.time_limit - timeLeft;
             const payload = {
                 answers: Object.keys(answers).map(qId => ({
                     question_id: parseInt(qId),
                     option_id: answers[qId],
                     type: 'single'
                 })),
-                time_taken: 0
+                time_taken: timeTaken
             };
             await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            Swal.fire({
-                title: 'Tes Selesai',
-                text: 'Jawaban Anda telah disimpan.',
-                icon: 'success'
-            }).then(() => onFinish());
+            if (isTimeout) {
+                Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
+            } else {
+                Swal.fire('Tes Selesai', 'Jawaban Anda telah disimpan.', 'success');
+            }
+            onFinish();
         } catch (err) {
             console.error(err);
             Swal.fire('Error', 'Gagal mengirim jawaban.', 'error');
             setIsSubmitting(false);
         }
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     };
 
     if (isLocked) {
@@ -192,16 +212,22 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
     if (loading) return <div className="p-8 text-center">Loading...</div>;
 
     const currentQ = testData.questions[currentIndex];
-    const answeredCount = Object.keys(answers).length;
-    const progress = (answeredCount / testData.questions.length * 100).toFixed(0);
+    const progress = ((Object.keys(answers).length) / testData.questions.length * 100).toFixed(0);
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
-            {/* Header */}
+            {/* Header with progress and timer */}
             <div className="bg-white shadow p-4 flex justify-between items-center">
                 <h1 className="font-bold text-lg">{testData.test_name}</h1>
-                <div className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded">
-                    {answeredCount} / {testData.questions.length} terjawab
+                <div className="flex gap-4 items-center">
+                    <div className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded">
+                        {Object.keys(answers).length} / {testData.questions.length} terjawab
+                    </div>
+                    {timeLeft !== null && (
+                        <div className="text-xl font-mono bg-red-100 text-red-700 px-3 py-1 rounded">
+                            {formatTime(timeLeft)}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -220,9 +246,7 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
                         {currentQ.options.map((opt) => (
                             <label
                                 key={opt.id}
-                                className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${answers[currentQ.id] === opt.id
-                                        ? 'bg-blue-500 text-white border-blue-500'
-                                        : 'bg-white hover:bg-gray-50'
+                                className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${answers[currentQ.id] === opt.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white hover:bg-gray-50'
                                     }`}
                             >
                                 <input
@@ -232,7 +256,6 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
                                     checked={answers[currentQ.id] === opt.id}
                                     onChange={() => handleSelect(opt.id)}
                                     className="mr-3"
-                                    disabled={isLocked}
                                 />
                                 <span>{opt.label}. {opt.content}</span>
                             </label>
@@ -245,7 +268,7 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
             <div className="bg-white p-4 shadow flex justify-between">
                 <button
                     onClick={goPrev}
-                    disabled={currentIndex === 0 || isLocked}
+                    disabled={currentIndex === 0}
                     className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
                 >
                     Sebelumnya
@@ -253,16 +276,14 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
                 {currentIndex === testData.questions.length - 1 ? (
                     <button
                         onClick={() => setShowConfirm(true)}
-                        disabled={isLocked}
-                        className="px-4 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600 disabled:opacity-50"
+                        className="px-4 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600"
                     >
                         Selesai
                     </button>
                 ) : (
                     <button
                         onClick={goNext}
-                        disabled={isLocked}
-                        className="px-4 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 disabled:opacity-50"
+                        className="px-4 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600"
                     >
                         Selanjutnya
                     </button>
@@ -275,14 +296,14 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
                     <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
                         <h3 className="text-xl font-bold mb-4">Selesaikan Tes?</h3>
                         <p className="mb-6 text-gray-600">
-                            Anda telah menjawab {answeredCount} pertanyaan.
+                            Anda telah menjawab {Object.keys(answers).length} pertanyaan.
                         </p>
                         <div className="flex gap-4 justify-center">
                             <button onClick={() => setShowConfirm(false)} className="px-4 py-2 bg-gray-200 rounded">
                                 Batal
                             </button>
                             <button
-                                onClick={handleSubmit}
+                                onClick={() => handleSubmit()}
                                 disabled={isSubmitting}
                                 className={`px-4 py-2 text-white rounded font-bold ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
                                     }`}

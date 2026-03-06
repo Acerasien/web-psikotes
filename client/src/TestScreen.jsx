@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import React from 'react';
 
 function TestScreen({ token, assignmentId, onFinish }) {
   const [testData, setTestData] = useState(null);

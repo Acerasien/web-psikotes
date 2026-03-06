@@ -494,14 +494,16 @@ def get_results(
             max_score = 24
         elif r.test.code == "SPEED":
             max_score = 100
-        elif r.test.code == "TEMP":
-            max_score = 168  # Not used in generic display
         elif r.test.code == "MEM":
             max_score = 100
         elif r.test.code == "LOGIC":
             max_score = 100
+        elif r.test.code == "LEAD":
+            max_score = None   # No single max score for Leadership
+        elif r.test.code == "TEMP":
+            max_score = None   # No single max score for Temperament (we show primary trait)
         else:
-            max_score = total_questions  # fallback for IQ, Leadership, etc.
+            max_score = total_questions
 
         output.append({
             "id": r.id,

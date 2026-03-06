@@ -290,10 +290,12 @@ function ResultsTable({ token }) {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.test_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
-                                        {result.test_name.includes('Temperament') && result.details?.primary ? (
+                                        {result.details?.primary ? (
                                             <span>{result.details.primary}</span>
-                                        ) : (
+                                        ) : result.max_score ? (
                                             <span>{result.score} / {result.max_score}</span>
+                                        ) : (
+                                            <span>{result.score}</span>   // fallback (shouldn't happen)
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
