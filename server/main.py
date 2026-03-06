@@ -23,6 +23,7 @@ import secrets
 import string
 from scoring.logic import score_logic
 from sqlalchemy import func, desc
+from scoring.leadership import score_leadership
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -414,6 +415,18 @@ def submit_test(
         )
         details = score_logic(submission.answers, questions)
         score = details["score"]
+        
+    elif test_code == "LEAD":
+        questions = (
+        db.query(Question)
+        .options(joinedload(Question.options))
+        .filter(Question.test_id == assignment.test_id)
+        .all()
+    )
+        
+        details = score_leadership(submission.answers, questions)
+        # For leadership, the score can be the sum of raw scores (optional)
+        score = sum(details["raw_scores"].values())
 
     else:
         # Default: IQ, Memory, Logic, etc. (simple correct count)

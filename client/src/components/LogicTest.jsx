@@ -14,6 +14,14 @@ function LogicTest({ token, assignmentId, onFinish }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+
     // Integrity state
     const [exitCount, setExitCount] = useState(0);
     const [isLocked, setIsLocked] = useState(false);
@@ -70,6 +78,7 @@ function LogicTest({ token, assignmentId, onFinish }) {
                 });
                 setTestData(res.data);
                 setQuestions(res.data.questions);
+                setQuestions(prev => shuffleArray([...prev]));
                 setTimeLeft(res.data.time_limit || 1800);
                 setLoading(false);
                 enterFullscreen();
@@ -268,8 +277,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                             <button
                                 onClick={toggleFlag}
                                 className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${flagged.has(currentQ.id)
-                                        ? 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200'
-                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                    ? 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200'
+                                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                                     }`}
                             >
                                 {flagged.has(currentQ.id) ? '⛳ Ditinggalkan' : 'Tandai'}
@@ -290,8 +299,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                                         key={opt.id}
                                         onClick={() => handleSelect(opt.id)}
                                         className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
-                                                ? 'bg-blue-500 text-white border-blue-600'
-                                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                            ? 'bg-blue-500 text-white border-blue-600'
+                                            : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                                             }`}
                                     >
                                         <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
@@ -312,8 +321,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                     onClick={goPrev}
                     disabled={currentIndex === 0}
                     className={`px-4 py-2 rounded-md font-medium transition ${currentIndex === 0
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     ← Sebelumnya
@@ -360,8 +369,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                                 }}
                                 disabled={isSubmitting}
                                 className={`px-5 py-2 text-white rounded-lg shadow transition ${isSubmitting
-                                        ? 'bg-blue-400 cursor-wait'
-                                        : 'bg-green-500 hover:bg-green-600'
+                                    ? 'bg-blue-400 cursor-wait'
+                                    : 'bg-green-500 hover:bg-green-600'
                                     }`}
                             >
                                 {isSubmitting ? 'Mengirim...' : 'Kirim'}

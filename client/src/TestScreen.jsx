@@ -16,6 +16,13 @@ function TestScreen({ token, assignmentId, onFinish }) {
   const [isFullscreen, setIsFullscreen] = useState(true);
 
   // --- HELPERS ---
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
 
   // Helper to format DISC answers for backend
   const formatDiscPayload = (answersObj) => {
@@ -41,17 +48,16 @@ function TestScreen({ token, assignmentId, onFinish }) {
 
       if (type === 'most') {
         newMost = optionId;
-        if (newLeast === optionId) newLeast = null; // Can't be both
+        if (newLeast === optionId) newLeast = null;
       } else {
         newLeast = optionId;
-        if (newMost === optionId) newMost = null; // Can't be both
+        if (newMost === optionId) newMost = null;
       }
       return { ...prev, [questionId]: { most: newMost, least: newLeast } };
     });
   };
 
   // --- INTEGRITY LOGIC ---
-
   useEffect(() => {
     const enterFullscreen = () => {
       const elem = document.documentElement;
@@ -69,7 +75,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
         const newCount = exitCount + 1;
         setExitCount(newCount);
 
-        // Log this exit to the server
         axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/exit-log`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(err => console.error("Failed to log exit", err));
@@ -108,14 +113,23 @@ function TestScreen({ token, assignmentId, onFinish }) {
   }, []);
 
   // --- DATA LOADING ---
-
   useEffect(() => {
     const loadTest = async () => {
       try {
         const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setTestData(res.data);
+
+        // Shuffle questions only for Leadership test
+        let testDataFromServer = res.data;
+        if (testDataFromServer.settings?.type === 'leadership') {
+          testDataFromServer = {
+            ...testDataFromServer,
+            questions: shuffleArray([...testDataFromServer.questions])
+          };
+        }
+
+        setTestData(testDataFromServer);
         if (res.data.time_limit === 0) setTimeLeft(null);
         else setTimeLeft(res.data.time_limit);
         setLoading(false);
@@ -133,7 +147,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
   }, [token, assignmentId]);
 
   // --- TIMER ---
-
   useEffect(() => {
     if (timeLeft === null || loading || !isFullscreen || isLocked) return;
     if (timeLeft > 0) {
@@ -145,7 +158,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
   }, [timeLeft, loading, isFullscreen, isLocked]);
 
   // --- INTERACTION LOGIC ---
-
   const handleSelect = (optionId) => {
     const currentQuestionId = testData.questions[currentIndex].id;
     if (testData.settings?.type === 'speed') {
@@ -156,7 +168,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
         else setShowConfirmModal(true);
       }, 200);
     } else if (testData.settings?.type === 'temperament') {
-      // Temperament: auto‑next after selection
       setAnswers({ ...answers, [currentQuestionId]: optionId });
       setTimeout(() => {
         if (currentIndex < testData.questions.length - 1) {
@@ -166,7 +177,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
         }
       }, 200);
     } else {
-      // Default (IQ, Logic, etc.): just store answer, no auto‑next
       setAnswers({ ...answers, [currentQuestionId]: optionId });
     }
   };
@@ -201,7 +211,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
   };
 
   // --- RENDER ---
-
   if (loading) return <div className="p-8 text-center">Loading Test...</div>;
   if (isLocked) {
     return (
@@ -261,15 +270,14 @@ function TestScreen({ token, assignmentId, onFinish }) {
                 </thead>
                 <tbody>
                   {testData.questions.map((q, qIdx) => (
-                    <>
+                    <React.Fragment key={q.id}>
                       {q.options.map((opt, optIdx) => {
-                        // Determine color state
                         const isMost = answers[q.id]?.most === opt.id;
                         const isLeast = answers[q.id]?.least === opt.id;
 
                         let rowClass = "hover:bg-gray-50";
-                        if (isMost) rowClass = "bg-green-100 border-green-300"; // Green for Most
-                        if (isLeast) rowClass = "bg-red-100 border-red-300"; // Red for Least
+                        if (isMost) rowClass = "bg-green-100 border-green-300";
+                        if (isLeast) rowClass = "bg-red-100 border-red-300";
 
                         return (
                           <tr key={opt.id} className={rowClass}>
@@ -279,17 +287,14 @@ function TestScreen({ token, assignmentId, onFinish }) {
                             <td className="border p-3">
                               {opt.content}
                             </td>
-                            {/* P Column (Most) */}
                             <td
                               className="border p-3 text-center cursor-pointer select-none"
                               onClick={() => handleDiscRadio(q.id, opt.id, 'most')}
                             >
-                              {/* Visual Box instead of radio */}
                               <div className={`w-6 h-6 mx-auto rounded border-2 flex items-center justify-center ${isMost ? 'bg-green-500 border-green-600' : 'bg-white border-gray-300'}`}>
                                 {isMost && <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
                               </div>
                             </td>
-                            {/* K Column (Least) */}
                             <td
                               className="border p-3 text-center cursor-pointer select-none"
                               onClick={() => handleDiscRadio(q.id, opt.id, 'least')}
@@ -301,29 +306,23 @@ function TestScreen({ token, assignmentId, onFinish }) {
                           </tr>
                         );
                       })}
-
-                      {/* Separator */}
                       {qIdx < testData.questions.length - 1 && (
                         <tr><td colSpan="4" className="border-b-4 border-gray-200"></td></tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
             </div>
-
             <div className="mt-6 text-center">
               <button
                 onClick={() => {
-                  // Check all questions
                   let missing = [];
                   testData.questions.forEach((q, idx) => {
                     if (!answers[q.id]?.most || !answers[q.id]?.least) {
-                      // Use idx + 1 for the display number (1-24)
                       missing.push(idx + 1);
                     }
                   });
-
                   if (missing.length > 0) {
                     Swal.fire({
                       title: "Belum Lengkap",
@@ -332,7 +331,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
                     });
                     return;
                   }
-
                   setShowConfirmModal(true);
                 }}
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-8 rounded text-lg"
@@ -342,8 +340,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
             </div>
           </div>
         ) : (
-
-          /* VIEW 2: DEFAULT CARD VIEW (Speed/IQ) */
+          /* VIEW 2: DEFAULT CARD VIEW (Speed/IQ/Leadership) */
           <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
             <p className="text-sm text-gray-500 mb-2">Question {currentIndex + 1} of {testData.questions.length}</p>
             <h2 className="text-xl font-semibold mb-6">{currentQuestion.content}</h2>

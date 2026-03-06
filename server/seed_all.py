@@ -8,7 +8,8 @@ scripts = [
     "seed_speed_test.py",
     "seed_temperament.py",
     "seed_memory.py",
-    "seed_logic.py"
+    "seed_logic.py",
+    "seed_leadership.py",
 ]
 
 for script in scripts:

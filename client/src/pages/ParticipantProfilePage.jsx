@@ -227,7 +227,7 @@ function ParticipantProfilePage({ token }) {
                                 <div className="bg-gray-50 px-5 py-4 border-b">
                                     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                                         <h3 className="text-xl font-semibold text-gray-800">{r.test_name}</h3>
-                                        {r.test_name !== "Temperament Test" && (
+                                        {r.test_name !== "Temperament Test" && r.test_name !== "Leadership Test" && (
                                             <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
                                                 {r.score} / {r.max_score}
                                             </div>
@@ -429,6 +429,32 @@ function ParticipantProfilePage({ token }) {
                                                 </span>
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+                                {/* Leadership Test */}
+                                {r.test_name === "Leadership Test" && r.details && (
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-3">Leadership Profile</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div><span className="font-medium">Primary Strength:</span> {r.details.primary}</div>
+                                            <div><span className="font-medium">Secondary Strength:</span> {r.details.secondary}</div>
+                                        </div>
+                                        <div className="mt-3">
+                                            <span className="font-medium">Trait Scores:</span>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                                                {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
+                                                    <div key={trait} className="bg-gray-50 p-2 rounded flex justify-between">
+                                                        <span className="font-medium">{trait}:</span>
+                                                        <span>{Math.round(pct)}%</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {r.details.development_areas?.length > 0 && (
+                                            <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-700">
+                                                ⚠️ Development areas: {r.details.development_areas.join(', ')}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

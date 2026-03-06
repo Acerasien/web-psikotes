@@ -168,14 +168,38 @@ function ResultsTable({ token }) {
                         <div>
                             <span className="font-medium">Band:</span>{' '}
                             <span className={`ml-1 px-2 py-0.5 rounded ${d.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
-                                    d.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
-                                        d.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-red-100 text-red-800'
+                                d.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
+                                    d.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-red-100 text-red-800'
                                 }`}>
                                 {d.band}
                             </span>
                         </div>
                     </div>
+                </div>
+            );
+        }
+        if (result.test_name.includes('Leadership')) {
+            const d = result.details;
+            if (!d) return null;
+            return (
+                <div className="p-3 bg-gray-50 rounded text-sm">
+                    <div><span className="font-medium">Primary:</span> {d.primary}</div>
+                    <div><span className="font-medium">Secondary:</span> {d.secondary}</div>
+                    <div className="mt-2">
+                        <span className="font-medium">Percentages:</span>
+                        <div className="grid grid-cols-2 gap-1 mt-1">
+                            {Object.entries(d.percentages || {}).map(([trait, pct]) => (
+                                <div key={trait} className="flex justify-between">
+                                    <span>{trait}:</span>
+                                    <span>{Math.round(pct)}%</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {d.development_areas?.length > 0 && (
+                        <div className="mt-2 text-orange-600">⚠️ Development: {d.development_areas.join(', ')}</div>
+                    )}
                 </div>
             );
         }

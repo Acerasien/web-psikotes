@@ -15,6 +15,14 @@ function MemoryTest({ token, assignmentId, onFinish }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+
     // Integrity state
     const [exitCount, setExitCount] = useState(0);
     const [isLocked, setIsLocked] = useState(false);
@@ -73,6 +81,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                 });
                 setTestData(res.data);
                 setQuestions(res.data.questions || []);
+                setQuestions(prev => shuffleArray([...prev]));
                 setEncodingTimeLeft(res.data.settings?.encoding_time || 180);
                 setRecallTimeLeft(res.data.settings?.recall_time || 600);
                 setLoading(false);
