@@ -6,6 +6,7 @@ import TemperamentTest from './components/TemperamentTest';
 import MemoryTest from './components/MemoryTest';
 import LogicTest from './components/LogicTest';
 import Tutorial from './components/Tutorial';
+import DISCTest from './components/DISCTest';
 
 function ParticipantDashboard({ token, user, onLogout }) {
   const [assignments, setAssignments] = useState([]);
@@ -87,6 +88,17 @@ function ParticipantDashboard({ token, user, onLogout }) {
       case 'TEMP': // Use consistent code from backend (TEMP for Temperament)
         return (
           <TemperamentTest
+            token={token}
+            assignmentId={activeTest}
+            onFinish={() => {
+              setActiveTest(null);
+              fetchAssignments();
+            }}
+          />
+        );
+      case 'DISC':
+        return (
+          <DISCTest
             token={token}
             assignmentId={activeTest}
             onFinish={() => {

@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import React from 'react';
 
 function TestScreen({ token, assignmentId, onFinish }) {
   const [testData, setTestData] = useState(null);
@@ -23,39 +22,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
       [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
-  };
-
-  // Helper to format DISC answers for backend
-  const formatDiscPayload = (answersObj) => {
-    const payload = [];
-    Object.keys(answersObj).forEach(qId => {
-      const selection = answersObj[qId];
-      if (selection.most) {
-        payload.push({ question_id: parseInt(qId), option_id: selection.most, type: 'most' });
-      }
-      if (selection.least) {
-        payload.push({ question_id: parseInt(qId), option_id: selection.least, type: 'least' });
-      }
-    });
-    return payload;
-  };
-
-  // Handler specifically for DISC Radio Buttons
-  const handleDiscRadio = (questionId, optionId, type) => {
-    setAnswers(prev => {
-      const currentQ = prev[questionId] || { most: null, least: null };
-      let newMost = currentQ.most;
-      let newLeast = currentQ.least;
-
-      if (type === 'most') {
-        newMost = optionId;
-        if (newLeast === optionId) newLeast = null;
-      } else {
-        newLeast = optionId;
-        if (newMost === optionId) newMost = null;
-      }
-      return { ...prev, [questionId]: { most: newMost, least: newLeast } };
-    });
   };
 
   // --- INTEGRITY LOGIC ---
@@ -186,16 +152,11 @@ function TestScreen({ token, assignmentId, onFinish }) {
     setIsSubmitting(true);
     const timeTaken = testData.time_limit === 0 ? 0 : testData.time_limit - timeLeft;
     try {
-      let finalAnswers = currentAnswers;
-      if (testData.settings?.type === 'disc') {
-        finalAnswers = formatDiscPayload(currentAnswers);
-      } else {
-        finalAnswers = Object.keys(currentAnswers).map(qId => ({
-          question_id: parseInt(qId),
-          option_id: currentAnswers[qId],
-          type: 'single'
-        }));
-      }
+      const finalAnswers = Object.keys(currentAnswers).map(qId => ({
+        question_id: parseInt(qId),
+        option_id: currentAnswers[qId],
+        type: 'single'
+      }));
 
       await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`,
         { answers: finalAnswers, time_taken: timeTaken },
@@ -236,8 +197,8 @@ function TestScreen({ token, assignmentId, onFinish }) {
         </div>
       </div>
 
-      {/* Question Indicator Grid (Hidden for DISC and Speed) */}
-      {testData.settings?.type !== 'speed' && testData.settings?.type !== 'disc' && (
+      {/* Question Indicator Grid (Hidden for Speed) */}
+      {testData.settings?.type !== 'speed' && (
         <div className="bg-gray-50 border-b p-2 flex justify-center space-x-1 overflow-x-auto">
           {testData.questions.map((q, idx) => (
             <div
@@ -252,154 +213,61 @@ function TestScreen({ token, assignmentId, onFinish }) {
         </div>
       )}
 
-      {/* QUESTION AREA */}
+      {/* QUESTION AREA - Default Card View */}
       <div className="flex-1 p-8 flex flex-col items-center justify-center overflow-y-auto">
+        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
+          <p className="text-sm text-gray-500 mb-2">Question {currentIndex + 1} of {testData.questions.length}</p>
+          <h2 className="text-xl font-semibold mb-6">{currentQuestion.content}</h2>
 
-        {/* VIEW 1: DISC TABLE VIEW */}
-        {testData.settings?.type === 'disc' ? (
-          <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4 text-center">Pilih yang PALING SESUAI (P) dan PALING TIDAK SESUAI (K)</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border p-2 text-left w-12">No</th>
-                    <th className="border p-2 text-left">Gambaran Diri</th>
-                    <th className="border p-2 text-center w-16">P</th>
-                    <th className="border p-2 text-center w-16">K</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {testData.questions.map((q, qIdx) => (
-                    <React.Fragment key={q.id}>
-                      {q.options.map((opt, optIdx) => {
-                        const isMost = answers[q.id]?.most === opt.id;
-                        const isLeast = answers[q.id]?.least === opt.id;
-
-                        let rowClass = "hover:bg-gray-50";
-                        if (isMost) rowClass = "bg-green-100 border-green-300";
-                        if (isLeast) rowClass = "bg-red-100 border-red-300";
-
-                        return (
-                          <tr key={opt.id} className={rowClass}>
-                            <td className="border p-3 text-center text-gray-500 font-bold">
-                              {optIdx === 0 ? qIdx + 1 : ""}
-                            </td>
-                            <td className="border p-3">
-                              {opt.content}
-                            </td>
-                            <td
-                              className="border p-3 text-center cursor-pointer select-none"
-                              onClick={() => handleDiscRadio(q.id, opt.id, 'most')}
-                            >
-                              <div className={`w-6 h-6 mx-auto rounded border-2 flex items-center justify-center ${isMost ? 'bg-green-500 border-green-600' : 'bg-white border-gray-300'}`}>
-                                {isMost && <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
-                              </div>
-                            </td>
-                            <td
-                              className="border p-3 text-center cursor-pointer select-none"
-                              onClick={() => handleDiscRadio(q.id, opt.id, 'least')}
-                            >
-                              <div className={`w-6 h-6 mx-auto rounded border-2 flex items-center justify-center ${isLeast ? 'bg-red-500 border-red-600' : 'bg-white border-gray-300'}`}>
-                                {isLeast && <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {qIdx < testData.questions.length - 1 && (
-                        <tr><td colSpan="4" className="border-b-4 border-gray-200"></td></tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => {
-                  let missing = [];
-                  testData.questions.forEach((q, idx) => {
-                    if (!answers[q.id]?.most || !answers[q.id]?.least) {
-                      missing.push(idx + 1);
-                    }
-                  });
-                  if (missing.length > 0) {
-                    Swal.fire({
-                      title: "Belum Lengkap",
-                      html: `Anda belum mengisi pertanyaan nomor: <strong>${missing.join(", ")}</strong>`,
-                      icon: "warning"
-                    });
-                    return;
-                  }
-                  setShowConfirmModal(true);
-                }}
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-8 rounded text-lg"
-              >
-                Selesai & Kirim
-              </button>
-            </div>
+          <div className="space-y-3">
+            {currentQuestion.options.map((opt) => {
+              let btnClass = "bg-white hover:bg-gray-50 border-gray-200";
+              if (answers[currentQuestion.id] === opt.id) {
+                btnClass = "bg-blue-500 text-white border-blue-500";
+              }
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => handleSelect(opt.id)}
+                  className={`w-full text-left p-4 border rounded-lg transition ${btnClass}`}
+                >
+                  <span className="font-bold mr-2">{opt.label}.</span> {opt.content}
+                </button>
+              );
+            })}
           </div>
-        ) : (
-          /* VIEW 2: DEFAULT CARD VIEW (Speed/IQ/Leadership) */
-          <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
-            <p className="text-sm text-gray-500 mb-2">Question {currentIndex + 1} of {testData.questions.length}</p>
-            <h2 className="text-xl font-semibold mb-6">{currentQuestion.content}</h2>
-
-            <div className="space-y-3">
-              {currentQuestion.options.map((opt) => {
-                let btnClass = "bg-white hover:bg-gray-50 border-gray-200";
-                if (answers[currentQuestion.id] === opt.id) {
-                  btnClass = "bg-blue-500 text-white border-blue-500";
-                }
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => handleSelect(opt.id)}
-                    className={`w-full text-left p-4 border rounded-lg transition ${btnClass}`}
-                  >
-                    <span className="font-bold mr-2">{opt.label}.</span> {opt.content}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* Footer Navigation (Hidden for DISC) */}
-      {testData.settings?.type !== 'disc' && (
+      {/* Footer Navigation (Hidden for Speed) */}
+      {testData.settings?.type !== 'speed' && (
         <div className="bg-white p-4 shadow flex justify-between items-center">
-          {testData.settings?.type !== 'speed' && (
-            <button
-              disabled={currentIndex === 0}
-              onClick={() => setCurrentIndex(currentIndex - 1)}
-              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
-          )}
+          <button
+            disabled={currentIndex === 0}
+            onClick={() => setCurrentIndex(currentIndex - 1)}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
 
           <div className="text-gray-600 flex-grow text-center">
             {Object.keys(answers).length} / {testData.questions.length} Answered
           </div>
 
-          {testData.settings?.type !== 'speed' && (
-            currentIndex === testData.questions.length - 1 ? (
-              <button
-                onClick={() => setShowConfirmModal(true)}
-                className="px-4 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600"
-              >
-                Finish Test
-              </button>
-            ) : (
-              <button
-                onClick={() => setCurrentIndex(currentIndex + 1)}
-                className="px-4 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600"
-              >
-                Next
-              </button>
-            )
+          {currentIndex === testData.questions.length - 1 ? (
+            <button
+              onClick={() => setShowConfirmModal(true)}
+              className="px-4 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600"
+            >
+              Finish Test
+            </button>
+          ) : (
+            <button
+              onClick={() => setCurrentIndex(currentIndex + 1)}
+              className="px-4 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600"
+            >
+              Next
+            </button>
           )}
         </div>
       )}
