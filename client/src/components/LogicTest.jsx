@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function LogicTest({ token, assignmentId, onFinish }) {
     const [testData, setTestData] = useState(null);
@@ -14,25 +15,10 @@ function LogicTest({ token, assignmentId, onFinish }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const shuffleArray = (array) => {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    };
-
-    // Integrity state
-    const [exitCount, setExitCount] = useState(0);
-    const [isLocked, setIsLocked] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(true);
-
-    const enterFullscreen = () => {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-    };
+    const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
+        assignmentId,
+        token
+    });
 
     const toggleFlag = useCallback(() => {
         if (questions.length === 0) return;
@@ -49,7 +35,6 @@ function LogicTest({ token, assignmentId, onFinish }) {
         const qId = questions[currentIndex]?.id;
         if (!qId) return;
         setAnswers(prev => ({ ...prev, [qId]: optionId }));
-        // Auto‑next after 200ms (optional, can remove if they want manual)
         setTimeout(() => {
             if (currentIndex < questions.length - 1) {
                 setCurrentIndex(prev => prev + 1);
@@ -78,14 +63,12 @@ function LogicTest({ token, assignmentId, onFinish }) {
                 });
                 setTestData(res.data);
                 setQuestions(res.data.questions);
-                setQuestions(prev => shuffleArray([...prev]));
                 setTimeLeft(res.data.time_limit || 1800);
                 setLoading(false);
                 enterFullscreen();
             } catch (err) {
                 console.error(err);
                 if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
-                    setIsLocked(true);
                     setLoading(false);
                 } else {
                     Swal.fire('Error', 'Gagal memuat tes.', 'error');
@@ -94,48 +77,9 @@ function LogicTest({ token, assignmentId, onFinish }) {
             }
         };
         loadTest();
-    }, [token, assignmentId, onFinish]);
+    }, [token, assignmentId, enterFullscreen, onFinish]);
 
-    // Fullscreen listener (same as before, omitted for brevity – copy from MemoryTest)
-    useEffect(() => {
-        const handleFullscreenChange = () => {
-            const isCurrentlyFullscreen = document.fullscreenElement !== null;
-            if (!isCurrentlyFullscreen && !isLocked && !loading && testData) {
-                const newCount = exitCount + 1;
-                setExitCount(newCount);
-                axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/exit-log`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                }).catch(err => console.error("Failed to log exit", err));
-                if (newCount >= 3) {
-                    setIsLocked(true);
-                    axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/lock`, {}, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }).catch(err => console.error(err));
-                    Swal.fire({
-                        title: 'Test Locked',
-                        text: 'You have exited fullscreen too many times.',
-                        icon: 'error',
-                        allowOutsideClick: false
-                    });
-                } else {
-                    setIsFullscreen(false);
-                    Swal.fire({
-                        title: `Warning ${newCount}/3`,
-                        text: 'Please return to fullscreen immediately!',
-                        icon: 'warning',
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
-                }
-            } else if (isCurrentlyFullscreen) {
-                setIsFullscreen(true);
-            }
-        };
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, [exitCount, isLocked, loading, testData, assignmentId, token]);
-
-    // Prevent context menu and dev tools (same as before)
+    // Prevent context menu and dev tools
     useEffect(() => {
         const handleContextMenu = (e) => e.preventDefault();
         const handleKeyDown = (e) => {
@@ -277,8 +221,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                             <button
                                 onClick={toggleFlag}
                                 className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${flagged.has(currentQ.id)
-                                    ? 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200'
-                                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                        ? 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                                     }`}
                             >
                                 {flagged.has(currentQ.id) ? '⛳ Ditinggalkan' : 'Tandai'}
@@ -299,8 +243,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                                         key={opt.id}
                                         onClick={() => handleSelect(opt.id)}
                                         className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
-                                            ? 'bg-blue-500 text-white border-blue-600'
-                                            : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                ? 'bg-blue-500 text-white border-blue-600'
+                                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                                             }`}
                                     >
                                         <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
@@ -321,8 +265,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                     onClick={goPrev}
                     disabled={currentIndex === 0}
                     className={`px-4 py-2 rounded-md font-medium transition ${currentIndex === 0
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     ← Sebelumnya
@@ -369,8 +313,8 @@ function LogicTest({ token, assignmentId, onFinish }) {
                                 }}
                                 disabled={isSubmitting}
                                 className={`px-5 py-2 text-white rounded-lg shadow transition ${isSubmitting
-                                    ? 'bg-blue-400 cursor-wait'
-                                    : 'bg-green-500 hover:bg-green-600'
+                                        ? 'bg-blue-400 cursor-wait'
+                                        : 'bg-green-500 hover:bg-green-600'
                                     }`}
                             >
                                 {isSubmitting ? 'Mengirim...' : 'Kirim'}

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import { useFullscreenLock } from './hooks/useFullscreenLock';
 
 function TestScreen({ token, assignmentId, onFinish }) {
   const [testData, setTestData] = useState(null);
@@ -11,9 +12,11 @@ function TestScreen({ token, assignmentId, onFinish }) {
   const [loading, setLoading] = useState(true);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [exitCount, setExitCount] = useState(0);
-  const [isLocked, setIsLocked] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(true);
+
+  const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
+    assignmentId,
+    token
+  });
 
   // --- HELPERS ---
   const shuffleArray = (array) => {
@@ -24,46 +27,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
     return array;
   };
 
-  // --- INTEGRITY LOGIC ---
-  useEffect(() => {
-    const enterFullscreen = () => {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) elem.requestFullscreen();
-      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-    };
-    if (!loading) enterFullscreen();
-  }, [loading]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isCurrentlyFullscreen = document.fullscreenElement !== null;
-      if (!isCurrentlyFullscreen && !isLocked && !loading) {
-        const newCount = exitCount + 1;
-        setExitCount(newCount);
-
-        axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/exit-log`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(err => console.error("Failed to log exit", err));
-
-        if (newCount >= 3) {
-          setIsLocked(true);
-          axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/lock`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
-          }).catch(err => console.error(err));
-          Swal.fire({ title: 'Test Locked', text: 'You have exited fullscreen too many times.', icon: 'error', allowOutsideClick: false });
-        } else {
-          setIsFullscreen(false);
-          Swal.fire({ title: `Warning ${newCount}/3`, text: 'Please return to fullscreen immediately!', icon: 'warning', timer: 3000, timerProgressBar: true });
-        }
-      } else if (isCurrentlyFullscreen) {
-        setIsFullscreen(true);
-      }
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [exitCount, isLocked, loading, assignmentId, token]);
-
+  // Prevent context menu and dev tools
   useEffect(() => {
     const handleContextMenu = (e) => e.preventDefault();
     const handleKeyDown = (e) => {
@@ -100,10 +64,10 @@ function TestScreen({ token, assignmentId, onFinish }) {
         if (res.data.time_limit === 0) setTimeLeft(null);
         else setTimeLeft(res.data.time_limit);
         setLoading(false);
+        enterFullscreen();
       } catch (err) {
         console.error(err);
         if (err.response && err.response.status === 403 && err.response.data.detail.includes("locked")) {
-          setIsLocked(true);
           setLoading(false);
         } else {
           onFinish();
@@ -111,7 +75,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
       }
     };
     loadTest();
-  }, [token, assignmentId]);
+  }, [token, assignmentId, enterFullscreen, onFinish]);
 
   // --- TIMER ---
   useEffect(() => {
@@ -173,7 +137,6 @@ function TestScreen({ token, assignmentId, onFinish }) {
   };
 
   // --- RENDER ---
-  if (loading) return <div className="p-8 text-center">Loading Test...</div>;
   if (isLocked) {
     return (
       <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
@@ -183,6 +146,8 @@ function TestScreen({ token, assignmentId, onFinish }) {
       </div>
     );
   }
+
+  if (loading) return <div className="p-8 text-center">Loading Test...</div>;
 
   const currentQuestion = testData.questions[currentIndex];
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${seconds % 60 < 10 ? '0' : ''}${seconds % 60}`;
@@ -272,7 +237,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
         </div>
       )}
 
-      {/* Modals & Overlays */}
+      {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
@@ -290,11 +255,14 @@ function TestScreen({ token, assignmentId, onFinish }) {
         </div>
       )}
 
-      {!isFullscreen && !isLocked && !loading && (
+      {/* Fullscreen Overlay */}
+      {!isFullscreen && !isLocked && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
           <h2 className="text-2xl font-bold mb-4">Paused</h2>
           <p>Please return to fullscreen mode.</p>
-          <button onClick={() => { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }} className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold">Return to Fullscreen</button>
+          <button onClick={() => { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }} className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600">
+            Return to Fullscreen
+          </button>
         </div>
       )}
     </div>

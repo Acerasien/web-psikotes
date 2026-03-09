@@ -1,49 +1,49 @@
 // client/src/components/MemoryTest.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function MemoryTest({ token, assignmentId, onFinish }) {
     const [testData, setTestData] = useState(null);
-    const [phase, setPhase] = useState('encoding'); // 'encoding' or 'recall'
+    const [phase, setPhase] = useState('encoding');
     const [encodingTimeLeft, setEncodingTimeLeft] = useState(0);
     const [recallTimeLeft, setRecallTimeLeft] = useState(0);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
+    const [flagged, setFlagged] = useState(new Set());
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const shuffleArray = (array) => {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    };
+    const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
+        assignmentId,
+        token
+    });
 
-    // Integrity state
-    const [exitCount, setExitCount] = useState(0);
-    const [isLocked, setIsLocked] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(true);
-
-    // --- Fullscreen helpers ---
-    const enterFullscreen = () => {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-    };
+    // Toggle flag for current question
+    const toggleFlag = useCallback(() => {
+        if (questions.length === 0) return;
+        const qId = questions[currentIndex].id;
+        setFlagged(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(qId)) {
+                newSet.delete(qId);
+            } else {
+                newSet.add(qId);
+            }
+            return newSet;
+        });
+    }, [questions, currentIndex]);
 
     // Handle answer selection (auto‑next)
-    const handleSelect = (optionId) => {
+    const handleSelect = useCallback((optionId) => {
         const qId = questions[currentIndex]?.id;
         if (!qId) return;
 
         setAnswers(prev => ({ ...prev, [qId]: optionId }));
 
-        // Auto‑next after 200ms (only if not last question)
         setTimeout(() => {
             if (currentIndex < questions.length - 1) {
                 setCurrentIndex(prev => prev + 1);
@@ -51,9 +51,9 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                 setShowConfirm(true);
             }
         }, 200);
-    };
+    }, [questions, currentIndex]);
 
-    // Navigation functions
+    // Navigation
     const goToQuestion = (index) => {
         if (index >= 0 && index < questions.length) {
             setCurrentIndex(index);
@@ -72,7 +72,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         }
     };
 
-    // --- Load test data ---
+    // Load test data
     useEffect(() => {
         const loadTest = async () => {
             try {
@@ -81,72 +81,25 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                 });
                 setTestData(res.data);
                 setQuestions(res.data.questions || []);
-                setQuestions(prev => shuffleArray([...prev]));
                 setEncodingTimeLeft(res.data.settings?.encoding_time || 180);
                 setRecallTimeLeft(res.data.settings?.recall_time || 600);
                 setLoading(false);
-                // Enter fullscreen after load
                 enterFullscreen();
             } catch (err) {
                 console.error(err);
                 if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
-                    setIsLocked(true);
+                    setIsLocked?.(true); // if needed, but hook handles it
                     setLoading(false);
                 } else {
-                    // Show alert if API fails completely
                     Swal.fire('Error', 'Gagal memuat tes.', 'error');
                     onFinish();
                 }
             }
         };
         loadTest();
-    }, [token, assignmentId, onFinish]);
+    }, [token, assignmentId, enterFullscreen, onFinish]);
 
-    // --- Fullscreen change listener ---
-    useEffect(() => {
-        const handleFullscreenChange = () => {
-            const isCurrentlyFullscreen = document.fullscreenElement !== null;
-
-            // Only warn if we aren't locked, loading, or just started
-            if (!isCurrentlyFullscreen && !isLocked && !loading && testData) {
-                const newCount = exitCount + 1;
-                setExitCount(newCount);
-
-                // Log the exit
-                axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/exit-log`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                }).catch(err => console.error("Failed to log exit", err));
-
-                if (newCount >= 3) {
-                    setIsLocked(true);
-                    axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/lock`, {}, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }).catch(err => console.error(err));
-                    Swal.fire({
-                        title: 'Test Locked',
-                        text: 'You have exited fullscreen too many times.',
-                        icon: 'error',
-                        allowOutsideClick: false
-                    });
-                } else {
-                    setIsFullscreen(false);
-                    Swal.fire({
-                        title: `Warning ${newCount}/3`,
-                        text: 'Please return to fullscreen immediately!',
-                        icon: 'warning',
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
-                }
-            } else if (isCurrentlyFullscreen) {
-                setIsFullscreen(true);
-            }
-        };
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, [exitCount, isLocked, loading, testData, assignmentId, token]);
-
-    // --- Prevent context menu and dev tools ---
+    // Prevent context menu and dev tools (keep inline for now)
     useEffect(() => {
         const handleContextMenu = (e) => e.preventDefault();
         const handleKeyDown = (e) => {
@@ -164,7 +117,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         };
     }, []);
 
-    // --- Encoding timer ---
+    // Encoding timer
     useEffect(() => {
         if (phase !== 'encoding' || encodingTimeLeft <= 0 || isLocked) return;
         const timer = setInterval(() => {
@@ -180,14 +133,13 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         return () => clearInterval(timer);
     }, [phase, encodingTimeLeft, isLocked]);
 
-    // --- Recall timer ---
+    // Recall timer
     useEffect(() => {
         if (phase !== 'recall' || recallTimeLeft <= 0 || isLocked) return;
         const timer = setInterval(() => {
             setRecallTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    // Auto-submit when time runs out
                     handleSubmit(true);
                     return 0;
                 }
@@ -240,13 +192,13 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         return maxLength;
     };
 
-    // --- Locked screen ---
+    // Locked screen
     if (isLocked) {
         return (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
                 <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
                 <p className="mb-2">You have exited fullscreen too many times.</p>
-                <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">
+                <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
                     Back to Dashboard
                 </button>
             </div>
@@ -275,53 +227,47 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                     </div>
                 </div>
 
-                {/* Encoding Phase Table */}
                 <div className="flex-1 p-8 overflow-auto pb-24 bg-gray-50">
                     <div className="max-w-6xl mx-auto">
                         <h2 className="text-2xl font-bold mb-8 text-center uppercase tracking-widest">Tabel Hafalan</h2>
-
                         {tableData ? (
-                            /* Grid Layout: Displays tables side-by-side on large screens */
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-center">
-                                {Object.entries(tableData).map(([category, entries], catIdx) => (
-                                    <div key={catIdx} className="flex justify-center">
-                                        <table className="border-2 border-black border-collapse w-full max-w-[200px] bg-white shadow-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th
-                                                        colSpan={2}
-                                                        className="border-2 border-black px-2 py-1 text-center font-black text-lg uppercase bg-white"
-                                                    >
-                                                        {category}
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {entries.map((entry, entryIdx) => {
-                                                    const lastSpace = entry.lastIndexOf(' ');
-                                                    const name = lastSpace !== -1 ? entry.substring(0, lastSpace).trim() : entry;
-                                                    const code = lastSpace !== -1 ? entry.substring(lastSpace + 1).trim() : '';
-
-                                                    return (
-                                                        <tr key={entryIdx}>
-                                                            <td className="border-2 border-black px-3 py-1 text-center font-bold text-md uppercase w-1/2">
-                                                                {name}
-                                                            </td>
-                                                            <td className="border-2 border-black px-3 py-1 text-center font-bold text-md uppercase w-1/2">
-                                                                {code}
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ))}
+                                {Object.entries(tableData).map(([category, entries], catIdx) => {
+                                    return (
+                                        <div key={catIdx} className="flex justify-center">
+                                            <table className="border-2 border-black border-collapse w-full max-w-[200px] bg-white shadow-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th colSpan={2} className="border-2 border-black px-2 py-1 text-center font-black text-lg uppercase bg-white">
+                                                            {category}
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {entries.map((entry, entryIdx) => {
+                                                        const lastSpace = entry.lastIndexOf(' ');
+                                                        const name = lastSpace !== -1 ? entry.substring(0, lastSpace).trim() : entry;
+                                                        const code = lastSpace !== -1 ? entry.substring(lastSpace + 1).trim() : '';
+                                                        return (
+                                                            <tr key={entryIdx}>
+                                                                <td className="border-2 border-black px-3 py-1 text-center font-bold text-md uppercase w-1/2">
+                                                                    {name}
+                                                                </td>
+                                                                <td className="border-2 border-black px-3 py-1 text-center font-bold text-md uppercase w-1/2">
+                                                                    {code}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <p className="text-center text-gray-500">No table data available.</p>
                         )}
-
                         <div className="mt-12 p-4 bg-white rounded-lg border border-gray-200 shadow-sm max-w-2xl mx-auto">
                             <p className="text-center text-gray-700 font-medium">
                                 Hafalkan tabel di atas. Anda akan diberikan <span className="text-blue-600 font-bold">{questions.length}</span> pertanyaan setelah waktu habis.
@@ -330,9 +276,9 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                     </div>
                 </div>
 
-                {/* Fullscreen overlay warning */}
+                {/* Fullscreen overlay */}
                 {!isFullscreen && !isLocked && (
-                    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white pointer-events-auto">
+                    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
                         <h2 className="text-2xl font-bold mb-4">Paused</h2>
                         <p>Please return to fullscreen mode.</p>
                         <button
@@ -347,174 +293,180 @@ function MemoryTest({ token, assignmentId, onFinish }) {
         );
     }
 
-    // Recall Phase – Refined without Flagging
-    if (phase === 'recall') {
-        const currentQ = questions[currentIndex] || {};
-        const answeredCount = Object.keys(answers).length;
-        const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+    // --- Recall Phase ---
+    const currentQ = questions[currentIndex] || {};
+    const answeredCount = Object.keys(answers).length;
+    const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-        return (
-            <div className="min-h-screen bg-gray-100 flex flex-col">
-                {/* Header */}
-                <div className="bg-white shadow px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-                    <h1 className="font-semibold text-lg">Memory Test - Fase Menjawab</h1>
-                    <div className="bg-red-100 text-red-700 px-3 py-1 rounded-md font-mono text-lg">
-                        {formatTime(recallTimeLeft)}
-                    </div>
+    return (
+        <div className="min-h-screen bg-gray-100 flex flex-col">
+            {/* Header */}
+            <div className="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-10">
+                <h1 className="font-bold text-lg">Memory Test - Fase Menjawab</h1>
+                <div className="text-xl font-mono bg-red-100 text-red-700 px-3 py-1 rounded">
+                    {formatTime(recallTimeLeft)}
                 </div>
+            </div>
 
-                {/* Question Navigation – wrap‑able grid (removed flag logic) */}
-                <div className="bg-white border-b px-4 py-3">
-                    <div className="flex flex-wrap gap-1.5 justify-center">
-                        {questions.map((q, idx) => {
-                            let btnClass = 'w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors ';
-
-                            if (answers[q.id]) {
-                                btnClass += 'bg-green-500 text-white hover:bg-green-600';
-                            } else {
-                                btnClass += 'bg-gray-200 text-gray-700 hover:bg-gray-300';
-                            }
-
-                            if (idx === currentIndex) {
-                                btnClass += ' ring-2 ring-blue-500 ring-offset-2';
-                            }
-                            return (
-                                <button key={q.id} onClick={() => goToQuestion(idx)} className={btnClass}>
-                                    {idx + 1}
-                                </button>
-                            );
-                        })}
-                    </div>
+            {/* Question Navigation Grid */}
+            <div className="bg-white border-b px-4 py-3">
+                <div className="flex flex-wrap gap-1.5 justify-center">
+                    {questions.map((q, idx) => {
+                        let btnClass = 'w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors ';
+                        if (answers[q.id]) {
+                            btnClass += 'bg-green-500 text-white hover:bg-green-600';
+                        } else if (flagged.has(q.id)) {
+                            btnClass += 'bg-yellow-400 text-white hover:bg-yellow-500';
+                        } else {
+                            btnClass += 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+                        }
+                        if (idx === currentIndex) {
+                            btnClass += ' ring-2 ring-blue-500 ring-offset-2';
+                        }
+                        return (
+                            <button key={q.id} onClick={() => goToQuestion(idx)} className={btnClass}>
+                                {idx + 1}
+                            </button>
+                        );
+                    })}
                 </div>
+            </div>
 
-                {/* Progress Bar */}
-                <div className="w-full bg-gray-200 h-2">
-                    <div className="bg-blue-500 h-2 transition-all duration-300" style={{ width: `${progress}%` }}></div>
-                </div>
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 h-2">
+                <div className="bg-blue-500 h-2 transition-all duration-300" style={{ width: `${progress}%` }}></div>
+            </div>
 
-                {/* Main Question Area */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                    <div className="max-w-3xl mx-auto">
-                        <div className="bg-white rounded-xl shadow-md p-6 md:p-8">
-                            {/* Question Header */}
-                            <div className="flex justify-between items-start mb-6">
-                                <span className="text-sm text-gray-500">
-                                    Pertanyaan {currentIndex + 1} dari {questions.length}
-                                </span>
-                            </div>
+            {/* Main Question Area */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                <div className="max-w-3xl mx-auto">
+                    <div className="bg-white rounded-xl shadow-md p-6 md:p-8">
+                        {/* Question Header */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                            <span className="text-sm text-gray-500">
+                                Pertanyaan {currentIndex + 1} dari {questions.length}
+                            </span>
+                            <button
+                                onClick={toggleFlag}
+                                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${flagged.has(currentQ.id)
+                                        ? 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {flagged.has(currentQ.id) ? '⛳ Ditinggalkan' : 'Tandai'}
+                            </button>
+                        </div>
 
-                            {/* Question Text */}
-                            <h2 className="text-xl font-medium text-gray-800 mb-8 leading-relaxed">
-                                {currentQ.content}
-                            </h2>
+                        {/* Question Text */}
+                        <h2 className="text-xl font-medium text-gray-800 mb-8 leading-relaxed">
+                            {currentQ.content}
+                        </h2>
 
-                            {/* Options */}
-                            <div className="space-y-3">
-                                {currentQ.options?.map(opt => {
-                                    const isSelected = answers[currentQ.id] === opt.id;
-                                    return (
-                                        <button
-                                            key={opt.id}
-                                            onClick={() => handleSelect(opt.id)}
-                                            className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
+                        {/* Options */}
+                        <div className="space-y-3">
+                            {currentQ.options?.map(opt => {
+                                const isSelected = answers[currentQ.id] === opt.id;
+                                return (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => handleSelect(opt.id)}
+                                        className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
                                                 ? 'bg-blue-500 text-white border-blue-600'
                                                 : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                                }`}
-                                        >
-                                            <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
-                                                {opt.label}.
-                                            </span>
-                                            <span>{opt.content}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                                            }`}
+                                    >
+                                        <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
+                                            {opt.label}.
+                                        </span>
+                                        <span>{opt.content}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Footer Navigation */}
-                <div className="bg-white border-t px-4 py-3 flex items-center justify-between">
-                    <button
-                        onClick={goPrev}
-                        disabled={currentIndex === 0}
-                        className={`px-4 py-2 rounded-md font-medium transition ${currentIndex === 0
+            {/* Footer Navigation */}
+            <div className="bg-white border-t px-4 py-3 flex items-center justify-between">
+                <button
+                    onClick={goPrev}
+                    disabled={currentIndex === 0}
+                    className={`px-4 py-2 rounded-md font-medium transition ${currentIndex === 0
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                        }`}
+                >
+                    ← Sebelumnya
+                </button>
+                <span className="text-sm text-gray-600 font-mono">
+                    {answeredCount} / {questions.length}
+                </span>
+                {currentIndex === questions.length - 1 ? (
+                    <button
+                        onClick={() => setShowConfirm(true)}
+                        className="px-5 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 shadow-sm transition"
                     >
-                        ← Sebelumnya
+                        Selesai
                     </button>
-                    <span className="text-sm text-gray-600 font-mono">
-                        {answeredCount} / {questions.length}
-                    </span>
-                    {currentIndex === questions.length - 1 ? (
-                        <button
-                            onClick={() => setShowConfirm(true)}
-                            className="px-5 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 shadow-sm transition"
-                        >
-                            Selesai
-                        </button>
-                    ) : (
-                        <button
-                            onClick={goNext}
-                            className="px-5 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 shadow-sm transition"
-                        >
-                            Selanjutnya →
-                        </button>
-                    )}
-                </div>
-
-                {/* Confirmation Modal */}
-                {showConfirm && (
-                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
-                        <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full transform transition-all scale-100">
-                            <h3 className="text-2xl font-bold mb-4 text-gray-800">Selesaikan Tes?</h3>
-                            <p className="mb-6 text-gray-600">Anda telah menjawab {Object.keys(answers).length} dari {questions.length} pertanyaan.</p>
-                            <div className="flex gap-4 justify-center">
-                                <button
-                                    onClick={() => setShowConfirm(false)}
-                                    className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowConfirm(false);
-                                        handleSubmit();
-                                    }}
-                                    disabled={isSubmitting}
-                                    className={`px-5 py-2.5 text-white rounded-lg shadow-sm transition ${isSubmitting
-                                        ? 'bg-blue-400 cursor-wait'
-                                        : 'bg-green-500 hover:bg-green-600'
-                                        }`}
-                                >
-                                    {isSubmitting ? 'Mengirim...' : 'Kirim Jawaban'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Fullscreen overlay */}
-                {!isFullscreen && !isLocked && (
-                    <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white pointer-events-auto">
-                        <h2 className="text-2xl font-bold mb-4">Paused</h2>
-                        <p>Please return to fullscreen mode.</p>
-                        <button
-                            onClick={() => enterFullscreen()}
-                            className="mt-4 px-6 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600 transition"
-                        >
-                            Return to Fullscreen
-                        </button>
-                    </div>
+                ) : (
+                    <button
+                        onClick={goNext}
+                        className="px-5 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 shadow-sm transition"
+                    >
+                        Selanjutnya →
+                    </button>
                 )}
             </div>
-        );
-    }
 
-    // Fallback
-    return <div>Loading...</div>;
+            {/* Confirmation Modal */}
+            {showConfirm && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+                        <h3 className="text-xl font-bold mb-3">Selesaikan Tes?</h3>
+                        <p className="text-gray-600 mb-6">
+                            Anda telah menjawab {answeredCount} dari {questions.length} pertanyaan.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowConfirm(false)}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowConfirm(false);
+                                    handleSubmit();
+                                }}
+                                disabled={isSubmitting}
+                                className={`px-5 py-2 text-white rounded-lg shadow transition ${isSubmitting
+                                        ? 'bg-blue-400 cursor-wait'
+                                        : 'bg-green-500 hover:bg-green-600'
+                                    }`}
+                            >
+                                {isSubmitting ? 'Mengirim...' : 'Kirim'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Fullscreen Overlay */}
+            {!isFullscreen && !isLocked && (
+                <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 text-white">
+                    <h2 className="text-2xl font-bold mb-4">Paused</h2>
+                    <p className="mb-6 text-gray-200">Please return to fullscreen mode.</p>
+                    <button
+                        onClick={() => enterFullscreen()}
+                        className="px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-semibold transition"
+                    >
+                        Return to Fullscreen
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default MemoryTest;
