@@ -1,5 +1,5 @@
 // client/src/hooks/useFullscreenLock.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
@@ -8,12 +8,13 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
     const [isLocked, setIsLocked] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(true);
 
-    const enterFullscreen = () => {
+    // ✅ Stable enterFullscreen function (memoized)
+    const enterFullscreen = useCallback(() => {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-    };
+    }, []); // No dependencies → never changes
 
     useEffect(() => {
         const handleFullscreenChange = () => {
@@ -55,7 +56,7 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, [exitCount, isLocked, assignmentId, token, onLock]);
+    }, [exitCount, isLocked, assignmentId, token, onLock]); // Dependencies are stable
 
     return { isLocked, isFullscreen, enterFullscreen };
 }

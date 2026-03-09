@@ -1,5 +1,5 @@
 // client/src/components/DISCTest.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
@@ -12,53 +12,32 @@ function DISCTest({ token, assignmentId, onFinish }) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Refs to hold latest values for stable callbacks
+    const answersRef = useRef(answers);
+    const testDataRef = useRef(testData);
+    const timeLeftRef = useRef(timeLeft);
+
+    useEffect(() => {
+        answersRef.current = answers;
+    }, [answers]);
+
+    useEffect(() => {
+        testDataRef.current = testData;
+    }, [testData]);
+
+    useEffect(() => {
+        timeLeftRef.current = timeLeft;
+    }, [timeLeft]);
+
     const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
         assignmentId,
         token,
         onLock: () => setLoading(false)
     });
 
-    // Load test data
-    useEffect(() => {
-        const loadTest = async () => {
-            try {
-                const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setTestData(res.data);
-                if (res.data.time_limit === 0) setTimeLeft(null);
-                else setTimeLeft(res.data.time_limit);
-                setLoading(false);
-                enterFullscreen();
-            } catch (err) {
-                console.error(err);
-                if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
-                    // already locked
-                }
-                onFinish();
-            }
-        };
-        loadTest();
-    }, [assignmentId, token, enterFullscreen, onFinish]);
+    const timerRef = useRef(null);
 
-    // Timer effect
-    useEffect(() => {
-        if (timeLeft === null || loading || isLocked) return;
-        if (timeLeft > 0) {
-            const timerId = setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        clearInterval(timerId);
-                        handleSubmit(true);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-            return () => clearInterval(timerId);
-        }
-    }, [timeLeft, loading, isLocked]);
-
+    // ----- DISC-specific helpers -----
     const handleDiscRadio = (questionId, optionId, type) => {
         setAnswers(prev => {
             const currentQ = prev[questionId] || { most: null, least: null };
@@ -90,24 +69,6 @@ function DISCTest({ token, assignmentId, onFinish }) {
         return payload;
     };
 
-    const handleSubmit = async (isTimeout = false) => {
-        setIsSubmitting(true);
-        const timeTaken = testData.time_limit === 0 ? 0 : testData.time_limit - timeLeft;
-        try {
-            const finalAnswers = formatDiscPayload(answers);
-            await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`,
-                { answers: finalAnswers, time_taken: timeTaken },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (isTimeout) Swal.fire("Time is up!", "Your test has been submitted.", "info");
-            onFinish();
-        } catch (err) {
-            console.error(err);
-            setIsSubmitting(false);
-            Swal.fire("Error", "Failed to submit test.", "error");
-        }
-    };
-
     const checkAllAnswered = () => {
         let missing = [];
         testData?.questions.forEach((q, idx) => {
@@ -126,12 +87,77 @@ function DISCTest({ token, assignmentId, onFinish }) {
         return true;
     };
 
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    };
+    // ----- Stable submission handler (uses refs) -----
+    const handleSubmit = useCallback(async (isTimeout = false) => {
+        setIsSubmitting(true);
+        const currentTestData = testDataRef.current;
+        const currentAnswers = answersRef.current;
+        const currentTimeLeft = timeLeftRef.current;
 
+        const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);
+        try {
+            const finalAnswers = formatDiscPayload(currentAnswers);
+            await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`,
+                { answers: finalAnswers, time_taken: timeTaken },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (isTimeout) Swal.fire("Time is up!", "Your test has been submitted.", "info");
+            onFinish();
+        } catch (err) {
+            console.error(err);
+            setIsSubmitting(false);
+            Swal.fire("Error", "Failed to submit test.", "error");
+        }
+    }, [assignmentId, token, onFinish]); // Only stable props
+
+    // ----- Timer effect (depends only on stable handleSubmit) -----
+    useEffect(() => {
+        if (loading || isLocked || timeLeft === null) return;
+
+        timerRef.current = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                    handleSubmit(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, [loading, isLocked, handleSubmit]); // handleSubmit is now stable
+
+    // ----- Load test data -----
+    useEffect(() => {
+        const loadTest = async () => {
+            try {
+                const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setTestData(res.data);
+                if (res.data.time_limit === 0) setTimeLeft(null);
+                else setTimeLeft(res.data.time_limit);
+                setLoading(false);
+                enterFullscreen();
+            } catch (err) {
+                console.error(err);
+                if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
+                    // already locked, just finish
+                }
+                onFinish();
+            }
+        };
+        loadTest();
+    }, [assignmentId, token, enterFullscreen, onFinish]);
+
+    // ----- Render locked screen -----
     if (isLocked) {
         return (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
@@ -146,6 +172,13 @@ function DISCTest({ token, assignmentId, onFinish }) {
 
     if (loading) return <div className="p-8 text-center">Loading Test...</div>;
 
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    // ----- Render DISC table -----
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Header with timer */}
@@ -156,7 +189,7 @@ function DISCTest({ token, assignmentId, onFinish }) {
                 </div>
             </div>
 
-            {/* DISC Table (same as before) */}
+            {/* DISC Table */}
             <div className="flex-1 p-8 overflow-auto">
                 <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6 mx-auto">
                     <h2 className="text-xl font-bold mb-4 text-center">
