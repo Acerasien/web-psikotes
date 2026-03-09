@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
-import * as XLSX from 'xlsx';  // for Excel parsing
-import Papa from 'papaparse';   // keep for CSV
+import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import Swal from 'sweetalert2';
 
 function BulkUploadModal({ token, onClose, onSuccess }) {
@@ -14,16 +14,19 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
     const [results, setResults] = useState(null);
     const fileInputRef = useRef();
 
+    // Prevent body scrolling while modal is open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = 'auto'; };
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
     }, []);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (!selectedFile) return;
         setFile(selectedFile);
-        setPreviewData([]); // clear old preview
+        setPreviewData([]); // Clear old preview
 
         const fileExt = selectedFile.name.split('.').pop().toLowerCase();
 
@@ -43,14 +46,14 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheet = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheet];
+                    // Convert sheet to array of arrays, preserving empty cells
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-                    // jsonData is an array of arrays; first row is headers
                     if (jsonData.length === 0) {
                         Swal.fire('Error', 'Excel file is empty.', 'error');
                         return;
                     }
                     const headers = jsonData[0];
-                    // take next 5 rows for preview
+                    // Take up to 5 data rows for preview
                     const previewRows = jsonData.slice(1, 6).map(row => {
                         const obj = {};
                         headers.forEach((header, idx) => {
@@ -65,61 +68,76 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
             };
             reader.readAsArrayBuffer(selectedFile);
         } else {
-            Swal.fire('Error', 'Unsupported file type.', 'error');
+            Swal.fire('Error', 'Unsupported file type. Please upload CSV or Excel.', 'error');
+            setFile(null);
         }
     };
 
     const handleUpload = async () => {
-        if (!file) return Swal.fire('Error', 'Please select a file.', 'error');
+        if (!file) {
+            Swal.fire('Error', 'Please select a file.', 'error');
+            return;
+        }
+
         setUploading(true);
         const formData = new FormData();
         formData.append('file', file);
         formData.append('assign_all', assignAll.toString());
+
         try {
             const res = await axios.post('http://127.0.0.1:8000/admin/users/bulk', formData, {
-                headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
+                }
             });
             setResults(res.data);
-            if (res.data.failed === 0) Swal.fire('Success', `${res.data.success} participants created successfully.`, 'success');
-            else Swal.fire('Partial Success', `${res.data.success} created, ${res.data.failed} failed.`, 'warning');
-            onSuccess();
+            if (res.data.failed === 0) {
+                Swal.fire('Success', `${res.data.success} participants created successfully.`, 'success');
+            } else {
+                Swal.fire('Partial Success', `${res.data.success} created, ${res.data.failed} failed.`, 'warning');
+            }
+            onSuccess(); // Let parent know to refresh
         } catch (err) {
-            Swal.fire('Error', err.response?.data?.detail || 'Upload failed.', 'error');
+            console.error(err);
+            const detail = err.response?.data?.detail || 'Upload failed.';
+            Swal.fire('Error', detail, 'error');
         } finally {
             setUploading(false);
         }
     };
 
     const downloadTemplate = () => {
-        // Create a sample workbook
-        const wb = XLSX.utils.book_new();
+        // Create sample data
         const wsData = [
             ['username', 'password', 'full_name', 'age', 'gender', 'education', 'department', 'position'],
             ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'IT', 'Manager'],
             ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'HR', 'Staff']
         ];
+        const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(wsData);
         XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
         XLSX.writeFile(wb, 'participant_template.xlsx');
     };
 
     const modalContent = (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] pt-10 px-4 pb-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-fade-in-up">
-
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b">
                     <h2 className="text-2xl font-bold text-gray-800">Bulk Upload Participants</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
-                {/* Content */}
+                {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto px-6 py-4">
                     {!results ? (
                         <>
-                            <p className="text-sm text-gray-600 mb-4">Format yang diharapkan (CSV atau Excel):</p>
+                            <p className="text-sm text-gray-600 mb-4">Upload file CSV atau Excel dengan kolom berikut:</p>
                             <div className="mb-6 overflow-x-auto">
                                 <table className="min-w-full border-collapse border border-gray-300 text-sm">
                                     <thead>
@@ -161,12 +179,22 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
                             </div>
 
                             <div className="flex justify-between items-center mb-6">
-                                <button onClick={downloadTemplate} className="text-blue-500 text-sm font-medium hover:underline">
+                                <button
+                                    onClick={downloadTemplate}
+                                    className="text-blue-500 hover:text-blue-700 text-sm font-medium inline-flex items-center"
+                                >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
                                     Download template (Excel)
                                 </button>
                             </div>
 
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6 bg-gray-50 cursor-pointer hover:bg-gray-100" onClick={() => fileInputRef.current.click()}>
+                            {/* File Drop Area */}
+                            <div
+                                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6 bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
+                                onClick={() => fileInputRef.current.click()}
+                            >
                                 <input
                                     type="file"
                                     accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
@@ -174,21 +202,36 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
                                     ref={fileInputRef}
                                     className="hidden"
                                 />
-                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                                <p className="mt-2 text-sm text-gray-600">{file ? file.name : 'Click to choose CSV or Excel'}</p>
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                <p className="mt-2 text-sm text-gray-600">
+                                    {file ? file.name : 'Klik untuk pilih file CSV atau Excel'}
+                                </p>
                             </div>
 
+                            {/* Preview */}
                             {previewData.length > 0 && (
                                 <div className="mb-6">
                                     <h3 className="font-semibold mb-2">Preview (5 baris pertama):</h3>
                                     <div className="overflow-x-auto border rounded">
                                         <table className="min-w-full divide-y divide-gray-200 text-sm">
                                             <thead className="bg-gray-50">
-                                                <tr>{Object.keys(previewData[0] || {}).map(k => <th key={k} className="px-3 py-2 text-left font-medium">{k}</th>)}</tr>
+                                                <tr>
+                                                    {Object.keys(previewData[0] || {}).map(key => (
+                                                        <th key={key} className="px-3 py-2 text-left font-medium text-gray-700">
+                                                            {key}
+                                                        </th>
+                                                    ))}
+                                                </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
                                                 {previewData.map((row, idx) => (
-                                                    <tr key={idx}>{Object.values(row).map((v, i) => <td key={i} className="px-3 py-2">{v}</td>)}</tr>
+                                                    <tr key={idx}>
+                                                        {Object.values(row).map((val, i) => (
+                                                            <td key={i} className="px-3 py-2 text-gray-600">{val}</td>
+                                                        ))}
+                                                    </tr>
                                                 ))}
                                             </tbody>
                                         </table>
@@ -196,22 +239,36 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
                                 </div>
                             )}
 
-                            <label className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                                <input type="checkbox" checked={assignAll} onChange={(e) => setAssignAll(e.target.checked)} className="form-checkbox h-5 w-5 text-blue-600" />
+                            {/* Assign all checkbox */}
+                            <label className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                                <input
+                                    type="checkbox"
+                                    checked={assignAll}
+                                    onChange={(e) => setAssignAll(e.target.checked)}
+                                    className="form-checkbox h-5 w-5 text-blue-600 rounded"
+                                />
                                 <span className="text-sm text-gray-700">Assign all tests to each new participant</span>
                             </label>
                         </>
                     ) : (
+                        // Results display
                         <div>
-                            <h3 className="font-bold text-lg mb-2">Results</h3>
-                            <p className="text-green-600 font-medium">Success: {results.success}</p>
-                            <p className="text-red-600 font-medium">Failed: {results.failed}</p>
+                            <h3 className="font-bold text-lg mb-2">Hasil Upload</h3>
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                <p>Total baris: {results.total}</p>
+                                <p className="text-green-600 font-medium">Berhasil: {results.success}</p>
+                                <p className="text-red-600 font-medium">Gagal: {results.failed}</p>
+                            </div>
                             {results.errors?.length > 0 && (
                                 <div className="mt-4">
-                                    <h4 className="font-semibold mb-2">Errors:</h4>
-                                    <ul className="list-disc list-inside text-sm text-red-600">
-                                        {results.errors.map((err, idx) => <li key={idx}>{err}</li>)}
-                                    </ul>
+                                    <h4 className="font-semibold mb-2">Kesalahan:</h4>
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-40 overflow-y-auto">
+                                        <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+                                            {results.errors.map((err, idx) => (
+                                                <li key={idx}>{err}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -219,22 +276,46 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+                <div className="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3 rounded-b-xl">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                    >
+                        Cancel
+                    </button>
                     {!results ? (
-                        <button onClick={handleUpload} disabled={uploading || !file} className={`px-4 py-2 text-white rounded ${uploading || !file ? 'bg-blue-300' : 'bg-blue-500 hover:bg-blue-600'}`}>
+                        <button
+                            onClick={handleUpload}
+                            disabled={uploading || !file}
+                            className={`px-4 py-2 text-white rounded-lg transition ${uploading || !file
+                                    ? 'bg-blue-300 cursor-not-allowed'
+                                    : 'bg-blue-500 hover:bg-blue-600'
+                                }`}
+                        >
                             {uploading ? 'Uploading...' : 'Upload'}
                         </button>
                     ) : (
-                        <button onClick={() => { setResults(null); onSuccess(); onClose(); }} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Done</button>
+                        <button
+                            onClick={() => {
+                                setResults(null);
+                                setFile(null);
+                                setPreviewData([]);
+                                onSuccess();
+                                onClose();
+                            }}
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                        >
+                            Done
+                        </button>
                     )}
                 </div>
             </div>
         </div>
     );
 
-    if (typeof document !== "undefined" && document.getElementById("root")) {
-        return ReactDOM.createPortal(modalContent, document.getElementById("root"));
+    // Render via portal to avoid layout issues
+    if (typeof document !== 'undefined' && document.getElementById('root')) {
+        return ReactDOM.createPortal(modalContent, document.getElementById('root'));
     }
     return modalContent;
 }

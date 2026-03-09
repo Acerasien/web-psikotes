@@ -730,17 +730,14 @@ def bulk_create_users(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    # Check file extension
     filename = file.filename.lower()
     if not (filename.endswith('.csv') or filename.endswith('.xlsx') or filename.endswith('.xls')):
         raise HTTPException(status_code=400, detail="Only CSV or Excel files are allowed")
 
-    # Read file content
     contents = file.file.read()
-    rows = []
+    rows = []  # will be list of dicts
 
     if filename.endswith('.csv'):
-        # Process CSV
         import csv
         import io
         decoded = contents.decode('utf-8-sig')
@@ -748,32 +745,16 @@ def bulk_create_users(
         rows = list(csv_reader)
 
     elif filename.endswith('.xlsx'):
-        # Process .xlsx
         from openpyxl import load_workbook
         from io import BytesIO
         wb = load_workbook(filename=BytesIO(contents), read_only=True)
         sheet = wb.active
-        # Get headers from first row
-        headers = [cell.value for cell in next(sheet.iter_rows(values_only=True))]
-        # Get data rows
-        for row in sheet.iter_rows(values_only=True):
-            # skip header row (already consumed)
-            if sheet.sheet_state == 'visible' and sheet._current_row == 1:  # hack? Better: we already used next()
-                continue
-            # Build dict
-            row_dict = {}
-            for idx, val in enumerate(row):
-                if idx < len(headers):
-                    row_dict[headers[idx]] = str(val) if val is not None else ''
-            rows.append(row_dict)
-        # The above loop includes the first row again because we used next()? Let's refactor:
-        # Reset: better to read all rows and then skip first.
-        wb = load_workbook(filename=BytesIO(contents), read_only=True)
-        sheet = wb.active
-        data = list(sheet.iter_rows(values_only=True))
-        headers = [str(cell) if cell else '' for cell in data[0]]
+        all_rows = list(sheet.iter_rows(values_only=True))
+        if not all_rows:
+            raise HTTPException(status_code=400, detail="Excel file is empty")
+        headers = [str(cell) if cell is not None else '' for cell in all_rows[0]]
         rows = []
-        for row in data[1:]:
+        for row in all_rows[1:]:
             row_dict = {}
             for idx, val in enumerate(row):
                 if idx < len(headers):
@@ -781,22 +762,19 @@ def bulk_create_users(
             rows.append(row_dict)
 
     elif filename.endswith('.xls'):
-        # Process old .xls
         import xlrd
         from io import BytesIO
         book = xlrd.open_workbook(file_contents=contents)
         sheet = book.sheet_by_index(0)
-        headers = [str(cell.value) for cell in sheet.row(0)]
+        headers = [str(sheet.cell_value(0, col)) for col in range(sheet.ncols)]
         rows = []
         for row_idx in range(1, sheet.nrows):
-            row = sheet.row(row_idx)
             row_dict = {}
-            for idx, cell in enumerate(row):
-                if idx < len(headers):
-                    row_dict[headers[idx]] = str(cell.value) if cell.value else ''
+            for col_idx in range(sheet.ncols):
+                val = sheet.cell_value(row_idx, col_idx)
+                row_dict[headers[col_idx]] = str(val) if val else ''
             rows.append(row_dict)
 
-    # Now validate and create users (same as before)
     required_fields = ['username', 'password', 'full_name']
     results = {
         "total": len(rows),
@@ -806,8 +784,7 @@ def bulk_create_users(
     }
     created_users = []
 
-    for row_num, row in enumerate(rows, start=2):  # start=2 because row 1 is header
-        # Validate required fields
+    for row_num, row in enumerate(rows, start=2):
         missing = [f for f in required_fields if not row.get(f)]
         if missing:
             results["failed"] += 1
@@ -818,13 +795,11 @@ def bulk_create_users(
         password = row['password'].strip()
         full_name = row['full_name'].strip()
 
-        # Check duplicate username
         if db.query(User).filter(User.username == username).first():
             results["failed"] += 1
             results["errors"].append(f"Row {row_num}: Username '{username}' already exists")
             continue
 
-        # Prepare user data
         user_data = {
             'username': username,
             'full_name': full_name,
@@ -859,7 +834,6 @@ def bulk_create_users(
         created_users.append(new_user)
         results["success"] += 1
 
-    # Assign all tests if requested
     if assign_all and created_users:
         all_tests = db.query(Test).all()
         for user in created_users:
