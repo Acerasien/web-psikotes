@@ -13,10 +13,15 @@ function SecurityDashboard({ token }) {
     const [lockedSearch, setLockedSearch] = useState('');
     const [logsSearch, setLogsSearch] = useState('');
 
-    // Sorting state for locked assignments
+    // Sorting state
     const [lockedSort, setLockedSort] = useState({ key: 'assigned_at', direction: 'desc' });
-    // Sorting state for exit logs
     const [logsSort, setLogsSort] = useState({ key: 'timestamp', direction: 'desc' });
+
+    // Pagination state
+    const [lockedPage, setLockedPage] = useState(1);
+    const [lockedPageSize, setLockedPageSize] = useState(10);
+    const [logsPage, setLogsPage] = useState(1);
+    const [logsPageSize, setLogsPageSize] = useState(10);
 
     const fetchLocked = async () => {
         try {
@@ -71,14 +76,14 @@ function SecurityDashboard({ token }) {
         }
     };
 
-    // --- Filtering functions ---
+    // --- Filtering ---
     const filterBySearch = (item, searchTerm) => {
         if (!searchTerm) return true;
         const name = (item.full_name || item.username || '').toLowerCase();
         return name.includes(searchTerm.toLowerCase());
     };
 
-    // --- Sorting functions ---
+    // --- Sorting ---
     const sortLocked = (a, b) => {
         const { key, direction } = lockedSort;
         let valA, valB;
@@ -128,6 +133,16 @@ function SecurityDashboard({ token }) {
         .filter(log => filterBySearch(log, logsSearch))
         .sort(sortLogs);
 
+    // Paginate
+    const paginatedLocked = filteredLocked.slice(
+        (lockedPage - 1) * lockedPageSize,
+        lockedPage * lockedPageSize
+    );
+    const paginatedLogs = filteredLogs.slice(
+        (logsPage - 1) * logsPageSize,
+        logsPage * logsPageSize
+    );
+
     const handleLockedSort = (key) => {
         setLockedSort(prev => ({
             key,
@@ -142,9 +157,64 @@ function SecurityDashboard({ token }) {
         }));
     };
 
+    // Reset page when search changes
+    useEffect(() => {
+        setLockedPage(1);
+    }, [lockedSearch]);
+
+    useEffect(() => {
+        setLogsPage(1);
+    }, [logsSearch]);
+
     if (loading) {
         return <div className="p-8 text-center">Loading security data...</div>;
     }
+
+    // Pagination component helper
+    const PaginationControls = ({ page, setPage, pageSize, setPageSize, totalItems }) => {
+        const totalPages = Math.ceil(totalItems / pageSize);
+        return (
+            <div className="px-4 py-3 bg-white border-t flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700">Rows per page:</span>
+                    <select
+                        value={pageSize}
+                        onChange={(e) => {
+                            setPageSize(Number(e.target.value));
+                            setPage(1);
+                        }}
+                        className="border rounded px-2 py-1 text-sm"
+                    >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                    </select>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="text-sm text-gray-700">
+                        Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalItems)} of {totalItems}
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage(p => Math.max(p - 1, 1))}
+                            disabled={page === 1}
+                            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                            disabled={page === totalPages}
+                            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-8">
@@ -154,7 +224,6 @@ function SecurityDashboard({ token }) {
                     <h3 className="text-lg leading-6 font-medium text-gray-900">Locked Assignments</h3>
                 </div>
 
-                {/* Search bar for locked assignments */}
                 <div className="p-4 bg-gray-50 border-b">
                     <input
                         type="text"
@@ -193,10 +262,10 @@ function SecurityDashboard({ token }) {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredLocked.length === 0 ? (
+                            {paginatedLocked.length === 0 ? (
                                 <tr><td colSpan="4" className="px-6 py-4 text-center text-gray-500">No locked assignments.</td></tr>
                             ) : (
-                                filteredLocked.map(a => (
+                                paginatedLocked.map(a => (
                                     <tr key={a.id}>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {a.full_name || a.username}
@@ -219,6 +288,15 @@ function SecurityDashboard({ token }) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination for locked assignments */}
+                <PaginationControls
+                    page={lockedPage}
+                    setPage={setLockedPage}
+                    pageSize={lockedPageSize}
+                    setPageSize={setLockedPageSize}
+                    totalItems={filteredLocked.length}
+                />
             </div>
 
             {/* Exit Logs Section */}
@@ -227,7 +305,6 @@ function SecurityDashboard({ token }) {
                     <h3 className="text-lg leading-6 font-medium text-gray-900">Exit Logs</h3>
                 </div>
 
-                {/* Search bar for exit logs */}
                 <div className="p-4 bg-gray-50 border-b">
                     <input
                         type="text"
@@ -263,10 +340,10 @@ function SecurityDashboard({ token }) {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredLogs.length === 0 ? (
+                            {paginatedLogs.length === 0 ? (
                                 <tr><td colSpan="3" className="px-6 py-4 text-center text-gray-500">No exit logs.</td></tr>
                             ) : (
-                                filteredLogs.map(log => (
+                                paginatedLogs.map(log => (
                                     <tr key={log.id}>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {log.full_name || log.username}
@@ -281,6 +358,15 @@ function SecurityDashboard({ token }) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination for exit logs */}
+                <PaginationControls
+                    page={logsPage}
+                    setPage={setLogsPage}
+                    pageSize={logsPageSize}
+                    setPageSize={setLogsPageSize}
+                    totalItems={filteredLogs.length}
+                />
             </div>
         </div>
     );

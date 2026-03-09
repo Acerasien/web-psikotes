@@ -1,0 +1,242 @@
+// client/src/components/BulkUploadModal.jsx
+import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import axios from 'axios';
+import * as XLSX from 'xlsx';  // for Excel parsing
+import Papa from 'papaparse';   // keep for CSV
+import Swal from 'sweetalert2';
+
+function BulkUploadModal({ token, onClose, onSuccess }) {
+    const [file, setFile] = useState(null);
+    const [previewData, setPreviewData] = useState([]);
+    const [assignAll, setAssignAll] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [results, setResults] = useState(null);
+    const fileInputRef = useRef();
+
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = 'auto'; };
+    }, []);
+
+    const handleFileChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (!selectedFile) return;
+        setFile(selectedFile);
+        setPreviewData([]); // clear old preview
+
+        const fileExt = selectedFile.name.split('.').pop().toLowerCase();
+
+        if (fileExt === 'csv') {
+            Papa.parse(selectedFile, {
+                header: true,
+                skipEmptyLines: true,
+                preview: 5,
+                complete: (result) => setPreviewData(result.data),
+                error: (err) => Swal.fire('Error', 'Failed to parse CSV: ' + err.message, 'error')
+            });
+        } else if (['xlsx', 'xls'].includes(fileExt)) {
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                try {
+                    const data = new Uint8Array(loadEvent.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheet];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                    // jsonData is an array of arrays; first row is headers
+                    if (jsonData.length === 0) {
+                        Swal.fire('Error', 'Excel file is empty.', 'error');
+                        return;
+                    }
+                    const headers = jsonData[0];
+                    // take next 5 rows for preview
+                    const previewRows = jsonData.slice(1, 6).map(row => {
+                        const obj = {};
+                        headers.forEach((header, idx) => {
+                            obj[header] = row[idx] !== undefined ? String(row[idx]) : '';
+                        });
+                        return obj;
+                    });
+                    setPreviewData(previewRows);
+                } catch (err) {
+                    Swal.fire('Error', 'Failed to parse Excel file: ' + err.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(selectedFile);
+        } else {
+            Swal.fire('Error', 'Unsupported file type.', 'error');
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) return Swal.fire('Error', 'Please select a file.', 'error');
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('assign_all', assignAll.toString());
+        try {
+            const res = await axios.post('http://127.0.0.1:8000/admin/users/bulk', formData, {
+                headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+            });
+            setResults(res.data);
+            if (res.data.failed === 0) Swal.fire('Success', `${res.data.success} participants created successfully.`, 'success');
+            else Swal.fire('Partial Success', `${res.data.success} created, ${res.data.failed} failed.`, 'warning');
+            onSuccess();
+        } catch (err) {
+            Swal.fire('Error', err.response?.data?.detail || 'Upload failed.', 'error');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const downloadTemplate = () => {
+        // Create a sample workbook
+        const wb = XLSX.utils.book_new();
+        const wsData = [
+            ['username', 'password', 'full_name', 'age', 'gender', 'education', 'department', 'position'],
+            ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'IT', 'Manager'],
+            ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'HR', 'Staff']
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+        XLSX.writeFile(wb, 'participant_template.xlsx');
+    };
+
+    const modalContent = (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-fade-in-up">
+
+                {/* Header */}
+                <div className="flex justify-between items-center px-6 py-4 border-b">
+                    <h2 className="text-2xl font-bold text-gray-800">Bulk Upload Participants</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 py-4">
+                    {!results ? (
+                        <>
+                            <p className="text-sm text-gray-600 mb-4">Format yang diharapkan (CSV atau Excel):</p>
+                            <div className="mb-6 overflow-x-auto">
+                                <table className="min-w-full border-collapse border border-gray-300 text-sm">
+                                    <thead>
+                                        <tr className="bg-gray-100">
+                                            <th className="border border-gray-300 px-3 py-2">username *</th>
+                                            <th className="border border-gray-300 px-3 py-2">password *</th>
+                                            <th className="border border-gray-300 px-3 py-2">full_name *</th>
+                                            <th className="border border-gray-300 px-3 py-2">age</th>
+                                            <th className="border border-gray-300 px-3 py-2">gender</th>
+                                            <th className="border border-gray-300 px-3 py-2">education</th>
+                                            <th className="border border-gray-300 px-3 py-2">department</th>
+                                            <th className="border border-gray-300 px-3 py-2">position</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td className="border border-gray-300 px-3 py-2">johndoe</td>
+                                            <td className="border border-gray-300 px-3 py-2">pass123</td>
+                                            <td className="border border-gray-300 px-3 py-2">John Doe</td>
+                                            <td className="border border-gray-300 px-3 py-2">30</td>
+                                            <td className="border border-gray-300 px-3 py-2">Male</td>
+                                            <td className="border border-gray-300 px-3 py-2">S1</td>
+                                            <td className="border border-gray-300 px-3 py-2">IT</td>
+                                            <td className="border border-gray-300 px-3 py-2">Manager</td>
+                                        </tr>
+                                        <tr className="bg-gray-50">
+                                            <td className="border border-gray-300 px-3 py-2">janedoe</td>
+                                            <td className="border border-gray-300 px-3 py-2">pass456</td>
+                                            <td className="border border-gray-300 px-3 py-2">Jane Doe</td>
+                                            <td className="border border-gray-300 px-3 py-2">28</td>
+                                            <td className="border border-gray-300 px-3 py-2">Female</td>
+                                            <td className="border border-gray-300 px-3 py-2">S2</td>
+                                            <td className="border border-gray-300 px-3 py-2">HR</td>
+                                            <td className="border border-gray-300 px-3 py-2">Staff</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <p className="text-xs text-gray-500 mt-1">* Kolom wajib. Kolom lain opsional.</p>
+                            </div>
+
+                            <div className="flex justify-between items-center mb-6">
+                                <button onClick={downloadTemplate} className="text-blue-500 text-sm font-medium hover:underline">
+                                    Download template (Excel)
+                                </button>
+                            </div>
+
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6 bg-gray-50 cursor-pointer hover:bg-gray-100" onClick={() => fileInputRef.current.click()}>
+                                <input
+                                    type="file"
+                                    accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                                    onChange={handleFileChange}
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                />
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                                <p className="mt-2 text-sm text-gray-600">{file ? file.name : 'Click to choose CSV or Excel'}</p>
+                            </div>
+
+                            {previewData.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="font-semibold mb-2">Preview (5 baris pertama):</h3>
+                                    <div className="overflow-x-auto border rounded">
+                                        <table className="min-w-full divide-y divide-gray-200 text-sm">
+                                            <thead className="bg-gray-50">
+                                                <tr>{Object.keys(previewData[0] || {}).map(k => <th key={k} className="px-3 py-2 text-left font-medium">{k}</th>)}</tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {previewData.map((row, idx) => (
+                                                    <tr key={idx}>{Object.values(row).map((v, i) => <td key={i} className="px-3 py-2">{v}</td>)}</tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            <label className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                                <input type="checkbox" checked={assignAll} onChange={(e) => setAssignAll(e.target.checked)} className="form-checkbox h-5 w-5 text-blue-600" />
+                                <span className="text-sm text-gray-700">Assign all tests to each new participant</span>
+                            </label>
+                        </>
+                    ) : (
+                        <div>
+                            <h3 className="font-bold text-lg mb-2">Results</h3>
+                            <p className="text-green-600 font-medium">Success: {results.success}</p>
+                            <p className="text-red-600 font-medium">Failed: {results.failed}</p>
+                            {results.errors?.length > 0 && (
+                                <div className="mt-4">
+                                    <h4 className="font-semibold mb-2">Errors:</h4>
+                                    <ul className="list-disc list-inside text-sm text-red-600">
+                                        {results.errors.map((err, idx) => <li key={idx}>{err}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+                    {!results ? (
+                        <button onClick={handleUpload} disabled={uploading || !file} className={`px-4 py-2 text-white rounded ${uploading || !file ? 'bg-blue-300' : 'bg-blue-500 hover:bg-blue-600'}`}>
+                            {uploading ? 'Uploading...' : 'Upload'}
+                        </button>
+                    ) : (
+                        <button onClick={() => { setResults(null); onSuccess(); onClose(); }} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Done</button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    if (typeof document !== "undefined" && document.getElementById("root")) {
+        return ReactDOM.createPortal(modalContent, document.getElementById("root"));
+    }
+    return modalContent;
+}
+
+export default BulkUploadModal;

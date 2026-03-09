@@ -24,6 +24,14 @@ import string
 from scoring.logic import score_logic
 from sqlalchemy import func, desc
 from scoring.leadership import score_leadership
+import csv
+import io
+from typing import List
+from fastapi import UploadFile, File, Form
+import openpyxl
+import xlrd
+from openpyxl.utils import get_column_letter
+
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -714,3 +722,155 @@ def complete_tutorial(
     assignment.pretest_completed = True
     db.commit()
     return {"message": "Tutorial marked as completed"}
+
+@app.post("/admin/users/bulk")
+def bulk_create_users(
+    file: UploadFile = File(...),
+    assign_all: bool = Form(False),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    # Check file extension
+    filename = file.filename.lower()
+    if not (filename.endswith('.csv') or filename.endswith('.xlsx') or filename.endswith('.xls')):
+        raise HTTPException(status_code=400, detail="Only CSV or Excel files are allowed")
+
+    # Read file content
+    contents = file.file.read()
+    rows = []
+
+    if filename.endswith('.csv'):
+        # Process CSV
+        import csv
+        import io
+        decoded = contents.decode('utf-8-sig')
+        csv_reader = csv.DictReader(io.StringIO(decoded))
+        rows = list(csv_reader)
+
+    elif filename.endswith('.xlsx'):
+        # Process .xlsx
+        from openpyxl import load_workbook
+        from io import BytesIO
+        wb = load_workbook(filename=BytesIO(contents), read_only=True)
+        sheet = wb.active
+        # Get headers from first row
+        headers = [cell.value for cell in next(sheet.iter_rows(values_only=True))]
+        # Get data rows
+        for row in sheet.iter_rows(values_only=True):
+            # skip header row (already consumed)
+            if sheet.sheet_state == 'visible' and sheet._current_row == 1:  # hack? Better: we already used next()
+                continue
+            # Build dict
+            row_dict = {}
+            for idx, val in enumerate(row):
+                if idx < len(headers):
+                    row_dict[headers[idx]] = str(val) if val is not None else ''
+            rows.append(row_dict)
+        # The above loop includes the first row again because we used next()? Let's refactor:
+        # Reset: better to read all rows and then skip first.
+        wb = load_workbook(filename=BytesIO(contents), read_only=True)
+        sheet = wb.active
+        data = list(sheet.iter_rows(values_only=True))
+        headers = [str(cell) if cell else '' for cell in data[0]]
+        rows = []
+        for row in data[1:]:
+            row_dict = {}
+            for idx, val in enumerate(row):
+                if idx < len(headers):
+                    row_dict[headers[idx]] = str(val) if val is not None else ''
+            rows.append(row_dict)
+
+    elif filename.endswith('.xls'):
+        # Process old .xls
+        import xlrd
+        from io import BytesIO
+        book = xlrd.open_workbook(file_contents=contents)
+        sheet = book.sheet_by_index(0)
+        headers = [str(cell.value) for cell in sheet.row(0)]
+        rows = []
+        for row_idx in range(1, sheet.nrows):
+            row = sheet.row(row_idx)
+            row_dict = {}
+            for idx, cell in enumerate(row):
+                if idx < len(headers):
+                    row_dict[headers[idx]] = str(cell.value) if cell.value else ''
+            rows.append(row_dict)
+
+    # Now validate and create users (same as before)
+    required_fields = ['username', 'password', 'full_name']
+    results = {
+        "total": len(rows),
+        "success": 0,
+        "failed": 0,
+        "errors": []
+    }
+    created_users = []
+
+    for row_num, row in enumerate(rows, start=2):  # start=2 because row 1 is header
+        # Validate required fields
+        missing = [f for f in required_fields if not row.get(f)]
+        if missing:
+            results["failed"] += 1
+            results["errors"].append(f"Row {row_num}: Missing fields: {', '.join(missing)}")
+            continue
+
+        username = row['username'].strip()
+        password = row['password'].strip()
+        full_name = row['full_name'].strip()
+
+        # Check duplicate username
+        if db.query(User).filter(User.username == username).first():
+            results["failed"] += 1
+            results["errors"].append(f"Row {row_num}: Username '{username}' already exists")
+            continue
+
+        # Prepare user data
+        user_data = {
+            'username': username,
+            'full_name': full_name,
+            'age': row.get('age') if row.get('age') else None,
+            'gender': row.get('gender'),
+            'education': row.get('education'),
+            'department': row.get('department'),
+            'position': row.get('position'),
+            'role': 'participant'
+        }
+        if user_data['age']:
+            try:
+                user_data['age'] = int(user_data['age'])
+            except ValueError:
+                results["failed"] += 1
+                results["errors"].append(f"Row {row_num}: Age must be a number")
+                continue
+
+        new_user = User(
+            username=user_data['username'],
+            password_hash=hash_password(password),
+            role=user_data['role'],
+            full_name=user_data['full_name'],
+            age=user_data['age'],
+            gender=user_data['gender'],
+            education=user_data['education'],
+            department=user_data['department'],
+            position=user_data['position']
+        )
+        db.add(new_user)
+        db.flush()
+        created_users.append(new_user)
+        results["success"] += 1
+
+    # Assign all tests if requested
+    if assign_all and created_users:
+        all_tests = db.query(Test).all()
+        for user in created_users:
+            for test in all_tests:
+                existing = db.query(Assignment).filter(
+                    Assignment.user_id == user.id,
+                    Assignment.test_id == test.id
+                ).first()
+                if not existing:
+                    new_assignment = Assignment(user_id=user.id, test_id=test.id)
+                    db.add(new_assignment)
+
+    db.commit()
+    return results

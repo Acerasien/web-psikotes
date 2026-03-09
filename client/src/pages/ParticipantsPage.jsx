@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import EditParticipantModal from '../components/EditParticipantModal';
+import BulkUploadModal from '../components/BulkUploadModal';
 
 function ParticipantsPage({ token, currentUserRole }) {
     const [usersList, setUsersList] = useState([]);
@@ -16,6 +17,7 @@ function ParticipantsPage({ token, currentUserRole }) {
     const navigate = useNavigate();
     const [editingUser, setEditingUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showBulkUpload, setShowBulkUpload] = useState(false);
 
     // Helper functions
     const getUserAssignments = (userId) => assignments.filter(a => a.user_id === userId);
@@ -181,6 +183,12 @@ function ParticipantsPage({ token, currentUserRole }) {
                         >
                             + Add Participant
                         </Link>
+                        <button
+                            onClick={() => setShowBulkUpload(true)}
+                            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-sm ml-2"
+                        >
+                            + Bulk Upload
+                        </button>
                     </div>
                 </div>
 
@@ -369,6 +377,17 @@ function ParticipantsPage({ token, currentUserRole }) {
                     }}
                     onSaved={() => {
                         refreshUsers();
+                        refreshAssignments();
+                    }}
+                />
+            )}
+            {showBulkUpload && (
+                <BulkUploadModal
+                    token={token}
+                    onClose={() => setShowBulkUpload(false)}
+                    onSuccess={() => {
+                        refreshUsers();
+                        // optionally refresh assignments if assign_all was used
                         refreshAssignments();
                     }}
                 />
