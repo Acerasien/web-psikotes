@@ -1,16 +1,64 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Swal from 'sweetalert2';  // <-- ADDED
+import Swal from 'sweetalert2';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-function ParticipantProfilePage({ token }) {
+function ParticipantProfilePage({ token, currentUserRole }) {   // Added currentUserRole prop
     const { id } = useParams();
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [assignments, setAssignments] = useState([]);
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
+    const [pdfExporting, setPdfExporting] = useState(false);
+
+    // PDF export handler
+    const handleExportPDF = async () => {
+        setPdfExporting(true);
+        try {
+            const response = await axios.get(`http://127.0.0.1:8000/admin/export/participant/${id}/pdf`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${user?.username || 'participant'}_report.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'Failed to export PDF.', 'error');
+        } finally {
+            setPdfExporting(false);
+        }
+    };
+
+    // Export handler
+    const handleExportParticipant = async () => {
+        setExporting(true);
+        try {
+            const response = await axios.get(`http://127.0.0.1:8000/admin/export/participant/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${user?.username || 'participant'}_results.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'Failed to export results.', 'error');
+        } finally {
+            setExporting(false);
+        }
+    };
 
     // Define loadParticipantData FIRST using useCallback
     const loadParticipantData = useCallback(async () => {
@@ -90,16 +138,30 @@ function ParticipantProfilePage({ token }) {
 
     return (
         <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto font-sans">
-            {/* Back Button */}
-            <button
-                onClick={() => navigate(-1)}
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 mb-2"
-            >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-            </button>
+            <div className="flex justify-between items-center mb-4">
+                <button onClick={() => navigate(-1)} className="text-blue-600 hover:text-blue-800">
+                    ← Back
+                </button>
+                {/* Show export button only if the logged-in user is superadmin */}
+                {currentUserRole === 'superadmin' && (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleExportParticipant}
+                            disabled={exporting}
+                            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm"
+                        >
+                            {exporting ? 'Exporting...' : 'Export CSV'}
+                        </button>
+                        <button
+                            onClick={handleExportPDF}
+                            disabled={pdfExporting}
+                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm"
+                        >
+                            {pdfExporting ? 'Generating...' : 'Export PDF'}
+                        </button>
+                    </div>
+                )}
+            </div>
 
             {/* Profile Header */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-sm overflow-hidden">

@@ -31,6 +31,11 @@ from fastapi import UploadFile, File, Form
 import openpyxl
 import xlrd
 from openpyxl.utils import get_column_letter
+import csv
+from fastapi.responses import StreamingResponse
+import io
+from weasyprint import HTML
+from fastapi.responses import Response
 
 
 # Create tables
@@ -848,3 +853,248 @@ def bulk_create_users(
 
     db.commit()
     return results
+
+@app.get("/admin/export/results")
+def export_results(
+    test_id: Optional[int] = None,
+    search: Optional[str] = None,
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    db: Session = Depends(get_db),
+    superadmin: User = Depends(require_superadmin)   # only superadmin can export
+):
+    # Build query (same as in get_results)
+    query = db.query(Result).join(User).join(Test)
+    if test_id:
+        query = query.filter(Result.test_id == test_id)
+    if from_date:
+        query = query.filter(Result.completed_at >= from_date)
+    if to_date:
+        query = query.filter(Result.completed_at <= to_date)
+    if search:
+        query = query.filter(
+            (User.full_name.ilike(f"%{search}%")) | (User.username.ilike(f"%{search}%"))
+        )
+
+    results = query.order_by(Result.completed_at.desc()).all()
+
+    # Prepare CSV data
+    output = io.StringIO()
+    writer = csv.writer(output)
+    # Write header
+    writer.writerow([
+        "Participant Username", "Participant Name", "Test", "Score", "Max Score",
+        "Percentage", "Time Taken (s)", "Completed At"
+    ])
+
+    for r in results:
+        # Determine max score based on test code
+        if r.test.code == "DISC":
+            max_score = 24
+        elif r.test.code == "SPEED":
+            max_score = 100
+        elif r.test.code == "MEM":
+            max_score = 100
+        elif r.test.code == "LOGIC":
+            max_score = 100
+        elif r.test.code in ["TEMP", "LEAD"]:
+            max_score = "N/A"
+        else:
+            max_score = db.query(Question).filter(Question.test_id == r.test_id).count()
+
+        percentage = round((r.score / max_score * 100), 2) if isinstance(max_score, int) and max_score > 0 else "N/A"
+
+        writer.writerow([
+            r.user.username,
+            r.user.full_name or "",
+            r.test.name,
+            r.score,
+            max_score,
+            percentage,
+            r.time_taken,
+            r.completed_at.strftime("%Y-%m-%d %H:%M") if r.completed_at else ""
+        ])
+
+    # Return as downloadable file
+    response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=results.csv"
+    return response
+
+@app.get("/admin/export/participant/{user_id}")
+def export_participant_results(
+    user_id: int,
+    db: Session = Depends(get_db),
+    superadmin: User = Depends(require_superadmin)
+):
+    # Get user
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get all results for this user
+    results = db.query(Result).filter(Result.user_id == user_id).order_by(Result.completed_at).all()
+
+    # Prepare CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Test", "Score", "Max Score", "Percentage", "Time Taken (s)", "Completed At"
+    ])
+
+    for r in results:
+        # Determine max score
+        if r.test.code == "DISC":
+            max_score = 24
+        elif r.test.code == "SPEED":
+            max_score = 100
+        elif r.test.code == "MEM":
+            max_score = 100
+        elif r.test.code == "LOGIC":
+            max_score = 100
+        elif r.test.code in ["TEMP", "LEAD"]:
+            max_score = "N/A"
+        else:
+            max_score = db.query(Question).filter(Question.test_id == r.test_id).count()
+
+        percentage = round((r.score / max_score * 100), 2) if isinstance(max_score, int) and max_score > 0 else "N/A"
+
+        writer.writerow([
+            r.test.name,
+            r.score,
+            max_score,
+            percentage,
+            r.time_taken,
+            r.completed_at.strftime("%Y-%m-%d %H:%M") if r.completed_at else ""
+        ])
+
+    # Add participant info at top (optional) – but CSV doesn't have headers well for that.
+    # We'll just return the table.
+
+    response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
+    response.headers["Content-Disposition"] = f"attachment; filename={user.username}_results.csv"
+    return response
+
+@app.get("/admin/export/participant/{user_id}/pdf")
+def export_participant_pdf(
+    user_id: int,
+    db: Session = Depends(get_db),
+    superadmin: User = Depends(require_superadmin)
+):
+    # Get user
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get all results for this user, ordered by test name
+    results = db.query(Result).filter(Result.user_id == user_id).order_by(Result.test_id).all()
+
+    # Translate gender
+    gender_display = "-"
+    if user.gender:
+        if user.gender.lower() == "male":
+            gender_display = "Laki-laki"
+        elif user.gender.lower() == "female":
+            gender_display = "Perempuan"
+        else:
+            gender_display = user.gender  # fallback
+
+    # Prepare HTML template
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Laporan Hasil Tes - {user.full_name or user.username}</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 30px; }}
+            h1 {{ color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }}
+            h2 {{ color: #34495e; margin-top: 30px; }}
+            .info-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; }}
+            .info-item {{ background: #f8f9fa; padding: 8px; border-radius: 5px; }}
+            .label {{ font-weight: bold; color: #2c3e50; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+            th {{ background: #3498db; color: white; padding: 10px; text-align: left; }}
+            td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
+            tr:nth-child(even) {{ background: #f2f2f2; }}
+            .footer {{ margin-top: 30px; font-size: 0.9em; color: #7f8c8d; text-align: center; }}
+        </style>
+    </head>
+    <body>
+        <h1>Laporan Hasil Tes Psikologi</h1>
+        
+        <div class="info-grid">
+            <div class="info-item"><span class="label">Nama:</span> {user.full_name or '-'}</div>
+            <div class="info-item"><span class="label">Umur:</span> {user.age or '-'}</div>
+            <div class="info-item"><span class="label">Jenis Kelamin:</span> {gender_display}</div>
+            <div class="info-item"><span class="label">Pendidikan:</span> {user.education or '-'}</div>
+            <div class="info-item"><span class="label">Departemen:</span> {user.department or '-'}</div>
+            <div class="info-item"><span class="label">Posisi:</span> {user.position or '-'}</div>
+        </div>
+
+        <h2>Ringkasan Hasil Tes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama Tes</th>
+                    <th>Skor</th>
+                    <th>Skor Maks</th>
+                    <th>Persentase</th>
+                    <th>Tanggal Selesai</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+
+    for r in results:
+        # Determine max score (same as before)
+        if r.test.code == "DISC":
+            max_score = 24
+        elif r.test.code == "SPEED":
+            max_score = 100
+        elif r.test.code == "MEM":
+            max_score = 100
+        elif r.test.code == "LOGIC":
+            max_score = 100
+        elif r.test.code == "TEMP":
+            max_score = "N/A"
+        elif r.test.code == "LEAD":
+            max_score = "N/A"
+        else:
+            max_score = db.query(Question).filter(Question.test_id == r.test_id).count()
+
+        # Calculate percentage if applicable
+        if isinstance(max_score, int) and max_score > 0:
+            percentage = f"{(r.score / max_score * 100):.1f}%"
+        else:
+            percentage = "-"
+
+        completed = r.completed_at.strftime("%d %b %Y") if r.completed_at else "-"
+
+        html_content += f"""
+                <tr>
+                    <td>{r.test.name}</td>
+                    <td>{r.score}</td>
+                    <td>{max_score}</td>
+                    <td>{percentage}</td>
+                    <td>{completed}</td>
+                </tr>
+        """
+
+    html_content += """
+            </tbody>
+        </table>
+        <div class="footer">
+            Laporan digenerate pada {date}
+        </div>
+    </body>
+    </html>
+    """.format(date=datetime.now().strftime("%d %b %Y %H:%M"))
+
+    # Convert HTML to PDF
+    pdf = HTML(string=html_content).write_pdf()
+
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={user.username}_report.pdf"}
+    )

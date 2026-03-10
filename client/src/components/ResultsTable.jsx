@@ -2,39 +2,18 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-// import { format } from 'date-fns';
 import { formatLocalDateTime } from '../utils/dateUtils';
 
-function ResultsTable({ token }) {
+function ResultsTable({ token, filters, onFilterChange, tests }) {
     const [results, setResults] = useState([]);
-    const [tests, setTests] = useState([]);
-    const [filters, setFilters] = useState({
-        testId: '',
-        search: '',
-        fromDate: '',
-        toDate: ''
-    });
+    const [loading, setLoading] = useState(true);
     const [sortConfig, setSortConfig] = useState({ key: 'completed_at', direction: 'desc' });
     const [expandedRows, setExpandedRows] = useState(new Set());
 
-    // Fetch tests for filter dropdown
-    useEffect(() => {
-        const fetchTests = async () => {
-            try {
-                const res = await axios.get('http://127.0.0.1:8000/tests/', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setTests(res.data);
-            } catch (err) {
-                console.error('Failed to fetch tests', err);
-            }
-        };
-        fetchTests();
-    }, [token]);
-
-    // Fetch results with filters
+    // Fetch results when filters change
     useEffect(() => {
         const fetchResults = async () => {
+            setLoading(true);
             try {
                 const params = new URLSearchParams();
                 if (filters.testId) params.append('test_id', filters.testId);
@@ -47,7 +26,9 @@ function ResultsTable({ token }) {
                 });
                 setResults(res.data);
             } catch (err) {
-                console.error('Failed to fetch results', err);
+                console.error(err);
+            } finally {
+                setLoading(false);
             }
         };
         fetchResults();
@@ -98,6 +79,7 @@ function ResultsTable({ token }) {
     };
 
     const renderDetails = (result) => {
+        // ... (unchanged, same as before)
         if (!result.details) return null;
         if (result.test_name.includes('DISC')) {
             const d = result.details;
@@ -218,12 +200,12 @@ function ResultsTable({ token }) {
                     type="text"
                     placeholder="Search participant..."
                     value={filters.search}
-                    onChange={e => setFilters({ ...filters, search: e.target.value })}
+                    onChange={e => onFilterChange({ ...filters, search: e.target.value })}
                     className="border rounded px-3 py-2"
                 />
                 <select
                     value={filters.testId}
-                    onChange={e => setFilters({ ...filters, testId: e.target.value })}
+                    onChange={e => onFilterChange({ ...filters, testId: e.target.value })}
                     className="border rounded px-3 py-2"
                 >
                     <option value="">All Tests</option>
@@ -234,14 +216,14 @@ function ResultsTable({ token }) {
                 <input
                     type="date"
                     value={filters.fromDate}
-                    onChange={e => setFilters({ ...filters, fromDate: e.target.value })}
+                    onChange={e => onFilterChange({ ...filters, fromDate: e.target.value })}
                     className="border rounded px-3 py-2"
                     placeholder="From"
                 />
                 <input
                     type="date"
                     value={filters.toDate}
-                    onChange={e => setFilters({ ...filters, toDate: e.target.value })}
+                    onChange={e => onFilterChange({ ...filters, toDate: e.target.value })}
                     className="border rounded px-3 py-2"
                     placeholder="To"
                 />
@@ -295,7 +277,7 @@ function ResultsTable({ token }) {
                                         ) : result.max_score ? (
                                             <span>{result.score} / {result.max_score}</span>
                                         ) : (
-                                            <span>{result.score}</span>   // fallback (shouldn't happen)
+                                            <span>{result.score}</span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
