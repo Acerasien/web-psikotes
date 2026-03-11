@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from auth import get_current_user, require_admin, require_superadmin, hash_password
-from models import User, Test, Assignment, Response, Result, Question, Option, ExitLog
+from models import User, Test, Assignment, Result, Question, Option, ExitLog
+from models import Response as DBResponse
 from datetime import datetime
 from datetime import date
 from schemas import TestSubmission
@@ -36,6 +37,12 @@ from fastapi.responses import StreamingResponse
 import io
 from weasyprint import HTML
 from fastapi.responses import Response
+from datetime import datetime
+from fastapi import HTTPException, Response
+from fastapi.responses import StreamingResponse
+from weasyprint import HTML, CSS
+from sqlalchemy.orm import Session
+from typing import Dict, Any
 
 
 # Create tables
@@ -363,7 +370,7 @@ def submit_test(
 
     # 2. Save all responses
     for ans in submission.answers:
-        resp = Response(
+        resp = DBResponse(
             user_id=current_user.id,
             test_id=assignment.test_id,
             assignment_id=assignment.id,
@@ -980,121 +987,523 @@ def export_participant_pdf(
     db: Session = Depends(get_db),
     superadmin: User = Depends(require_superadmin)
 ):
-    # Get user
+    # -------------------------------------------------------------------
+    # Fetch data
+    # -------------------------------------------------------------------
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Get all results for this user, ordered by test name
     results = db.query(Result).filter(Result.user_id == user_id).order_by(Result.test_id).all()
 
-    # Translate gender
-    gender_display = "-"
-    if user.gender:
-        if user.gender.lower() == "male":
-            gender_display = "Laki-laki"
-        elif user.gender.lower() == "female":
-            gender_display = "Perempuan"
-        else:
-            gender_display = user.gender  # fallback
+    # -------------------------------------------------------------------
+    # Helper: Indonesian date formatting
+    # -------------------------------------------------------------------
+    def id_datefmt(dt: datetime) -> str:
+        days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+        months = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ]
+        return f"{days[dt.weekday()]}, {dt.day} {months[dt.month-1]} {dt.year}"
 
-    # Prepare HTML template
+    # -------------------------------------------------------------------
+    # Compute overall test date (earliest completion)
+    # -------------------------------------------------------------------
+    test_dates = [r.completed_at for r in results if r.completed_at]
+    overall_test_date = min(test_dates) if test_dates else datetime.now()
+
+    # -------------------------------------------------------------------
+    # Prepare meta
+    # -------------------------------------------------------------------
+    report_date = datetime.now()
+    report_id   = f"RPT-{user_id}-{report_date.strftime('%Y%m%d%H%M')}"
+
+    # -------------------------------------------------------------------
+    # Helper functions (ratings, max scores, etc.)
+    # -------------------------------------------------------------------
+    def get_max_score(test_code: str) -> int | None:
+        mapping = {"DISC": 24, "SPEED": 100, "MEM": 100, "LOGIC": 100, "TEMP": None, "LEAD": None}
+        return mapping.get(test_code)
+
+    def get_rating(score: int, max_score: int | None, test_name: str) -> Dict[str, str]:
+        """Returns dict: {label, class, desc}"""
+        if max_score is None or score is None:
+            return {"label": "-", "class": "neutral", "desc": ""}
+        pct = (score / max_score) * 100
+
+        if test_name in ["Memory Test", "IQ Test", "Speed Test", "Logic & Arithmetic Test"]:
+            if pct >= 80:
+                return {"label": "Sangat Baik", "class": "excellent", "desc": "Performansi sangat tinggi – di atas standar."}
+            if pct >= 60:
+                return {"label": "Baik", "class": "good", "desc": "Performansi baik – memenuhi standar yang diharapkan."}
+            if pct >= 40:
+                return {"label": "Cukup", "class": "fair", "desc": "Performansi cukup – perlu pengembangan lebih lanjut."}
+            return {"label": "Kurang", "class": "poor", "desc": "Performansi di bawah standar – memerlukan perhatian khusus."}
+        return {"label": "-", "class": "neutral", "desc": ""}
+
+    # -------------------------------------------------------------------
+    # Sort results in the desired order
+    # -------------------------------------------------------------------
+    test_order = {
+        "DISC": 1,
+        "TEMP": 2,
+        "LEAD": 3,
+        "MEM": 4,
+        "LOGIC": 5,
+        "IQ": 6,
+        "SPEED": 7
+    }
+    sorted_results = sorted(results, key=lambda r: test_order.get(r.test.code, 999))
+
+    # -------------------------------------------------------------------
+    # Build HTML with compact styling (removed extra meta and test-code)
+    # -------------------------------------------------------------------
     html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Laporan Hasil Tes - {user.full_name or user.username}</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 30px; }}
-            h1 {{ color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }}
-            h2 {{ color: #34495e; margin-top: 30px; }}
-            .info-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0; }}
-            .info-item {{ background: #f8f9fa; padding: 8px; border-radius: 5px; }}
-            .label {{ font-weight: bold; color: #2c3e50; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-            th {{ background: #3498db; color: white; padding: 10px; text-align: left; }}
-            td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
-            tr:nth-child(even) {{ background: #f2f2f2; }}
-            .footer {{ margin-top: 30px; font-size: 0.9em; color: #7f8c8d; text-align: center; }}
-        </style>
-    </head>
-    <body>
-        <h1>Laporan Hasil Tes Psikologi</h1>
-        
-        <div class="info-grid">
-            <div class="info-item"><span class="label">Nama:</span> {user.full_name or '-'}</div>
-            <div class="info-item"><span class="label">Umur:</span> {user.age or '-'}</div>
-            <div class="info-item"><span class="label">Jenis Kelamin:</span> {gender_display}</div>
-            <div class="info-item"><span class="label">Pendidikan:</span> {user.education or '-'}</div>
-            <div class="info-item"><span class="label">Departemen:</span> {user.department or '-'}</div>
-            <div class="info-item"><span class="label">Posisi:</span> {user.position or '-'}</div>
-        </div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Laporan Psikotes – {user.full_name or user.username}</title>
+<style>
+    :root {{
+        --primary:   #1e3a8a;
+        --secondary: #3b82f6;
+        --accent:    #64748b;
+        --bg:        #ffffff;
+        --paper:     #f8fafc;
+        --text:      #1f2937;
+        --border:    #e2e8f0;
+        --shadow:    0px 1px 3px rgba(15,23,42,0.08);
+        --excellent: #10b981;
+        --good:      #3b82f6;
+        --fair:      #f59e0b;
+        --poor:      #ef4444;
+        --neutral:   #94a3b8;
+    }}
+    @page {{
+        size: A4;
+        margin: 2cm;  /* reduced from 2.5cm to save space */
+        @top-center {{
+            content: "LAPORAN PSIKOTES – {user.full_name or user.username}";
+            font-size: 9pt;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+        }}
+        @bottom-center {{
+            content: "Halaman " counter(page) " dari " counter(pages);
+            font-size: 9pt;
+            color: var(--accent);
+        }}
+    }}
+    body {{
+        font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: 10.5pt;  /* slightly reduced */
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
+        margin: 0;
+        padding: 0;
+    }}
+    .report-header {{
+        text-align: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--primary);
+    }}
+    .report-header h1 {{
+        font-size: 18pt;  /* slightly smaller */
+        font-weight: 700;
+        color: var(--primary);
+        margin: 0 0 0.2rem 0;
+        letter-spacing: -0.02em;
+    }}
+    .report-header .subtitle {{
+        font-size: 9.5pt;
+        color: var(--accent);
+        margin: 0;
+        font-weight: 500;
+    }}
+    .profile-card {{
+        background: var(--paper);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: var(--shadow);
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }}
+    .profile-item {{
+        display: flex;
+        flex-direction: column;
+    }}
+    .profile-label {{
+        font-size: 8pt;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--accent);
+        margin-bottom: 0.2rem;
+        font-weight: 600;
+    }}
+    .profile-value {{
+        font-size: 10.5pt;
+        font-weight: 700;
+        color: var(--text);
+    }}
+    .test-card {{
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: var(--shadow);
+        page-break-inside: avoid;
+    }}
+    .test-head {{
+        border-bottom: 2px solid var(--secondary);
+        padding-bottom: 0.4rem;
+        margin-bottom: 0.8rem;
+    }}
+    .test-title {{
+        font-size: 12pt;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 0;
+    }}
+    .narrative {{
+        font-size: 10.2pt;
+        text-align: justify;
+        margin-bottom: 0.8rem;
+        color: #334155;
+    }}
+    table {{
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10pt;
+        margin: 0.8rem 0;
+        background: var(--bg);
+    }}
+    th {{
+        background: var(--primary);
+        color: #fff;
+        font-weight: 600;
+        padding: 0.4rem 0.6rem;
+        text-align: left;
+        border: 1px solid var(--primary);
+    }}
+    td {{
+        padding: 0.4rem 0.6rem;
+        border: 1px solid var(--border);
+    }}
+    tr:nth-child(even) {{
+        background: var(--paper);
+    }}
+    tr.primary-row {{
+        background: #eff6ff !important;
+        font-weight: 700;
+        color: var(--primary);
+    }}
+    tr.primary-row td:first-child {{
+        border-left: 3px solid var(--secondary);
+    }}
+    .conclusion-cell {{
+        background: #f0f9ff;
+        font-style: italic;
+        color: #1e40af;
+        padding: 0.6rem;
+        vertical-align: middle;
+    }}
+    .score-row {{
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.4rem;
+        font-size: 10pt;
+    }}
+    .score-label {{
+        flex: 0 0 120px;
+        font-weight: 600;
+        color: var(--text);
+    }}
+    .score-bar-wrap {{
+        flex: 1;
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0 0.5rem;
+    }}
+    .score-bar {{
+        height: 100%;
+        background: var(--secondary);
+    }}
+    .score-value {{
+        flex: 0 0 50px;
+        text-align: right;
+        font-weight: 700;
+        color: var(--primary);
+    }}
+    .rating-badge {{
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 8.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-left: 0.3rem;
+    }}
+    .rating-excellent {{ background: #d1fae5; color: #065f46; }}
+    .rating-good      {{ background: #dbeafe; color: #1e40af; }}
+    .rating-fair      {{ background: #fef3c7; color: #92400e; }}
+    .rating-poor      {{ background: #fee2e2; color: #991b1b; }}
+    .rating-neutral   {{ background: #f1f5f9; color: #475569; }}
+    .report-footer {{
+        margin-top: 2rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border);
+        font-size: 8.5pt;
+        color: var(--accent);
+        text-align: center;
+        font-weight: 500;
+    }}
+</style>
+</head>
+<body>
 
-        <h2>Ringkasan Hasil Tes</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nama Tes</th>
-                    <th>Skor</th>
-                    <th>Skor Maks</th>
-                    <th>Persentase</th>
-                    <th>Tanggal Selesai</th>
-                </tr>
-            </thead>
-            <tbody>
-    """
+<div class="report-header">
+    <h1>LAPORAN HASIL PSIKOTES</h1>
+    <div class="subtitle">Psychological Assessment Report – Andamas Standard</div>
+</div>
 
-    for r in results:
-        # Determine max score (same as before)
-        if r.test.code == "DISC":
-            max_score = 24
-        elif r.test.code == "SPEED":
-            max_score = 100
-        elif r.test.code == "MEM":
-            max_score = 100
-        elif r.test.code == "LOGIC":
-            max_score = 100
-        elif r.test.code == "TEMP":
-            max_score = "N/A"
-        elif r.test.code == "LEAD":
-            max_score = "N/A"
-        else:
-            max_score = db.query(Question).filter(Question.test_id == r.test_id).count()
+<!-- PARTICIPANT PROFILE -->
+<div class="profile-card">
+    <div class="profile-item">
+        <span class="profile-label">Nama Lengkap</span>
+        <span class="profile-value">{user.full_name or '-'}</span>
+    </div>
+    <div class="profile-item">
+        <span class="profile-label">Pendidikan</span>
+        <span class="profile-value">{user.education or '-'}</span>
+    </div>
+    <div class="profile-item">
+        <span class="profile-label">Usia</span>
+        <span class="profile-value">{user.age or '-'} Tahun</span>
+    </div>
+    <div class="profile-item">
+        <span class="profile-label">Departemen</span>
+        <span class="profile-value">{user.department or '-'}</span>
+    </div>
+    <div class="profile-item">
+        <span class="profile-label">Posisi</span>
+        <span class="profile-value">{user.position or '-'}</span>
+    </div>
+    <div class="profile-item">
+        <span class="profile-label">Tanggal Tes</span>
+        <span class="profile-value">{id_datefmt(overall_test_date)}</span>
+    </div>
+</div>
 
-        # Calculate percentage if applicable
-        if isinstance(max_score, int) and max_score > 0:
-            percentage = f"{(r.score / max_score * 100):.1f}%"
-        else:
-            percentage = "-"
+<!-- TEST RESULTS -->
+"""
 
-        completed = r.completed_at.strftime("%d %b %Y") if r.completed_at else "-"
+    for r in sorted_results:
+        test_code = r.test.code
+        test_name = r.test.name
+        details   = r.details or {}
 
         html_content += f"""
-                <tr>
-                    <td>{r.test.name}</td>
-                    <td>{r.score}</td>
-                    <td>{max_score}</td>
-                    <td>{percentage}</td>
-                    <td>{completed}</td>
-                </tr>
-        """
+<div class="test-card">
+    <div class="test-head">
+        <h2 class="test-title">{test_name}</h2>
+    </div>
+"""
 
-    html_content += """
-            </tbody>
-        </table>
-        <div class="footer">
-            Laporan digenerate pada {date}
-        </div>
-    </body>
-    </html>
-    """.format(date=datetime.now().strftime("%d %b %Y %H:%M"))
+        # ------------------------------ DISC ------------------------------
+        if test_code == "DISC" and details:
+            traits = ['D','I','S','C']
+            graph_ii = details.get('graph_ii', {})
+            graph_i = details.get('graph_i', {})
+            stress_gap = details.get('stress_gap', 0)
+            nat_primary = max(traits, key=lambda t: graph_ii.get(t, 0))
+            pre_primary = max(traits, key=lambda t: graph_i.get(t, 0))
+            trait_names = {'D':'Dominance','I':'Influence','S':'Steadiness','C':'Conscientiousness'}
 
-    # Convert HTML to PDF
-    pdf = HTML(string=html_content).write_pdf()
+            narrative = (
+                f"Berdasarkan hasil tes DISC, testee menunjukkan perilaku utama alami yang dominan {trait_names[nat_primary]} ({nat_primary}). "
+                f"Artinya testee cenderung stabil, sabar, dan pendengar yang baik. Mereka berfokus pada kerja sama tim, menjaga keharmonisan, serta lebih nyaman bekerja di lingkungan yang teratur dan konsisten. "
+                f"Saat di bawah tekanan, testee cenderung lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain (Dominance - D). "
+                f"Secara alami (True Self), testee cenderung sabar, konsisten, dan setia. Mereka menghargai kestabilan, serta lebih suka bekerja dalam lingkungan yang harmonis dan minim konflik (Steadiness - S). "
+                f"Berdasarkan hasil tes DISC, testee menunjukkan profil kepribadian yang Cukup Sesuai dengan Norm Standard yang telah ditetapkan oleh Andamas. Dengan demikian, testee dinilai memenuhi ketentuan yang dibutuhkan untuk level posisi saat ini dari sisi kepribadian DISC."
+            )
+            html_content += f'<div class="narrative">{narrative}</div>'
+
+        # -------------------------- TEMPERAMENT --------------------------
+        elif test_code == "TEMP" and details:
+            raw_scores = details.get('raw_scores', {})
+            primary_en = details.get('primary', '')
+            
+            en_to_id = {
+                "Choleric": "Koleris",
+                "Melancholic": "Melankolis",
+                "Sanguine": "Sanguin",
+                "Phlegmatic": "Plegmatis"
+            }
+            primary_id = en_to_id.get(primary_en, primary_en)
+            
+            categories = [
+                ('Koleris', raw_scores.get('C', 0)),
+                ('Melankolis', raw_scores.get('M', 0)),
+                ('Sanguin', raw_scores.get('S', 0)),
+                ('Plegmatis', raw_scores.get('P', 0)),
+            ]
+            
+            trait_meanings = {
+                'Koleris': "individu yang bersemangat, tegas, dan berorientasi pada pencapaian. Mereka pemimpin alami yang cepat mengambil keputusan namun perlu waspada terhadap kesabaran terhadap tim.",
+                'Melankolis': "individu yang analitis, detail‑orientated, dan perfeksionis. Mereka menghasilkan pekerjaan berkualitas tinggi, namun perlu dukungan untuk fleksibilitas dan delegasi.",
+                'Sanguin': "individu yang sosial, optimis, dan kreatif. Mereka mampu membangun rapport yang kuat, namun memerlukan struktur untuk menjaga konsistensi.",
+                'Plegmatis': "individu yang stabil, sabar, dan kooperatif. Mereka menjadi penjaga keharmonisan tim, namun perlu dorongan untuk inisiatif dan kecepatan kerja."
+            }
+            # Build conclusion text
+            concl_text = f"Berdasarkan hasil tes, testee menunjukkan dominasi temperament {primary_id}, yaitu {trait_meanings.get(primary_id, '')}"
+
+            # Start table with conclusion cell spanning all rows
+            html_content += '<table>'
+            html_content += '<tr><th>Kategori</th><th>Skor</th><th>Kesimpulan</th></tr>'
+            rowspan = len(categories)
+            for i, (cat, score) in enumerate(categories):
+                is_primary = (primary_id == cat)
+                row_class = ' class="primary-row"' if is_primary else ''
+                if i == 0:
+                    # First row gets the conclusion with rowspan
+                    html_content += f'<tr{row_class}><td>{cat}</td><td>{score}</td><td class="conclusion-cell" rowspan="{rowspan}">{concl_text}</td></tr>'
+                else:
+                    html_content += f'<tr{row_class}><td>{cat}</td><td>{score}</td></tr>'
+            html_content += '</table>'
+
+        # -------------------------- LEADERSHIP --------------------------
+        elif test_code == "LEAD" and details:
+            score = r.score or 0
+            html_content += f"""
+            <div class="narrative">
+                Hasil Psikotes menunjukkan bahwa testee menjawab soal dengan skor keseluruhan <strong>{score} Point</strong>. Dengan demikian dapat dikatakan bahwa testee “menunjukkan motivasi yang kuat untuk menjadi pemimpin”.
+            </div>
+            """
+
+        # -------------------------- MEMORY -----------------------------
+        elif test_code == "MEM" and details:
+            correct = details.get('correct_count', 0)
+            total = 50
+            rating = get_rating(correct, total, test_name)
+            pct = int((correct / total) * 100)
+            html_content += f"""
+            <div class="score-row">
+                <span class="score-label">Kemampuan Memori</span>
+                <div class="score-bar-wrap">
+                    <div class="score-bar" style="width:{pct}%; background:var(--{rating['class']});"></div>
+                </div>
+                <span class="score-value">{correct}/{total}</span>
+            </div>
+            <div class="narrative">
+                Testee menjawab <strong>{correct}</strong> soal benar dari total {total} soal. 
+                Dengan demikian, kemampuan memori dinilai 
+                <span class="rating-badge rating-{rating['class']}">{rating['label']}</span>.
+                <br>{rating['desc']}
+            </div>
+            """
+
+        # ----------------------- LOGIC & ARITHMETIC --------------------
+        elif test_code == "LOGIC" and details:
+            correct = details.get('correct_count', 0)
+            total = 25
+            rating = get_rating(correct, total, test_name)
+            pct = int((correct / total) * 100)
+            html_content += f"""
+            <div class="score-row">
+                <span class="score-label">Logika & Aritmatika</span>
+                <div class="score-bar-wrap">
+                    <div class="score-bar" style="width:{pct}%; background:var(--{rating['class']});"></div>
+                </div>
+                <span class="score-value">{correct}/{total}</span>
+            </div>
+            <div class="narrative">
+                Testee menjawab <strong>{correct}</strong> soal benar dari {total} soal. 
+                Kemampuan logika dan pemecahan masalah dinilai 
+                <span class="rating-badge rating-{rating['class']}">{rating['label']}</span>.
+                <br>{rating['desc']}
+            </div>
+            """
+
+        # --------------------------- SPEED -----------------------------
+        elif test_code == "SPEED" and details:
+            correct = details.get('score', 0)   # Use 'score' field
+            total = 100
+            rating = get_rating(correct, total, test_name)
+            pct = int((correct / total) * 100)
+            extra = "Unggul dalam Tekanan Tinggi" if rating['class'] == 'excellent' else ""
+            html_content += f"""
+            <div class="score-row">
+                <span class="score-label">Kecepatan & Akurasi</span>
+                <div class="score-bar-wrap">
+                    <div class="score-bar" style="width:{pct}%; background:var(--{rating['class']});"></div>
+                </div>
+                <span class="score-value">{correct}/{total}</span>
+            </div>
+            <div class="narrative">
+                Dari {total} soal Speed Test, testee menjawab <strong>{correct}</strong> soal benar. 
+                {('Dengan performa ini, testee dinilai “<strong>'+extra+'</strong>” – unggul dan berkembang di bawah tekanan tinggi. Ideal untuk peran dengan tenggat waktu ketat dan situasi kritis.' if extra else 'Dengan demikian kemampuan kecepatan dan akurasi dinilai <span class="rating-badge rating-'+rating['class']+'">'+rating['label']+'</span>.')}
+            </div>
+            """
+
+        # --------------------------- IQ TEST (placeholder) -------------
+        elif test_code == "IQ" and details:
+            correct = details.get('correct', 0)
+            total = 20
+            rating = get_rating(correct, total, test_name)
+            pct = int((correct / total) * 100)
+            html_content += f"""
+            <div class="score-row">
+                <span class="score-label">Kemampuan Pola (IQ)</span>
+                <div class="score-bar-wrap">
+                    <div class="score-bar" style="width:{pct}%; background:var(--{rating['class']});"></div>
+                </div>
+                <span class="score-value">{correct}/{total}</span>
+            </div>
+            <div class="narrative">
+                Testee berhasil menjawab <strong>{correct}</strong> soal benar dari {total} soal. 
+                Kemampuan memahami pola dan berpikir abstrak dinilai 
+                <span class="rating-badge rating-{rating['class']}">{rating['label']}</span>.
+            </div>
+            """
+
+        # ------------------------ FALLBACK ---------------------------
+        else:
+            max_sc = get_max_score(test_code)
+            html_content += f'<div class="narrative">Skor: <strong>{r.score or 0}</strong> / {max_sc if max_sc else "N/A"}</div>'
+
+        html_content += "</div>"  # close test-card
+
+    html_content += f"""
+<div class="report-footer">
+    <strong>Laporan Dikembangkan oleh Tim Psikologi Andamas</strong> | 
+    Data bersifat rahasia dan hanya untuk penggunaan internal. 
+    <br>Dicetak pada {id_datefmt(report_date)} – {report_id}
+</div>
+</body>
+</html>
+"""
+
+    # -------------------------------------------------------------------
+    # Generate PDF
+    # -------------------------------------------------------------------
+    pdf_bytes = HTML(string=html_content).write_pdf()
 
     return Response(
-        content=pdf,
+        content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={user.username}_report.pdf"}
+        headers={
+            "Content-Disposition": f'attachment; filename="Laporan_Psikotes_{user.username or user.id}_{report_date.strftime("%Y%m%d")}.pdf"'
+        },
     )
