@@ -1,50 +1,44 @@
-# server/main.py
-from fastapi import FastAPI, Depends, HTTPException, status
+# =============================================================================
+# Standard Library Imports
+# =============================================================================
+import csv
+import io
+import secrets
+import string
+from datetime import datetime, date
+from typing import Optional, List, Dict, Any
+
+# =============================================================================
+# Third-Party Imports
+# =============================================================================
+from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from fastapi.responses import StreamingResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from auth import get_current_user, require_admin, require_superadmin, hash_password
+from sqlalchemy import func, desc
+from sqlalchemy.orm import Session, joinedload
+import openpyxl
+import xlrd
+from weasyprint import HTML
+
+# =============================================================================
+# Local Application Imports
+# =============================================================================
+from auth import (
+    get_current_user, require_admin, require_superadmin,
+    hash_password, verify_password, create_access_token
+)
+from database import engine, Base, SessionLocal, get_db
 from models import User, Test, Assignment, Result, Question, Option, ExitLog
 from models import Response as DBResponse
-from datetime import datetime
-from datetime import date
-from schemas import TestSubmission
-from database import engine, Base, SessionLocal, get_db
-from auth import verify_password, create_access_token
-from schemas import Token
-from schemas import UserCreate
-from typing import Optional  # <-- ADDED for optional query parameters
+from schemas import TestSubmission, Token, UserCreate, UserUpdate
 from scoring.disc import score_disc
 from scoring.speed import score_speed
 from scoring.temperament import score_temperament
-from sqlalchemy.orm import joinedload  # to load options efficiently
-from schemas import UserUpdate
 from scoring.memory import score_memory
-import secrets
-import string
 from scoring.logic import score_logic
-from sqlalchemy import func, desc
 from scoring.leadership import score_leadership
-import csv
-import io
-from typing import List
-from fastapi import UploadFile, File, Form
-import openpyxl
-import xlrd
-from openpyxl.utils import get_column_letter
-import csv
-from fastapi.responses import StreamingResponse
-import io
-from weasyprint import HTML
-from fastapi.responses import Response
-from datetime import datetime
-from fastapi import HTTPException, Response
-from fastapi.responses import StreamingResponse
-from weasyprint import HTML, CSS
-from sqlalchemy.orm import Session
-from typing import Dict, Any
 from services.pdf_report import generate_participant_pdf
-
 
 # Create tables
 Base.metadata.create_all(bind=engine)
