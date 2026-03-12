@@ -4,17 +4,27 @@ from typing import Dict, List, Optional
 from weasyprint import HTML
 from models import User, Result  # assuming these are accessible
 
+
 def id_datefmt(dt: datetime) -> str:
     days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
     months = [
         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
         "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ]
-    return f"{days[dt.weekday()]}, {dt.day} {months[dt.month-1]} {dt.year}"
+    return f"{days[dt.weekday()]}, {dt.day} {months[dt.month - 1]} {dt.year}"
+
 
 def get_max_score(test_code: str) -> Optional[int]:
-    mapping = {"DISC": 24, "SPEED": 100, "MEM": 100, "LOGIC": 100, "TEMP": None, "LEAD": None}
+    mapping = {
+        "DISC": 24,
+        "SPEED": 100,
+        "MEM": 100,
+        "LOGIC": 100,
+        "TEMP": None,
+        "LEAD": None
+    }
     return mapping.get(test_code)
+
 
 def get_rating(score: int, max_score: Optional[int], test_name: str) -> Dict[str, str]:
     if max_score is None or score is None:
@@ -23,13 +33,30 @@ def get_rating(score: int, max_score: Optional[int], test_name: str) -> Dict[str
 
     if test_name in ["Memory Test", "IQ Test", "Speed Test", "Logic & Arithmetic Test"]:
         if pct >= 80:
-            return {"label": "Sangat Baik", "class": "excellent", "desc": "Performansi sangat tinggi – di atas standar."}
+            return {
+                "label": "Sangat Baik",
+                "class": "excellent",
+                "desc": "Performansi sangat tinggi – di atas standar."
+            }
         if pct >= 60:
-            return {"label": "Baik", "class": "good", "desc": "Performansi baik – memenuhi standar yang diharapkan."}
+            return {
+                "label": "Baik",
+                "class": "good",
+                "desc": "Performansi baik – memenuhi standar yang diharapkan."
+            }
         if pct >= 40:
-            return {"label": "Cukup", "class": "fair", "desc": "Performansi cukup – perlu pengembangan lebih lanjut."}
-        return {"label": "Kurang", "class": "poor", "desc": "Performansi di bawah standar – memerlukan perhatian khusus."}
+            return {
+                "label": "Cukup",
+                "class": "fair",
+                "desc": "Performansi cukup – perlu pengembangan lebih lanjut."
+            }
+        return {
+            "label": "Kurang",
+            "class": "poor",
+            "desc": "Performansi di bawah standar – memerlukan perhatian khusus."
+        }
     return {"label": "-", "class": "neutral", "desc": ""}
+
 
 def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
     # Sort results in desired order
@@ -42,7 +69,10 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
         "IQ": 6,
         "SPEED": 7
     }
-    sorted_results = sorted(results, key=lambda r: test_order.get(r.test.code, 999))
+    sorted_results = sorted(
+        results,
+        key=lambda r: test_order.get(r.test.code, 999)
+    )
 
     # Compute overall test date (earliest completion)
     test_dates = [r.completed_at for r in results if r.completed_at]
@@ -51,7 +81,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
     report_date = datetime.now()
     report_id = f"RPT-{user.id}-{report_date.strftime('%Y%m%d%H%M')}"
 
-    # Build HTML content (copy the entire HTML string from your endpoint)
+    # Build HTML content
     html_content = f"""
 <!DOCTYPE html>
 <html lang="id">
@@ -76,7 +106,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
     }}
     @page {{
         size: A4;
-        margin: 2cm;  /* reduced from 2.5cm to save space */
+        margin: 2cm;
         @top-center {{
             content: "LAPORAN PSIKOTES – {user.full_name or user.username}";
             font-size: 9pt;
@@ -92,7 +122,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
     }}
     body {{
         font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        font-size: 10.5pt;  /* slightly reduced */
+        font-size: 10.5pt;
         line-height: 1.5;
         color: var(--text);
         background: var(--bg);
@@ -106,7 +136,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
         border-bottom: 2px solid var(--primary);
     }}
     .report-header h1 {{
-        font-size: 18pt;  /* slightly smaller */
+        font-size: 18pt;
         font-weight: 700;
         color: var(--primary);
         margin: 0 0 0.2rem 0;
@@ -171,6 +201,16 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
         text-align: justify;
         margin-bottom: 0.8rem;
         color: #334155;
+    }}
+    .conclusion-box {{
+        background: #f0f9ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        padding: 0.8rem;
+        margin-top: 0.8rem;
+        font-size: 10pt;
+        color: #1e40af;
+        line-height: 1.6;
     }}
     table {{
         width: 100%;
@@ -305,7 +345,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
     for r in sorted_results:
         test_code = r.test.code
         test_name = r.test.name
-        details   = r.details or {}
+        details = r.details or {}
 
         html_content += f"""
 <div class="test-card">
@@ -316,28 +356,71 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
 
         # ------------------------------ DISC ------------------------------
         if test_code == "DISC" and details:
-            traits = ['D','I','S','C']
+            traits = ['D', 'I', 'S', 'C']
             graph_ii = details.get('graph_ii', {})
             graph_i = details.get('graph_i', {})
             stress_gap = details.get('stress_gap', 0)
+
+            # Find primary natural trait (True Self) and primary under pressure
             nat_primary = max(traits, key=lambda t: graph_ii.get(t, 0))
             pre_primary = max(traits, key=lambda t: graph_i.get(t, 0))
-            trait_names = {'D':'Dominance','I':'Influence','S':'Steadiness','C':'Conscientiousness'}
 
+            trait_names = {
+                'D': 'Dominance',
+                'I': 'Influence',
+                'S': 'Steadiness',
+                'C': 'Conscientiousness'
+            }
+
+            # Descriptions for each trait (natural)
+            natural_desc = {
+                'D': "tegas, berorientasi hasil, dan suka tantangan.",
+                'I': "ramah, optimis, dan mudah bergaul.",
+                'S': "sabar, konsisten, dan setia. Mereka menghargai kestabilan serta lebih suka bekerja dalam lingkungan yang harmonis dan minim konflik.",
+                'C': "teliti, analitis, dan cermat. Mereka mengikuti prosedur dengan disiplin dan memperhatikan detail."
+            }
+
+            # Descriptions for under pressure
+            pressure_desc = {
+                'D': "lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain.",
+                'I': "lebih ekspresif dan emosional, namun bisa kehilangan fokus dan menjadi kurang teratur.",
+                'S': "menjadi lebih lambat dalam mengambil keputusan dan cenderung menghindari konflik.",
+                'C': "menjadi lebih kritis, perfeksionis, dan cenderung menarik diri."
+            }
+
+            # Build narrative
             narrative = (
                 f"Berdasarkan hasil tes DISC, testee menunjukkan perilaku utama alami yang dominan {trait_names[nat_primary]} ({nat_primary}). "
-                f"Artinya testee cenderung stabil, sabar, dan pendengar yang baik. Mereka berfokus pada kerja sama tim, menjaga keharmonisan, serta lebih nyaman bekerja di lingkungan yang teratur dan konsisten. "
-                f"Saat di bawah tekanan, testee cenderung lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain (Dominance - D). "
-                f"Secara alami (True Self), testee cenderung sabar, konsisten, dan setia. Mereka menghargai kestabilan, serta lebih suka bekerja dalam lingkungan yang harmonis dan minim konflik (Steadiness - S). "
-                f"Berdasarkan hasil tes DISC, testee menunjukkan profil kepribadian yang Cukup Sesuai dengan Norm Standard yang telah ditetapkan oleh Andamas. Dengan demikian, testee dinilai memenuhi ketentuan yang dibutuhkan untuk level posisi saat ini dari sisi kepribadian DISC."
+                f"Artinya testee cenderung {natural_desc[nat_primary]} "
             )
+
+            narrative += (
+                f"Saat di bawah tekanan, testee cenderung {pressure_desc[pre_primary]} "
+            )
+
+            narrative += (
+                f"Secara alami (True Self), testee cenderung {natural_desc[nat_primary].lower()} "
+            )
+
+            # Suitability based on stress gap
+            if stress_gap < 5:
+                suitability = "Sesuai dengan Norm Standard Andamas – memenuhi persyaratan level posisi saat ini."
+            elif stress_gap < 10:
+                suitability = "Cukup Sesuai dengan Norm Standard Andamas – memenuhi persyaratan, namun memerlukan pengembangan di area tekanan."
+            else:
+                suitability = "Profil menunjukkan perbedaan signifikan antara diri alami dan penampilan publik – disarankan konseling atau penyesuaian peran."
+
+            narrative += f"Berdasarkan hasil tes DISC, testee menunjukkan profil kepribadian yang {suitability}"
+
             html_content += f'<div class="narrative">{narrative}</div>'
 
         # -------------------------- TEMPERAMENT --------------------------
         elif test_code == "TEMP" and details:
             raw_scores = details.get('raw_scores', {})
             primary_en = details.get('primary', '')
-            
+            secondary_en = details.get('secondary', '')
+
+            # Map English to Indonesian
             en_to_id = {
                 "Choleric": "Koleris",
                 "Melancholic": "Melankolis",
@@ -345,43 +428,71 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
                 "Phlegmatic": "Plegmatis"
             }
             primary_id = en_to_id.get(primary_en, primary_en)
-            
-            categories = [
-                ('Koleris', raw_scores.get('C', 0)),
-                ('Melankolis', raw_scores.get('M', 0)),
-                ('Sanguin', raw_scores.get('S', 0)),
-                ('Plegmatis', raw_scores.get('P', 0)),
-            ]
-            
-            trait_meanings = {
-                'Koleris': "individu yang bersemangat, tegas, dan berorientasi pada pencapaian. Mereka pemimpin alami yang cepat mengambil keputusan namun perlu waspada terhadap kesabaran terhadap tim.",
-                'Melankolis': "individu yang analitis, detail‑orientated, dan perfeksionis. Mereka menghasilkan pekerjaan berkualitas tinggi, namun perlu dukungan untuk fleksibilitas dan delegasi.",
-                'Sanguin': "individu yang sosial, optimis, dan kreatif. Mereka mampu membangun rapport yang kuat, namun memerlukan struktur untuk menjaga konsistensi.",
-                'Plegmatis': "individu yang stabil, sabar, dan kooperatif. Mereka menjadi penjaga keharmonisan tim, namun perlu dorongan untuk inisiatif dan kecepatan kerja."
-            }
-            # Build conclusion text
-            concl_text = f"Berdasarkan hasil tes, testee menunjukkan dominasi temperament {primary_id}, yaitu {trait_meanings.get(primary_id, '')}"
+            secondary_id = en_to_id.get(secondary_en, secondary_en) if secondary_en else None
 
-            # Start table with conclusion cell spanning all rows
+            # Get raw scores for each trait (assuming keys: C, M, S, P)
+            trait_scores = {
+                'Koleris': raw_scores.get('C', 0),
+                'Melankolis': raw_scores.get('M', 0),
+                'Sanguin': raw_scores.get('S', 0),
+                'Plegmatis': raw_scores.get('P', 0)
+            }
+
+            # Function to get intensity label (max possible per trait = 42)
+            def get_intensity_label(score):
+                pct = (score / 42) * 100
+                if pct >= 70:
+                    return "tinggi"
+                elif pct >= 30:
+                    return "sedang"
+                else:
+                    return "rendah"
+
+            # Detailed trait meanings (Indonesian)
+            trait_meanings = {
+                'Koleris': "individu yang bersemangat, tegas, dan berorientasi pada pencapaian. Mereka adalah pemimpin alami yang cepat mengambil keputusan dan tidak takut menghadapi tantangan. Di tempat kerja, mereka sering menjadi penggerak yang mendorong tim menuju target. Namun, mereka perlu waspada terhadap kecenderungan untuk menjadi kurang sabar dan kurang memperhatikan perasaan orang lain. Mereka berkembang dalam lingkungan yang kompetitif dan membutuhkan tantangan baru agar tetap termotivasi.",
+                'Melankolis': "individu yang analitis, detail‑orientated, dan perfeksionis. Mereka memiliki standar tinggi dan menghasilkan pekerjaan berkualitas. Mereka unggul dalam tugas yang memerlukan ketelitian dan perencanaan matang. Namun, mereka cenderung terlalu kritis terhadap diri sendiri dan orang lain, serta bisa lambat dalam mengambil keputusan karena terlalu banyak pertimbangan. Mereka membutuhkan apresiasi atas kerja keras mereka dan dukungan untuk lebih fleksibel.",
+                'Sanguin': "individu yang sosial, optimis, dan kreatif. Mereka mudah bergaul, pandai membangun hubungan, dan mampu menciptakan suasana kerja yang menyenangkan. Mereka adalah komunikator ulung dan sering menjadi pusat perhatian. Namun, mereka cenderung kurang konsisten, mudah bosan dengan rutinitas, dan bisa mengabaikan detail. Mereka membutuhkan struktur yang jelas dan pengingat untuk tetap fokus pada tugas.",
+                'Plegmatis': "individu yang stabil, sabar, dan kooperatif. Mereka adalah pendengar yang baik dan menjaga keharmonisan dalam tim. Mereka tidak suka konflik dan mampu meredakan ketegangan. Namun, mereka cenderung pasif, kurang inisiatif, dan bisa terlalu lambat dalam merespons perubahan. Mereka membutuhkan dorongan untuk lebih proaktif dan pengakuan atas kontribusi mereka yang konsisten."
+            }
+
+            # Build conclusion text
+            primary_intensity = get_intensity_label(trait_scores[primary_id])
+            concl_text = f"Berdasarkan hasil tes, testee menunjukkan dominasi temperament {primary_id} dengan intensitas {primary_intensity}. "
+            concl_text += trait_meanings[primary_id] + " "
+
+            if secondary_id:
+                secondary_intensity = get_intensity_label(trait_scores[secondary_id])
+                concl_text += f"Selain itu, testee juga memiliki kecenderungan sekunder pada {secondary_id} (intensitas {secondary_intensity}) yang memberikan nuansa tambahan pada profil kepribadiannya. "
+
+            concl_text += "Kombinasi ini membentuk karakteristik unik yang perlu dipertimbangkan dalam penempatan peran dan pengembangan."
+
+            # Build categories list for table (using Indonesian names)
+            categories = [
+                ('Koleris', trait_scores['Koleris']),
+                ('Melankolis', trait_scores['Melankolis']),
+                ('Sanguin', trait_scores['Sanguin']),
+                ('Plegmatis', trait_scores['Plegmatis'])
+            ]
+
+            # Start table – no conclusion column, just scores
             html_content += '<table>'
-            html_content += '<tr><th>Kategori</th><th>Skor</th><th>Kesimpulan</th></tr>'
-            rowspan = len(categories)
-            for i, (cat, score) in enumerate(categories):
+            html_content += '<tr><th>Kategori</th><th>Skor</th></tr>'
+            for cat, score in categories:
                 is_primary = (primary_id == cat)
                 row_class = ' class="primary-row"' if is_primary else ''
-                if i == 0:
-                    # First row gets the conclusion with rowspan
-                    html_content += f'<tr{row_class}><td>{cat}</td><td>{score}</td><td class="conclusion-cell" rowspan="{rowspan}">{concl_text}</td></tr>'
-                else:
-                    html_content += f'<tr{row_class}><td>{cat}</td><td>{score}</td></tr>'
+                html_content += f'<tr{row_class}><td>{cat}</td><td>{score}</td></tr>'
             html_content += '</table>'
+
+            # Conclusion as a separate block
+            html_content += f'<div class="conclusion-box">{concl_text}</div>'
 
         # -------------------------- LEADERSHIP --------------------------
         elif test_code == "LEAD" and details:
             score = r.score or 0
             html_content += f"""
             <div class="narrative">
-                Hasil Psikotes menunjukkan bahwa testee menjawab soal dengan skor keseluruhan <strong>{score} Point</strong>. Dengan demikian dapat dikatakan bahwa testee “menunjukkan motivasi yang kuat untuk menjadi pemimpin”.
+                Hasil Psikotes menunjukkan bahwa testee menjawab soal dengan skor keseluruhan <strong>{score} Point</strong>. Dengan demikian dapat dikatakan bahwa testee "menunjukkan motivasi yang kuat untuk menjadi pemimpin".
             </div>
             """
 
@@ -431,7 +542,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
 
         # --------------------------- SPEED -----------------------------
         elif test_code == "SPEED" and details:
-            correct = details.get('score', 0)   # Use 'score' field
+            correct = details.get('score', 0)
             total = 100
             rating = get_rating(correct, total, test_name)
             pct = int((correct / total) * 100)
@@ -446,11 +557,11 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
             </div>
             <div class="narrative">
                 Dari {total} soal Speed Test, testee menjawab <strong>{correct}</strong> soal benar. 
-                {('Dengan performa ini, testee dinilai “<strong>'+extra+'</strong>” – unggul dan berkembang di bawah tekanan tinggi. Ideal untuk peran dengan tenggat waktu ketat dan situasi kritis.' if extra else 'Dengan demikian kemampuan kecepatan dan akurasi dinilai <span class="rating-badge rating-'+rating['class']+'">'+rating['label']+'</span>.')}
+                {('Dengan performa ini, testee dinilai "<strong>' + extra + '</strong>" – unggul dan berkembang di bawah tekanan tinggi. Ideal untuk peran dengan tenggat waktu ketat dan situasi kritis.' if extra else 'Dengan demikian kemampuan kecepatan dan akurasi dinilai <span class="rating-badge rating-' + rating['class'] + '">' + rating['label'] + '</span>.')}
             </div>
             """
 
-        # --------------------------- IQ TEST (placeholder) -------------
+        # --------------------------- IQ TEST ---------------------------
         elif test_code == "IQ" and details:
             correct = details.get('correct', 0)
             total = 20

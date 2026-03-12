@@ -107,6 +107,15 @@ function TestScreen({ token, assignmentId, onFinish }) {
           setShowConfirmModal(true);
         }
       }, 200);
+    } else if (testData.settings?.type === 'leadership') {
+      setAnswers({ ...answers, [currentQuestionId]: optionId });
+      setTimeout(() => {
+        if (currentIndex < testData.questions.length - 1) {
+          setCurrentIndex(currentIndex + 1);
+        } else {
+          setShowConfirmModal(true);
+        }
+      }, 200);
     } else {
       setAnswers({ ...answers, [currentQuestionId]: optionId });
     }
