@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-function ParticipantProfilePage({ token, currentUserRole }) {   // Added currentUserRole prop
+function ParticipantProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { token, isSuperadmin } = useAuth();
     const [user, setUser] = useState(null);
     const [assignments, setAssignments] = useState([]);
     const [results, setResults] = useState([]);
@@ -18,10 +20,7 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
     const handleExportPDF = async () => {
         setPdfExporting(true);
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/admin/export/participant/${id}/pdf`, {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: 'blob'
-            });
+            const response = await api.exportParticipantPdf(id);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -41,10 +40,7 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
     const handleExportParticipant = async () => {
         setExporting(true);
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/admin/export/participant/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: 'blob'
-            });
+            const response = await api.exportParticipant(id);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -64,26 +60,20 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
     const loadParticipantData = useCallback(async () => {
         try {
             setLoading(true);
-            const userRes = await axios.get(`http://127.0.0.1:8000/users/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const userRes = await api.getUser(id);
             setUser(userRes.data);
 
-            const assignRes = await axios.get(`http://127.0.0.1:8000/assignments/?user_id=${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const assignRes = await api.getAssignments(id);
             setAssignments(assignRes.data);
 
-            const resultsRes = await axios.get(`http://127.0.0.1:8000/results/?user_id=${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const resultsRes = await api.getResults({ user_id: id });
             setResults(resultsRes.data);
         } catch (err) {
             console.error('Error loading participant data:', err);
         } finally {
             setLoading(false);
         }
-    }, [id, token]);
+    }, [id]);
 
     // Load data on mount and when id/token changes
     useEffect(() => {
@@ -91,7 +81,24 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
     }, [loadParticipantData]);
 
     const getResultForTest = (testId) => {
-        return results.find(r => r.test_id === testId);
+        // Get all results for this test and return the latest one
+        const testResults = results.filter(r => r.test_id === testId);
+        if (testResults.length === 0) return null;
+        // Sort by completed_at descending and return the latest
+        testResults.sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+        return testResults[0];
+    };
+
+    // Deduplicate results - keep only the latest per test
+    const getLatestResults = () => {
+        const latestResults = {};
+        results.forEach(r => {
+            if (!latestResults[r.test_id] || 
+                new Date(r.completed_at) > new Date(latestResults[r.test_id].completed_at)) {
+                latestResults[r.test_id] = r;
+            }
+        });
+        return Object.values(latestResults);
     };
 
     // Define handleReset AFTER loadParticipantData
@@ -108,9 +115,7 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
 
         if (result.isConfirmed) {
             try {
-                await axios.post(`http://127.0.0.1:8000/admin/assignments/${assignmentId}/reset`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.resetAssignment(assignmentId);
                 Swal.fire('Reset!', 'Test has been reset.', 'success');
                 loadParticipantData(); // refresh data
             } catch (err) {
@@ -143,7 +148,7 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
                     ← Back
                 </button>
                 {/* Show export button only if the logged-in user is superadmin */}
-                {currentUserRole === 'superadmin' && (
+                {isSuperadmin && (
                     <div className="flex gap-2">
                         <button
                             onClick={handleExportParticipant}
@@ -208,6 +213,15 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {assignments.map((a) => {
                             const result = getResultForTest(a.test_id);
+                            
+                            // Check if test was incomplete (answered less than total questions)
+                            const isIncomplete = result && result.total_questions && 
+                                result.score < result.total_questions * 0.5; // Less than 50% answered
+                            
+                            // For DISC, check if both most/least were answered for all questions
+                            const isDiscIncomplete = a.test_name === "DISC Assessment" && 
+                                result?.details && 
+                                (Object.keys(result.details.graph_i || {}).length < 4);
                             let statusColor, icon;
                             switch (a.status) {
                                 case 'completed':
@@ -254,9 +268,24 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
                                         )}
                                     </div>
 
-                                    {result && a.test_name !== "Temperament Test" && (
+                                    {result && a.test_name !== "Temperament Test" && !isDiscIncomplete && (
                                         <div className="mt-2 text-sm text-gray-700">
                                             Score: <span className="font-bold text-green-600">{result.score}</span> / {result.max_score}
+                                            {isIncomplete && (
+                                                <span className="ml-2 text-xs text-orange-600 font-medium">⚠️ Incomplete</span>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    {result && isIncomplete && (
+                                        <div className="mt-2 text-sm text-orange-600 font-medium">
+                                            ⚠️ Participant did not finish this test
+                                        </div>
+                                    )}
+                                    
+                                    {result && isDiscIncomplete && (
+                                        <div className="mt-2 text-sm text-orange-600 font-medium">
+                                            ⚠️ DISC profile incomplete (not all questions answered)
                                         </div>
                                     )}
 
@@ -280,7 +309,7 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
                         📊 Test Results
                     </h2>
                     <div className="space-y-5">
-                        {results.map((r) => (
+                        {getLatestResults().map((r) => (
                             <div
                                 key={r.id}
                                 className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden bg-white"
@@ -496,41 +525,47 @@ function ParticipantProfilePage({ token, currentUserRole }) {   // Added current
                                 {/* Leadership Test */}
                                 {r.test_name === "Leadership Test" && r.details && (
                                     <div className="p-5">
-                                        {(() => {
-                                            const traitNames = {
-                                                DEC: 'Decisiveness',
-                                                COM: 'Communication',
-                                                STR: 'Strategic Thinking',
-                                                TEA: 'Team Orientation',
-                                                ACC: 'Accountability',
-                                                EMO: 'Emotional Control'
-                                            };
-                                            return (
-                                                <>
-                                                    <h4 className="font-bold text-gray-700 mb-3">Leadership Profile</h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
-                                                        <div><span className="font-medium">Primary Strength:</span> {r.details.primary}</div>
-                                                        <div><span className="font-medium">Secondary Strength:</span> {r.details.secondary}</div>
-                                                    </div>
-                                                    <div className="mt-3">
-                                                        <span className="font-medium">Trait Scores:</span>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                                                            {Object.entries(r.details.percentages || {}).map(([code, pct]) => (
-                                                                <div key={code} className="bg-gray-50 p-2 rounded flex justify-between">
-                                                                    <span className="font-medium">{traitNames[code] || code}:</span>
-                                                                    <span>{Math.round(pct)}%</span>
-                                                                </div>
-                                                            ))}
+                                        <h4 className="font-bold text-gray-700 mb-3">Leadership Profile</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                                            <div><span className="font-medium">Primary Strength:</span> {r.details.primary}</div>
+                                            <div><span className="font-medium">Secondary Strength:</span> {r.details.secondary}</div>
+                                        </div>
+                                        <div className="mt-3">
+                                            <span className="font-medium">Trait Scores:</span>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                                                {Object.entries(r.details.percentages || {}).map(([code, pct]) => {
+                                                    const traitNames = {
+                                                        DEC: 'Decisiveness',
+                                                        COM: 'Communication',
+                                                        STR: 'Strategic Thinking',
+                                                        TEA: 'Team Orientation',
+                                                        ACC: 'Accountability',
+                                                        EMO: 'Emotional Control'
+                                                    };
+                                                    return (
+                                                        <div key={code} className="bg-gray-50 p-2 rounded flex justify-between">
+                                                            <span className="font-medium">{traitNames[code] || code}:</span>
+                                                            <span>{Math.round(pct)}%</span>
                                                         </div>
-                                                    </div>
-                                                    {r.details.development_areas?.length > 0 && (
-                                                        <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-700">
-                                                            ⚠️ Development areas: {r.details.development_areas.map(code => traitNames[code] || code).join(', ')}
-                                                        </div>
-                                                    )}
-                                                </>
-                                            );
-                                        })()}
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        {r.details.development_areas?.length > 0 && (
+                                            <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-700">
+                                                ⚠️ Development areas: {r.details.development_areas.map(code => {
+                                                    const traitNames = {
+                                                        DEC: 'Decisiveness',
+                                                        COM: 'Communication',
+                                                        STR: 'Strategic Thinking',
+                                                        TEA: 'Team Orientation',
+                                                        ACC: 'Accountability',
+                                                        EMO: 'Emotional Control'
+                                                    };
+                                                    return traitNames[code] || code;
+                                                }).join(', ')}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

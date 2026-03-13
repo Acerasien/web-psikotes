@@ -1,57 +1,50 @@
 // client/src/App.jsx
-import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Login from './Login'
-import AdminLayout from './AdminLayout' // New Component
+import AdminLayout from './AdminLayout'
 import ParticipantDashboard from './ParticipantDashboard'
 import './index.css'
 
-function App() {
-  const [token, setToken] = useState(sessionStorage.getItem('token'));
-  const [user, setUser] = useState(null);
+function AppContent() {
+  const { token, user, loading, logout } = useAuth();
 
-  const handleLogin = (newToken) => {
-    setToken(newToken);
-    sessionStorage.setItem('token', newToken);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="text-gray-600">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
-  const handleLogout = () => {
-    setToken(null);
-    setUser(null);
-    sessionStorage.removeItem('token');
-  };
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (!token) return;
-      try {
-        const response = await fetch('http://127.0.0.1:8000/users/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await response.json();
-        setUser(data);
-      } catch (err) {
-        handleLogout();
-      }
-    };
-    fetchUser();
-  }, [token]);
-
-  if (!token) return <Login onLogin={handleLogin} />
-  if (!user) return <div className="min-h-screen flex items-center justify-center bg-gray-100">Loading...</div>;
+  if (!token || !user) return <Login />
 
   // Routing Logic
   if (user.role === 'admin' || user.role === 'superadmin') {
     return (
       <Router>
         <Routes>
-          <Route path="/*" element={<AdminLayout token={token} user={user} onLogout={handleLogout} />} />
+          <Route path="/*" element={<AdminLayout onLogout={logout} />} />
         </Routes>
       </Router>
     )
   } else {
-    return <ParticipantDashboard token={token} user={user} onLogout={handleLogout} />
+    return <ParticipantDashboard onLogout={logout} />
   }
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
+  )
 }
 
 export default App

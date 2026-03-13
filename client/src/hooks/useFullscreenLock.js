@@ -1,6 +1,6 @@
 // client/src/hooks/useFullscreenLock.js
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 
 export function useFullscreenLock({ assignmentId, token, onLock }) {
@@ -23,15 +23,11 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
                 const newCount = exitCount + 1;
                 setExitCount(newCount);
 
-                axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/exit-log`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                }).catch(err => console.error("Failed to log exit", err));
+                api.logExit(assignmentId).catch(err => console.error("Failed to log exit", err));
 
                 if (newCount >= 3) {
                     setIsLocked(true);
-                    axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/lock`, {}, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }).catch(err => console.error(err));
+                    api.lockAssignment(assignmentId).catch(err => console.error(err));
                     Swal.fire({
                         title: 'Test Locked',
                         text: 'You have exited fullscreen too many times.',
@@ -56,7 +52,7 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, [exitCount, isLocked, assignmentId, token, onLock]); // Dependencies are stable
+    }, [exitCount, isLocked, assignmentId, onLock]); // Dependencies are stable
 
     return { isLocked, isFullscreen, enterFullscreen };
 }

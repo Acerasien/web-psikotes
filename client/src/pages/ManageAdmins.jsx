@@ -1,11 +1,13 @@
 // client/src/pages/ManageAdmins.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import EditParticipantModal from '../components/EditParticipantModal';
 
-function ManageAdmins({ token, currentUserRole }) {
+function ManageAdmins() {
+    const { token, isSuperadmin: currentUserRole } = useAuth();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingUser, setEditingUser] = useState(null);
@@ -13,9 +15,7 @@ function ManageAdmins({ token, currentUserRole }) {
 
     const fetchAdmins = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:8000/users/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.getUsers();
             // Filter only admin and superadmin
             const admins = res.data.filter(u => u.role === 'admin' || u.role === 'superadmin');
             setUsers(admins);
@@ -28,7 +28,7 @@ function ManageAdmins({ token, currentUserRole }) {
 
     useEffect(() => {
         fetchAdmins();
-    }, [token]);
+    }, []);
 
     const handleResetPassword = async (userId, username) => {
         const result = await Swal.fire({
@@ -43,9 +43,7 @@ function ManageAdmins({ token, currentUserRole }) {
 
         if (result.isConfirmed) {
             try {
-                const res = await axios.post(`http://127.0.0.1:8000/admin/reset-password/${userId}`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.resetPassword(userId);
                 const newPassword = res.data.new_password;
                 await Swal.fire({
                     title: 'Password Reset',
@@ -72,9 +70,7 @@ function ManageAdmins({ token, currentUserRole }) {
 
         if (result.isConfirmed) {
             try {
-                await axios.delete(`http://127.0.0.1:8000/users/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.deleteUser(userId);
                 Swal.fire('Deleted!', 'Admin has been deleted.', 'success');
                 fetchAdmins();
             } catch (err) {
@@ -164,7 +160,6 @@ function ManageAdmins({ token, currentUserRole }) {
             {/* Edit Modal (reuse same component) */}
             {showEditModal && (
                 <EditParticipantModal
-                    token={token}
                     user={editingUser}
                     onClose={() => {
                         setShowEditModal(false);

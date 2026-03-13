@@ -1,10 +1,12 @@
 // client/src/TestScreen.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from './contexts/AuthContext';
+import { api } from './utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from './hooks/useFullscreenLock';
 
-function TestScreen({ token, assignmentId, onFinish }) {
+function TestScreen({ assignmentId, onFinish }) {
+  const { token } = useAuth();
   const [testData, setTestData] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -47,9 +49,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
   useEffect(() => {
     const loadTest = async () => {
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.startTest(assignmentId);
 
         // Shuffle questions only for Leadership test
         let testDataFromServer = res.data;
@@ -75,7 +75,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
       }
     };
     loadTest();
-  }, [token, assignmentId, enterFullscreen, onFinish]);
+  }, [assignmentId, enterFullscreen, onFinish]);
 
   // --- TIMER ---
   useEffect(() => {
@@ -122,6 +122,20 @@ function TestScreen({ token, assignmentId, onFinish }) {
   };
 
   const handleSubmit = async (currentAnswers = answers, isTimeout = false) => {
+    // Check if all questions answered
+    const answeredCount = Object.keys(currentAnswers).length;
+    const totalQuestions = testData?.questions?.length || 0;
+    
+    if (!isTimeout && totalQuestions > 0 && answeredCount < totalQuestions) {
+      Swal.fire({
+        title: 'Belum Lengkap',
+        text: `Anda baru menjawab ${answeredCount} dari ${totalQuestions} pertanyaan.`,
+        icon: 'warning',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     const timeTaken = testData.time_limit === 0 ? 0 : testData.time_limit - timeLeft;
     try {
@@ -131,10 +145,7 @@ function TestScreen({ token, assignmentId, onFinish }) {
         type: 'single'
       }));
 
-      await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`,
-        { answers: finalAnswers, time_taken: timeTaken },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.submitTest(assignmentId, finalAnswers, timeTaken);
 
       if (isTimeout) Swal.fire("Time is up!", "Your test has been submitted.", "info");
       onFinish();

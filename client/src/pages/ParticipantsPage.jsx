@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import EditParticipantModal from '../components/EditParticipantModal';
 import BulkUploadModal from '../components/BulkUploadModal';
 
-function ParticipantsPage({ token, currentUserRole }) {
+function ParticipantsPage() {
+    const { token, isSuperadmin } = useAuth();
     const [usersList, setUsersList] = useState([]);
     const [tests, setTests] = useState([]);
     const [assignments, setAssignments] = useState([]);
@@ -25,9 +27,7 @@ function ParticipantsPage({ token, currentUserRole }) {
 
     const fetchTests = async () => {
         try {
-            const r = await axios.get('http://127.0.0.1:8000/tests/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const r = await api.getTests();
             setTests(r.data);
         } catch (e) {
             console.error(e);
@@ -36,9 +36,7 @@ function ParticipantsPage({ token, currentUserRole }) {
 
     const refreshAssignments = async () => {
         try {
-            const r = await axios.get('http://127.0.0.1:8000/assignments/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const r = await api.getAssignments();
             setAssignments(r.data);
         } catch (e) {
             console.error(e);
@@ -47,9 +45,7 @@ function ParticipantsPage({ token, currentUserRole }) {
 
     const refreshUsers = async () => {
         try {
-            const r = await axios.get('http://127.0.0.1:8000/users/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const r = await api.getUsers();
             setUsersList(r.data);
         } catch (e) {
             console.error(e);
@@ -60,7 +56,7 @@ function ParticipantsPage({ token, currentUserRole }) {
         refreshUsers();
         fetchTests();
         refreshAssignments();
-    }, [token]);
+    }, []);
 
     // Filtering
     const filteredUsers = usersList
@@ -85,9 +81,7 @@ function ParticipantsPage({ token, currentUserRole }) {
             return;
         }
         try {
-            await axios.post(`http://127.0.0.1:8000/assignments/?user_id=${userId}&test_id=${testId}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.createAssignment(userId, testId);
             refreshAssignments();
             setSelectedTest(prev => ({ ...prev, [userId]: '' }));
         } catch (err) {
@@ -105,9 +99,7 @@ function ParticipantsPage({ token, currentUserRole }) {
         });
         if (result.isConfirmed) {
             try {
-                await axios.post(`http://127.0.0.1:8000/admin/assignments/${assignmentId}/unlock`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.unlockAssignment(assignmentId);
                 refreshAssignments();
                 Swal.fire('Unlocked!', '', 'success');
             } catch (err) {
@@ -129,9 +121,7 @@ function ParticipantsPage({ token, currentUserRole }) {
 
         if (result.isConfirmed) {
             try {
-                await axios.delete(`http://127.0.0.1:8000/users/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.deleteUser(userId);
                 Swal.fire('Deleted!', 'Participant has been deleted.', 'success');
                 refreshUsers();
             } catch (err) {
@@ -152,9 +142,7 @@ function ParticipantsPage({ token, currentUserRole }) {
 
         if (result.isConfirmed) {
             try {
-                await axios.post(`http://127.0.0.1:8000/assignments/assign-all/${userId}`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.assignAllTests(userId);
                 Swal.fire('Success', 'All tests assigned successfully!', 'success');
                 refreshAssignments();   // refresh assignments list
             } catch (err) {
@@ -253,7 +241,7 @@ function ParticipantsPage({ token, currentUserRole }) {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     {/* Unlock button (if locked) */}
-                                                    {currentUserRole === 'superadmin' && hasLocked && (
+                                                    {isSuperadmin && hasLocked && (
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -303,7 +291,7 @@ function ParticipantsPage({ token, currentUserRole }) {
                                                     </div>
 
                                                     {/* Edit & Delete icons, only for superadmin */}
-                                                    {currentUserRole === 'superadmin' && (
+                                                    {isSuperadmin && (
                                                         <>
                                                             {/* Edit icon */}
                                                             <button
@@ -369,7 +357,6 @@ function ParticipantsPage({ token, currentUserRole }) {
             {/* Edit Modal */}
             {showEditModal && (
                 <EditParticipantModal
-                    token={token}
                     user={editingUser}
                     onClose={() => {
                         setShowEditModal(false);
@@ -383,7 +370,6 @@ function ParticipantsPage({ token, currentUserRole }) {
             )}
             {showBulkUpload && (
                 <BulkUploadModal
-                    token={token}
                     onClose={() => setShowBulkUpload(false)}
                     onSuccess={() => {
                         refreshUsers();

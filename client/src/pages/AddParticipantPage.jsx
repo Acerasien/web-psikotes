@@ -1,9 +1,11 @@
 // client/src/pages/AddParticipantPage.jsx
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import CreateUser from '../CreateUser';
 
-function AddParticipantPage({ token, currentUserRole }) {
+function AddParticipantPage() {
     const navigate = useNavigate();
+    const { token, isSuperadmin: currentUserRole } = useAuth();
 
     const handleSuccess = () => {
         navigate('/participants');
@@ -21,7 +23,7 @@ function AddParticipantPage({ token, currentUserRole }) {
                 </p>
             </div>
             <div className="px-4 py-5 sm:p-6">
-                <CreateUser token={token} onUserCreated={handleSuccess} currentUserRole={currentUserRole} />
+                <CreateUser onUserCreated={handleSuccess} />
                 <div className="mt-4 text-right">
                     <button
                         onClick={() => navigate('/participants')}

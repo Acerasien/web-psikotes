@@ -1,10 +1,12 @@
 // client/src/components/LogicTest.jsx
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function LogicTest({ token, assignmentId, onFinish }) {
+function LogicTest({ assignmentId, onFinish }) {
+    const { token } = useAuth();
     const [testData, setTestData] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
@@ -43,24 +45,28 @@ function LogicTest({ token, assignmentId, onFinish }) {
     };
 
     const goToQuestion = (index) => {
-        if (index >= 0 && index < questions.length) setCurrentIndex(index);
+        if (index >= 0 && index < questions.length) {
+            setCurrentIndex(index);
+        }
     };
 
     const goNext = () => {
-        if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1);
+        if (currentIndex < questions.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+        }
     };
 
     const goPrev = () => {
-        if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+        if (currentIndex > 0) {
+            setCurrentIndex(prev => prev - 1);
+        }
     };
 
     // Load test data
     useEffect(() => {
         const loadTest = async () => {
             try {
-                const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.startTest(assignmentId);
                 setTestData(res.data);
                 setQuestions(res.data.questions);
                 setTimeLeft(res.data.time_limit || 1800);
@@ -77,7 +83,7 @@ function LogicTest({ token, assignmentId, onFinish }) {
             }
         };
         loadTest();
-    }, [token, assignmentId, enterFullscreen, onFinish]);
+    }, [assignmentId, enterFullscreen, onFinish]);
 
     // Prevent context menu and dev tools
     useEffect(() => {
@@ -114,6 +120,18 @@ function LogicTest({ token, assignmentId, onFinish }) {
     }, [timeLeft, isLocked]);
 
     const handleSubmit = async (isTimeout = false) => {
+        // Check if all questions answered
+        const answeredCount = Object.keys(answers).length;
+        if (!isTimeout && answeredCount < questions.length) {
+            Swal.fire({
+                title: 'Belum Lengkap',
+                text: `Anda baru menjawab ${answeredCount} dari ${questions.length} pertanyaan. Silakan jawab semua pertanyaan sebelum menyelesaikan tes.`,
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const payload = {
@@ -124,9 +142,7 @@ function LogicTest({ token, assignmentId, onFinish }) {
                 })),
                 time_taken: (testData?.time_limit || 1800) - timeLeft
             };
-            await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.submitTest(assignmentId, payload.answers, payload.time_taken);
             if (isTimeout) {
                 Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
             } else {
@@ -184,7 +200,7 @@ function LogicTest({ token, assignmentId, onFinish }) {
             <div className="bg-white border-b px-4 py-3">
                 <div className="flex flex-wrap gap-1.5 justify-center">
                     {questions.map((q, idx) => {
-                        let btnClass = 'w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors ';
+                        let btnClass = 'w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors cursor-pointer ';
                         if (answers[q.id]) {
                             btnClass += 'bg-green-500 text-white hover:bg-green-600';
                         } else if (flagged.has(q.id)) {
@@ -196,7 +212,12 @@ function LogicTest({ token, assignmentId, onFinish }) {
                             btnClass += ' ring-2 ring-blue-500 ring-offset-2';
                         }
                         return (
-                            <button key={q.id} onClick={() => goToQuestion(idx)} className={btnClass}>
+                            <button 
+                                key={q.id} 
+                                type="button"
+                                onClick={() => goToQuestion(idx)} 
+                                className={btnClass}
+                            >
                                 {idx + 1}
                             </button>
                         );

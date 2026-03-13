@@ -1,10 +1,12 @@
 // client/src/components/DISCTest.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function DISCTest({ token, assignmentId, onFinish }) {
+function DISCTest({ assignmentId, onFinish }) {
+    const { token } = useAuth();
     const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
     const [timeLeft, setTimeLeft] = useState(null);
@@ -97,10 +99,7 @@ function DISCTest({ token, assignmentId, onFinish }) {
         const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);
         try {
             const finalAnswers = formatDiscPayload(currentAnswers);
-            await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`,
-                { answers: finalAnswers, time_taken: timeTaken },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.submitTest(assignmentId, finalAnswers, timeTaken);
             if (isTimeout) Swal.fire("Time is up!", "Your test has been submitted.", "info");
             onFinish();
         } catch (err) {
@@ -108,7 +107,7 @@ function DISCTest({ token, assignmentId, onFinish }) {
             setIsSubmitting(false);
             Swal.fire("Error", "Failed to submit test.", "error");
         }
-    }, [assignmentId, token, onFinish]); // Only stable props
+    }, [assignmentId, onFinish]); // Only stable props
 
     // ----- Timer effect (depends only on stable handleSubmit) -----
     useEffect(() => {
@@ -138,9 +137,7 @@ function DISCTest({ token, assignmentId, onFinish }) {
     useEffect(() => {
         const loadTest = async () => {
             try {
-                const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.startTest(assignmentId);
                 setTestData(res.data);
                 if (res.data.time_limit === 0) setTimeLeft(null);
                 else setTimeLeft(res.data.time_limit);
@@ -155,7 +152,7 @@ function DISCTest({ token, assignmentId, onFinish }) {
             }
         };
         loadTest();
-    }, [assignmentId, token, enterFullscreen, onFinish]);
+    }, [assignmentId, enterFullscreen, onFinish]);
 
     // ----- Render locked screen -----
     if (isLocked) {

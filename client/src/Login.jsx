@@ -1,8 +1,10 @@
 // client/src/Login.jsx
 import { useState } from 'react';
-import axios from 'axios';
+import { useAuth } from './contexts/AuthContext';
+import Swal from 'sweetalert2';
 
-function Login({ onLogin }) {
+function Login() {
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -14,14 +16,10 @@ function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
-
-      const response = await axios.post('http://127.0.0.1:8000/login', formData);
-      onLogin(response.data.access_token);
+      await login(username, password);
     } catch (err) {
       setError('Invalid username or password');
+      Swal.fire('Login Failed', 'Invalid username or password', 'error');
     } finally {
       setLoading(false);
     }

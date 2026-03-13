@@ -1,53 +1,70 @@
 // client/src/pages/Dashboard.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import LoadingSpinner from '../components/LoadingSpinner';
+import PageWrapper from '../components/PageWrapper';
 
-function Dashboard({ token }) {
+function Dashboard() {
+    const { token } = useAuth();
     const [summary, setSummary] = useState(null);
     const [testStats, setTestStats] = useState([]);
     const [recent, setRecent] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchData = async () => {
+        try {
+            setError(null);
+            const [summaryRes, testsRes, recentRes] = await Promise.all([
+                api.getStatsSummary(),
+                api.getStatsTests(),
+                api.getStatsRecent(10)
+            ]);
+            
+            const summaryData = summaryRes?.data || null;
+            const testsData = testsRes?.data || null;
+            const recentData = recentRes?.data || null;
+            
+            setSummary(summaryData);
+            setTestStats(testsData);
+            setRecent(recentData);
+            
+            // Check if any data is missing
+            if (!summaryData || !testsData || !recentData) {
+                throw new Error('Incomplete data received from server');
+            }
+        } catch (err) {
+            console.error('Failed to load dashboard stats', err);
+            setError(err.message || 'Failed to load dashboard data');
+            setSummary(null);
+            setTestStats([]);
+            setRecent([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [summaryRes, testsRes, recentRes] = await Promise.all([
-                    axios.get('http://127.0.0.1:8000/admin/stats/summary', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                    axios.get('http://127.0.0.1:8000/admin/stats/tests', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                    axios.get('http://127.0.0.1:8000/admin/stats/recent?limit=10', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    })
-                ]);
-                setSummary(summaryRes.data);
-                setTestStats(testsRes.data);
-                setRecent(recentRes.data);
-            } catch (err) {
-                console.error('Failed to load dashboard stats', err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, [token]);
 
-    if (loading) return <div className="p-8 text-center">Loading dashboard...</div>;
-
-    // If any of the data is missing, show a friendly error
+    // Don't render if still loading or if there's an error (handled by PageWrapper)
     if (!summary || !testStats || !recent) {
-        return (
-            <div className="p-8 text-center text-red-600 bg-red-50 rounded-lg">
-                Failed to load dashboard data. Please try again later.
-            </div>
-        );
+        return null; // PageWrapper will show loading state
     }
 
     return (
-        <div className="space-y-6">
+        <PageWrapper
+            loading={loading}
+            error={error}
+            onRetry={fetchData}
+            loadingText="Loading dashboard..."
+            errorTitle="Failed to load dashboard"
+            errorMessage="Unable to load dashboard statistics. Please try again."
+        >
+            <div className="space-y-6">
             {/* Key Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
@@ -127,7 +144,8 @@ function Dashboard({ token }) {
                     </table>
                 </div>
             </div>
-        </div>
+            </div>
+        </PageWrapper>
     );
 }
 

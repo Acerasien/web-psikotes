@@ -1,11 +1,12 @@
 # server/auth.py
+import os
+from datetime import datetime, timedelta
 from passlib.context import CryptContext
-from database import SessionLocal, get_db
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from database import SessionLocal
+from database import get_db
 from models import User
 
 # This context tells passlib to use the bcrypt algorithm
@@ -17,14 +18,10 @@ def hash_password(password: str):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-from datetime import datetime, timedelta
-from jose import jwt
-
-# SECRET KEY: In production, this should be in an environment variable!
-# For learning, we just use a random string.
-SECRET_KEY = "a_very_secret_key_that_should_be_random_and_long"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# Security settings from environment variables
+SECRET_KEY = os.getenv("SECRET_KEY", "your-fallback-secret-key-change-in-production")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 def create_access_token(data: dict):
     to_encode = data.copy()

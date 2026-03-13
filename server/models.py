@@ -1,5 +1,5 @@
 # server/models.py
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, JSON, ForeignKey, Boolean, DateTime, Index
 from database import Base
 import enum
 from sqlalchemy import JSON, ForeignKey
@@ -18,44 +18,53 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password_hash = Column(String)
-    role = Column(String, default="participant")
-    
+    role = Column(String, default="participant", index=True)
+
     # NEW FIELDS FOR REPORT
-    full_name = Column(String, nullable=True)
+    full_name = Column(String, nullable=True, index=True)
     gender = Column(String, nullable=True)  # e.g., "L" or "P", or "Male"/"Female"
     age = Column(Integer, nullable=True)
     education = Column(String, nullable=True)
-    department = Column(String, nullable=True)
+    department = Column(String, nullable=True, index=True)
     position = Column(String, nullable=True)
+
+    # Relationships with cascade delete
+    assignments = relationship("Assignment", back_populates="user", cascade="all, delete-orphan")
+    results = relationship("Result", back_populates="user", cascade="all, delete-orphan")
+    responses = relationship("Response", back_populates="user", cascade="all, delete-orphan")
+    exit_logs = relationship("ExitLog", back_populates="user", cascade="all, delete-orphan")
 
 # 1. The Test Model (e.g., IQ Test, DISC)
 class Test(Base):
     __tablename__ = "tests"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)  # e.g., "IQ Test"
     code = Column(String, unique=True, index=True) # e.g., "IQ"
     time_limit = Column(Integer)  # Time in seconds
     settings = Column(JSON, nullable=True) # Store config like 'passing_score'
-    
-    # Relationship: One Test has many Questions
-    questions = relationship("Question", back_populates="test")
+
+    # Relationships
+    questions = relationship("Question", back_populates="test", cascade="all, delete-orphan")
+    assignments = relationship("Assignment", back_populates="test")
+    results = relationship("Result", back_populates="test")
 
 # 2. The Question Model
 class Question(Base):
     __tablename__ = "questions"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    test_id = Column(Integer, ForeignKey("tests.id"))
-    content = Column(String) 
-    order_index = Column(Integer)
-    
+    test_id = Column(Integer, ForeignKey("tests.id"), index=True)
+    content = Column(String)
+    order_index = Column(Integer, index=True)
+
     # CHANGE 'metadata' to 'meta_data' to avoid conflict
-    meta_data = Column(JSON, nullable=True) 
-    
+    meta_data = Column(JSON, nullable=True)
+
     # Relationships
     test = relationship("Test", back_populates="questions")
-    options = relationship("Option", back_populates="question")
+    options = relationship("Option", back_populates="question", cascade="all, delete-orphan")
+    responses = relationship("Response", back_populates="question")
 
 # 3. The Option Model (The answers)
 class Option(Base):
@@ -72,60 +81,77 @@ class Option(Base):
 
 class Assignment(Base):
     __tablename__ = "assignments"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    test_id = Column(Integer, ForeignKey("tests.id"))
-    status = Column(String, default="pending") # pending, in_progress, completed, locked
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    test_id = Column(Integer, ForeignKey("tests.id"), index=True)
+    status = Column(String, default="pending", index=True) # pending, in_progress, completed, locked
     pretest_completed = Column(Boolean, default=False) # The Tutorial flag
-    assigned_at = Column(DateTime, default=datetime.utcnow) # Needs import: from datetime import datetime
-    
+    assigned_at = Column(DateTime, default=datetime.utcnow, index=True) # Needs import: from datetime import datetime
+
     # Relationships
-    user = relationship("User")
-    test = relationship("Test")
+    user = relationship("User", back_populates="assignments")
+    test = relationship("Test", back_populates="assignments")
+    responses = relationship("Response", back_populates="assignment", cascade="all, delete-orphan")
+    results = relationship("Result", back_populates="assignment", cascade="all, delete-orphan")
+    exit_logs = relationship("ExitLog", back_populates="assignment", cascade="all, delete-orphan")
+
+    # Indexes for common queries
+    __table_args__ = (
+        Index('ix_assignments_user_status', 'user_id', 'status'),
+        Index('ix_assignments_test_status', 'test_id', 'status'),
+    )
 
 class Response(Base):
     __tablename__ = "responses"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    test_id = Column(Integer, ForeignKey("tests.id"))
-    question_id = Column(Integer, ForeignKey("questions.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    test_id = Column(Integer, ForeignKey("tests.id"), index=True)
+    question_id = Column(Integer, ForeignKey("questions.id"), index=True)
     selected_option_id = Column(Integer, ForeignKey("options.id"))
-    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)  # new
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False, index=True)  # new
     # NEW FIELD: To distinguish between 'most', 'least', or 'single' (for speed test)
-    selection_type = Column(String, default="single") 
-    
+    selection_type = Column(String, default="single")
+
     # Relationships
-    user = relationship("User")
+    user = relationship("User", back_populates="responses")
     test = relationship("Test")
-    assignment = relationship("Assignment")
-    question = relationship("Question")
+    assignment = relationship("Assignment", back_populates="responses")
+    question = relationship("Question", back_populates="responses")
     option = relationship("Option")
 
 class Result(Base):
     __tablename__ = "results"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    test_id = Column(Integer, ForeignKey("tests.id"))
-    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)  # new
-    score = Column(Integer, default=0)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    test_id = Column(Integer, ForeignKey("tests.id"), index=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False, index=True)
+    score = Column(Integer, default=0, index=True)
     time_taken = Column(Integer) # in seconds
-    completed_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, default=datetime.utcnow, index=True)
     details = Column(JSON, nullable=True)  # <-- ADD THIS LINE
-    
+
     # Relationships
-    user = relationship("User")
-    test = relationship("Test")
-    assignment = relationship("Assignment")
+    user = relationship("User", back_populates="results")
+    test = relationship("Test", back_populates="results")
+    assignment = relationship("Assignment", back_populates="results")
+
+    # Indexes for common queries
+    __table_args__ = (
+        Index('ix_results_user_completed', 'user_id', 'completed_at'),
+        Index('ix_results_test_completed', 'test_id', 'completed_at'),
+    )
     
 class ExitLog(Base):
     __tablename__ = "exit_logs"
+    
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    assignment_id = Column(Integer, ForeignKey("assignments.id"))
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
 
-    user = relationship("User")
-    assignment = relationship("Assignment")
+    # Relationships
+    user = relationship("User", back_populates="exit_logs")
+    assignment = relationship("Assignment", back_populates="exit_logs")

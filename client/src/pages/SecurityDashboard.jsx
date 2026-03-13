@@ -1,10 +1,12 @@
 // client/src/pages/SecurityDashboard.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { formatLocalDateTime } from '../utils/dateUtils';
 
-function SecurityDashboard({ token }) {
+function SecurityDashboard() {
+    const { token } = useAuth();
     const [lockedAssignments, setLockedAssignments] = useState([]);
     const [exitLogs, setExitLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,9 +27,7 @@ function SecurityDashboard({ token }) {
 
     const fetchLocked = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:8000/admin/locked-assignments', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.getLockedAssignments();
             setLockedAssignments(res.data);
         } catch (err) {
             console.error('Failed to fetch locked assignments', err);
@@ -36,9 +36,7 @@ function SecurityDashboard({ token }) {
 
     const fetchExitLogs = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:8000/admin/exit-logs', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.getExitLogs();
             setExitLogs(res.data);
         } catch (err) {
             console.error('Failed to fetch exit logs', err);
@@ -65,9 +63,7 @@ function SecurityDashboard({ token }) {
         });
         if (result.isConfirmed) {
             try {
-                await axios.post(`http://127.0.0.1:8000/admin/assignments/${assignmentId}/unlock`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.unlockAssignment(assignmentId);
                 Swal.fire('Unlocked!', 'The assignment has been unlocked.', 'success');
                 fetchLocked();
             } catch (err) {

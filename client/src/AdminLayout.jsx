@@ -1,13 +1,15 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 import ParticipantsPage from './pages/ParticipantsPage';
 import ResultsPage from './pages/ResultsPage';
 import AddParticipantPage from './pages/AddParticipantPage';
 import ParticipantProfilePage from './pages/ParticipantProfilePage';
 import SecurityDashboard from './pages/SecurityDashboard';
 import ManageAdmins from './pages/ManageAdmins';
-import Dashboard from './pages/Dashboard';  // new import
+import Dashboard from './pages/Dashboard';
 
-function AdminLayout({ token, user, onLogout }) {
+function AdminLayout({ onLogout }) {
+    const { user, isSuperadmin } = useAuth();
     const location = useLocation();
 
     return (
@@ -49,7 +51,7 @@ function AdminLayout({ token, user, onLogout }) {
                     >
                         Participants
                     </Link>
-                    {user.role === 'superadmin' && (
+                    {isSuperadmin && (
                         <>
                             <Link
                                 to="/admins"
@@ -94,13 +96,13 @@ function AdminLayout({ token, user, onLogout }) {
 
                 <main className="flex-1 p-6 overflow-y-auto">
                     <Routes>
-                        <Route path="/" element={<Dashboard token={token} currentUserRole={user.role} />} />
-                        <Route path="/participants" element={<ParticipantsPage token={token} currentUserRole={user.role} />} />
-                        <Route path="/participants/new" element={<AddParticipantPage token={token} currentUserRole={user.role} />} />
-                        <Route path="/participants/:id" element={<ParticipantProfilePage token={token} currentUserRole={user.role} />} />
-                        <Route path="/admins" element={<ManageAdmins token={token} currentUserRole={user.role} />} />
-                        <Route path="/results" element={<ResultsPage token={token} currentUserRole={user.role} />} />
-                        <Route path="/security" element={<SecurityDashboard token={token} currentUserRole={user.role} />} />
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/participants" element={<ParticipantsPage />} />
+                        <Route path="/participants/new" element={<AddParticipantPage />} />
+                        <Route path="/participants/:id" element={<ParticipantProfilePage />} />
+                        <Route path="/admins" element={<ManageAdmins />} />
+                        <Route path="/results" element={<ResultsPage />} />
+                        <Route path="/security" element={<SecurityDashboard />} />
                     </Routes>
                 </main>
             </div>

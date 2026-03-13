@@ -1,12 +1,14 @@
 // client/src/components/BulkUploadModal.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import apiClient from '../utils/api';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import Swal from 'sweetalert2';
 
-function BulkUploadModal({ token, onClose, onSuccess }) {
+function BulkUploadModal({ onClose, onSuccess }) {
+    const { token } = useAuth();
     const [file, setFile] = useState(null);
     const [previewData, setPreviewData] = useState([]);
     const [assignAll, setAssignAll] = useState(false);
@@ -85,11 +87,8 @@ function BulkUploadModal({ token, onClose, onSuccess }) {
         formData.append('assign_all', assignAll.toString());
 
         try {
-            const res = await axios.post('http://127.0.0.1:8000/admin/users/bulk', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${token}`
-                }
+            const res = await apiClient.post('/admin/users/bulk', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             setResults(res.data);
             if (res.data.failed === 0) {

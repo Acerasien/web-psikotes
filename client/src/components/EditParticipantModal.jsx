@@ -1,9 +1,11 @@
 // client/src/components/EditParticipantModal.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 
-function EditParticipantModal({ token, user, onClose, onSaved }) {
+function EditParticipantModal({ user, onClose, onSaved }) {
+    const { token } = useAuth();
     const [formData, setFormData] = useState({
         username: '',
         password: '',
@@ -49,9 +51,7 @@ function EditParticipantModal({ token, user, onClose, onSaved }) {
         };
 
         try {
-            await axios.put(`http://127.0.0.1:8000/users/${user.id}`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.updateUser(user.id, payload);
             Swal.fire('Success', 'Participant updated successfully', 'success');
             onSaved(); // refresh parent list
             onClose(); // close modal

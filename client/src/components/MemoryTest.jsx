@@ -1,10 +1,12 @@
 // client/src/components/MemoryTest.jsx
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function MemoryTest({ token, assignmentId, onFinish }) {
+function MemoryTest({ assignmentId, onFinish }) {
+    const { token } = useAuth();
     const [testData, setTestData] = useState(null);
     const [phase, setPhase] = useState('encoding');
     const [encodingTimeLeft, setEncodingTimeLeft] = useState(0);
@@ -54,12 +56,6 @@ function MemoryTest({ token, assignmentId, onFinish }) {
     }, [questions, currentIndex]);
 
     // Navigation
-    const goToQuestion = (index) => {
-        if (index >= 0 && index < questions.length) {
-            setCurrentIndex(index);
-        }
-    };
-
     const goNext = () => {
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(currentIndex + 1);
@@ -76,9 +72,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
     useEffect(() => {
         const loadTest = async () => {
             try {
-                const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.startTest(assignmentId);
                 setTestData(res.data);
                 setQuestions(res.data.questions || []);
                 setEncodingTimeLeft(res.data.settings?.encoding_time || 180);
@@ -97,7 +91,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
             }
         };
         loadTest();
-    }, [token, assignmentId, enterFullscreen, onFinish]);
+    }, [assignmentId, enterFullscreen, onFinish]);
 
     // Prevent context menu and dev tools (keep inline for now)
     useEffect(() => {
@@ -150,6 +144,18 @@ function MemoryTest({ token, assignmentId, onFinish }) {
     }, [phase, recallTimeLeft, isLocked]);
 
     const handleSubmit = async (isTimeout = false) => {
+        // Check if all questions answered
+        const answeredCount = Object.keys(answers).length;
+        if (!isTimeout && questions.length > 0 && answeredCount < questions.length) {
+            Swal.fire({
+                title: 'Belum Lengkap',
+                text: `Anda baru menjawab ${answeredCount} dari ${questions.length} pertanyaan.`,
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const payload = {
@@ -160,9 +166,7 @@ function MemoryTest({ token, assignmentId, onFinish }) {
                 })),
                 time_taken: testData.settings?.recall_time - recallTimeLeft
             };
-            await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.submitTest(assignmentId, payload.answers, payload.time_taken);
             if (isTimeout) {
                 Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
             } else {

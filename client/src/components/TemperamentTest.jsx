@@ -1,10 +1,12 @@
 // client/src/components/TemperamentTest.jsx
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function TemperamentTest({ token, assignmentId, onFinish }) {
+function TemperamentTest({ assignmentId, onFinish }) {
+    const { token } = useAuth();
     const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -22,9 +24,7 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
     useEffect(() => {
         const loadTest = async () => {
             try {
-                const res = await axios.get(`http://127.0.0.1:8000/assignments/${assignmentId}/start`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.startTest(assignmentId);
                 setTestData(res.data);
                 if (res.data.time_limit === 0) setTimeLeft(null);
                 else setTimeLeft(res.data.time_limit);
@@ -126,9 +126,7 @@ function TemperamentTest({ token, assignmentId, onFinish }) {
                 })),
                 time_taken: timeTaken
             };
-            await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/submit`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.submitTest(assignmentId, payload.answers, payload.time_taken);
             if (isTimeout) {
                 Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
             } else {

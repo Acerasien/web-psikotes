@@ -1,6 +1,7 @@
 // client/src/ParticipantDashboard.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from './contexts/AuthContext';
+import { api } from './utils/api';
 import TestScreen from './TestScreen';
 import TemperamentTest from './components/TemperamentTest';
 import MemoryTest from './components/MemoryTest';
@@ -8,7 +9,8 @@ import LogicTest from './components/LogicTest';
 import Tutorial from './components/Tutorial';
 import DISCTest from './components/DISCTest';
 
-function ParticipantDashboard({ token, user, onLogout }) {
+function ParticipantDashboard({ onLogout }) {
+  const { token, user } = useAuth();
   const [assignments, setAssignments] = useState([]);
   const [activeTest, setActiveTest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,9 +19,7 @@ function ParticipantDashboard({ token, user, onLogout }) {
   const fetchAssignments = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://127.0.0.1:8000/users/me/assignments', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.getMyAssignments();
       setAssignments(res.data);
     } catch (err) {
       console.error("Failed to fetch assignments", err);
@@ -39,13 +39,12 @@ function ParticipantDashboard({ token, user, onLogout }) {
 
   useEffect(() => {
     fetchAssignments();
-  }, [token]);
+  }, []);
 
   // Priority 1: Show tutorial if one is pending
   if (tutorialAssignment) {
     return (
       <Tutorial
-        token={token}
         assignmentId={tutorialAssignment.id}
         testCode={tutorialAssignment.test_code}
         testName={tutorialAssignment.test_name}
@@ -66,7 +65,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
       case 'MEM':
         return (
           <MemoryTest
-            token={token}
             assignmentId={activeTest}
             onFinish={() => {
               setActiveTest(null);
@@ -77,7 +75,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
       case 'LOGIC':
         return (
           <LogicTest
-            token={token}
             assignmentId={activeTest}
             onFinish={() => {
               setActiveTest(null);
@@ -88,7 +85,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
       case 'TEMP': // Use consistent code from backend (TEMP for Temperament)
         return (
           <TemperamentTest
-            token={token}
             assignmentId={activeTest}
             onFinish={() => {
               setActiveTest(null);
@@ -99,7 +95,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
       case 'DISC':
         return (
           <DISCTest
-            token={token}
             assignmentId={activeTest}
             onFinish={() => {
               setActiveTest(null);
@@ -110,7 +105,6 @@ function ParticipantDashboard({ token, user, onLogout }) {
       default:
         return (
           <TestScreen
-            token={token}
             assignmentId={activeTest}
             onFinish={() => {
               setActiveTest(null);

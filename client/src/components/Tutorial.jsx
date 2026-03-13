@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { tutorials } from '../data/tutorials.jsx';
 
-function Tutorial({ token, assignmentId, testCode, testName, onComplete }) {
+function Tutorial({ assignmentId, testCode, testName, onComplete }) {
+    const { token } = useAuth();
     const tutorial = tutorials[testCode];
     const [currentSample, setCurrentSample] = useState(0);
     const [selected, setSelected] = useState(null);
@@ -40,9 +42,7 @@ function Tutorial({ token, assignmentId, testCode, testName, onComplete }) {
                 confirmButtonText: 'Mulai Tes'
             }).then(async () => {
                 try {
-                    await axios.post(`http://127.0.0.1:8000/assignments/${assignmentId}/complete-tutorial`, {}, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
+                    await api.completeTutorial(assignmentId);
                     onComplete();
                 } catch (err) {
                     console.error(err);

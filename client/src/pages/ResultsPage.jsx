@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import ResultsTable from '../components/ResultsTable';
 
-function ResultsPage({ token, currentUserRole }) {
+function ResultsPage() {
+    const { token, isSuperadmin: currentUserRole } = useAuth();
     const [tests, setTests] = useState([]);
     const [filters, setFilters] = useState({
         testId: '',
@@ -16,30 +18,25 @@ function ResultsPage({ token, currentUserRole }) {
     useEffect(() => {
         const fetchTests = async () => {
             try {
-                const res = await axios.get('http://127.0.0.1:8000/tests/', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.getTests();
                 setTests(res.data);
             } catch (err) {
                 console.error('Failed to fetch tests', err);
             }
         };
         fetchTests();
-    }, [token]);
+    }, []);
 
     const handleExport = async () => {
         setExporting(true);
         try {
-            const params = new URLSearchParams();
-            if (filters.testId) params.append('test_id', filters.testId);
-            if (filters.search) params.append('search', filters.search);
-            if (filters.fromDate) params.append('from_date', filters.fromDate);
-            if (filters.toDate) params.append('to_date', filters.toDate);
+            const params = {};
+            if (filters.testId) params.test_id = filters.testId;
+            if (filters.search) params.search = filters.search;
+            if (filters.fromDate) params.from_date = filters.fromDate;
+            if (filters.toDate) params.to_date = filters.toDate;
 
-            const response = await axios.get(`http://127.0.0.1:8000/admin/export/results?${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: 'blob'
-            });
+            const response = await api.exportResults(params);
 
             // Create download link
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -75,7 +72,6 @@ function ResultsPage({ token, currentUserRole }) {
 
             {/* Pass filters and setFilters down to ResultsTable */}
             <ResultsTable
-                token={token}
                 filters={filters}
                 onFilterChange={setFilters}
                 tests={tests}

@@ -1,10 +1,12 @@
 // client/src/components/ResultsTable.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import { Link } from 'react-router-dom';
 import { formatLocalDateTime } from '../utils/dateUtils';
 
-function ResultsTable({ token, filters, onFilterChange, tests }) {
+function ResultsTable({ filters, onFilterChange, tests }) {
+    const { token } = useAuth();
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sortConfig, setSortConfig] = useState({ key: 'completed_at', direction: 'desc' });
@@ -15,15 +17,13 @@ function ResultsTable({ token, filters, onFilterChange, tests }) {
         const fetchResults = async () => {
             setLoading(true);
             try {
-                const params = new URLSearchParams();
-                if (filters.testId) params.append('test_id', filters.testId);
-                if (filters.search) params.append('search', filters.search);
-                if (filters.fromDate) params.append('from_date', filters.fromDate);
-                if (filters.toDate) params.append('to_date', filters.toDate);
+                const params = {};
+                if (filters.testId) params.test_id = filters.testId;
+                if (filters.search) params.search = filters.search;
+                if (filters.fromDate) params.from_date = filters.fromDate;
+                if (filters.toDate) params.to_date = filters.toDate;
 
-                const res = await axios.get(`http://127.0.0.1:8000/results/?${params}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await api.getResults(params);
                 setResults(res.data);
             } catch (err) {
                 console.error(err);
@@ -32,7 +32,7 @@ function ResultsTable({ token, filters, onFilterChange, tests }) {
             }
         };
         fetchResults();
-    }, [filters, token]);
+    }, [filters]);
 
     // Sorting function
     const sortedResults = [...results].sort((a, b) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from './utils/api';
 
 function ParticipantDetail({ token }) {
     const { id } = useParams();
@@ -11,9 +11,7 @@ function ParticipantDetail({ token }) {
     useEffect(() => {
         const fetchParticipant = async () => {
             try {
-                const response = await axios.get(`http://127.0.0.1:8000/users/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await api.getUser(id);
                 setParticipant(response.data);
             } catch (error) {
                 console.error('Error fetching participant:', error);
@@ -23,7 +21,7 @@ function ParticipantDetail({ token }) {
         };
 
         fetchParticipant();
-    }, [id, token]);
+    }, [id]);
 
     if (loading) return <div>Loading...</div>;
     if (!participant) return <div>Participant not found.</div>;

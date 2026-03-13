@@ -1,8 +1,10 @@
 // client/src/CreateUser.jsx
 import { useState } from 'react';
-import axios from 'axios';
+import { useAuth } from './contexts/AuthContext';
+import { api } from './utils/api';
 
-function CreateUser({ token, onUserCreated, currentUserRole }) {
+function CreateUser({ onUserCreated }) {
+  const { token, isSuperadmin: currentUserRole } = useAuth();
   const [formData, setFormData] = useState({  // ← FIXED: Added '='
     username: '',
     password: '',
@@ -35,9 +37,7 @@ function CreateUser({ token, onUserCreated, currentUserRole }) {
     };
 
     try {
-      await axios.post('http://127.0.0.1:8000/users/', payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.createUser(payload);
       setMessage('User created successfully!');
       setFormData({
         username: '',
