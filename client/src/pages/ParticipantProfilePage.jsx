@@ -213,14 +213,15 @@ function ParticipantProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {assignments.map((a) => {
                             const result = getResultForTest(a.test_id);
-                            
-                            // Check if test was incomplete (answered less than total questions)
-                            const isIncomplete = result && result.total_questions && 
-                                result.score < result.total_questions * 0.5; // Less than 50% answered
-                            
-                            // For DISC, check if both most/least were answered for all questions
-                            const isDiscIncomplete = a.test_name === "DISC Assessment" && 
-                                result?.details && 
+
+                            // Use is_complete flag from backend details
+                            const isIncomplete = result?.details?.is_complete === false;
+                            const answeredCount = result?.details?.answered_count;
+                            const totalQuestions = result?.details?.total_questions;
+
+                            // For DISC, also check if all quadrants are filled (personality completeness)
+                            const isDiscIncomplete = a.test_code === 'DISC' &&
+                                result?.details &&
                                 (Object.keys(result.details.graph_i || {}).length < 4);
                             let statusColor, icon;
                             switch (a.status) {
@@ -268,16 +269,37 @@ function ParticipantProfilePage() {
                                         )}
                                     </div>
 
+                                    {/* Score display */}
                                     {result && a.test_name !== "Temperament Test" && !isDiscIncomplete && (
                                         <div className="mt-2 text-sm text-gray-700">
-                                            Score: <span className="font-bold text-green-600">{result.score}</span> / {result.max_score}
-                                            {isIncomplete && (
-                                                <span className="ml-2 text-xs text-orange-600 font-medium">⚠️ Incomplete</span>
+                                            {a.test_code === 'DISC' ? (
+                                                <span className="text-gray-500">Personality assessment</span>
+                                            ) : (
+                                                <>
+                                                    Score: <span className="font-bold text-green-600">{result.score}</span> / {result.max_score || '?'}
+                                                </>
                                             )}
                                         </div>
                                     )}
-                                    
-                                    {result && isIncomplete && (
+
+                                    {/* Completion status - shown for ALL test types */}
+                                    {result && answeredCount !== undefined && totalQuestions !== undefined && (
+                                        <div className="mt-2 text-sm">
+                                            <span className="font-medium">Questions:</span>{' '}
+                                            <span className={`font-bold ${isIncomplete ? 'text-orange-600' : 'text-green-600'}`}>
+                                                {answeredCount}/{totalQuestions}
+                                            </span>
+                                            {isIncomplete && (
+                                                <span className="ml-2 text-xs text-orange-600 font-medium">⚠️ Incomplete</span>
+                                            )}
+                                            {!isIncomplete && !isDiscIncomplete && (
+                                                <span className="ml-2 text-xs text-green-600 font-medium">✓ Complete</span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Incomplete warning message */}
+                                    {(isIncomplete || isDiscIncomplete) && (
                                         <div className="mt-2 text-sm text-orange-600 font-medium">
                                             ⚠️ Participant did not finish this test
                                         </div>

@@ -113,11 +113,13 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
   - [x] MemoryTest.jsx - Already responsive (grid layout)
   - [x] LogicTest.jsx - Already responsive (similar to TestScreen)
 - [x] Phase 4: Polish - Modals, headers, navigation improved
+- [x] Phase 5: ResultsTable - Mobile card view with expandable details
 
 ### Test Routing Refactor (Completed ✅)
 - [x] Created useTestSession hook for shared test logic
 - [x] Created TestLayout, QuestionNavGrid, QuestionCard, TestFooter components
-- [x] Created StandardTest component for generic tests
+- [x] Created StandardTest component for generic tests (Leadership, IQ, etc.)
+- [x] Created SpeedTest component with auto-advance and keyboard shortcuts
 - [x] Set up React Router routes for /test/:assignmentId
 - [x] Updated all test components to use navigate() instead of onFinish
 - [x] Updated ParticipantDashboard to use routing
@@ -127,10 +129,22 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 2. **Add TypeScript** - Migrate frontend to TypeScript for better type safety
 3. **Add Tests** - Unit tests (frontend) and pytest (backend)
 4. **User Settings** - Profile management, password change
-5. **Test Analytics Dashboard** - Visualize aggregate results, trends
 6. **Export Improvements** - Bulk export, custom report templates
 7. **Rate Limiting** - Add rate limiting for API endpoints
 8. **Email Notifications** - Send test invitations, results via email
 9. **Session Management** - Track and manage active user sessions
 10. **Audit Logging** - Log admin actions for security compliance
 11. **Backup System** - Automated database backups
+
+### Completed Features ✅
+- [x] Dashboard Refactored - Removed meaningless charts, added completion tracking and security alerts
+  - Removed: Test Popularity chart, Average Score chart
+  - Added: Assignment Status pie chart
+  - Added: Incomplete submissions alert
+  - Added: Security events list (locked tests, exit attempts)
+  - Backend: New `/admin/stats/completion` and `/admin/stats/security-events` endpoints
+- [x] Fixed "Participant did not finish this test" false positive
+  - Backend: Tracks `answered_count`, `total_questions`, and `is_complete` for ALL test types
+  - Frontend: Uses `is_complete` flag from backend instead of score-based heuristics
+  - UI: Shows score and completion status separately for clarity
+  - Works for: DISC, SPEED, MEM, LOGIC, TEMP, LEAD, and all other tests

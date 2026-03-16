@@ -194,19 +194,19 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                 <h3 className="text-lg leading-6 font-medium text-gray-900">Test Results</h3>
             </div>
 
-            {/* Filters */}
-            <div className="p-4 bg-gray-50 border-b grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Filters - Stack on mobile */}
+            <div className="p-4 bg-gray-50 border-b grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <input
                     type="text"
                     placeholder="Search participant..."
                     value={filters.search}
                     onChange={e => onFilterChange({ ...filters, search: e.target.value })}
-                    className="border rounded px-3 py-2"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <select
                     value={filters.testId}
                     onChange={e => onFilterChange({ ...filters, testId: e.target.value })}
-                    className="border rounded px-3 py-2"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 >
                     <option value="">All Tests</option>
                     {tests.map(t => (
@@ -217,20 +217,96 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                     type="date"
                     value={filters.fromDate}
                     onChange={e => onFilterChange({ ...filters, fromDate: e.target.value })}
-                    className="border rounded px-3 py-2"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="From"
                 />
                 <input
                     type="date"
                     value={filters.toDate}
                     onChange={e => onFilterChange({ ...filters, toDate: e.target.value })}
-                    className="border rounded px-3 py-2"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="To"
                 />
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Mobile Card View - shows on screens < lg */}
+            <div className="lg:hidden divide-y divide-gray-200">
+                {loading && (
+                    <div className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                        <p className="text-gray-500 mt-2 text-sm">Loading results...</p>
+                    </div>
+                )}
+                
+                {!loading && sortedResults.length === 0 && (
+                    <div className="p-8 text-center text-gray-500">
+                        <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>No results found</p>
+                    </div>
+                )}
+
+                {!loading && sortedResults.map(result => (
+                    <div key={result.id} className="p-4 space-y-3">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                                <Link 
+                                    to={`/participants/${result.user_id}`} 
+                                    className="text-blue-600 hover:text-blue-800 font-medium text-sm block truncate"
+                                >
+                                    {result.full_name || result.username}
+                                </Link>
+                                <p className="text-xs text-gray-500 mt-0.5">{result.test_name}</p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                                <div className="text-lg font-bold text-green-600">
+                                    {result.details?.primary ? (
+                                        <span>{result.details.primary}</span>
+                                    ) : result.max_score ? (
+                                        <span>{result.score} / {result.max_score}</span>
+                                    ) : (
+                                        <span>{result.score}</span>
+                                    )}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    {Math.floor(result.time_taken / 60)}m {result.time_taken % 60}s
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Date and actions */}
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {formatLocalDateTime(result.completed_at, 'dd MMM yyyy')}
+                            </div>
+                            <button
+                                onClick={() => toggleRow(result.id)}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 px-2 py-1 bg-blue-50 rounded"
+                            >
+                                {expandedRows.has(result.id) ? 'Hide' : 'Details'}
+                                <svg className={`w-3.5 h-3.5 transition-transform ${expandedRows.has(result.id) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Expanded details */}
+                        {expandedRows.has(result.id) && (
+                            <div className="pt-2 bg-gray-50 rounded-lg p-3">
+                                {renderDetails(result)}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop Table View - hidden on mobile */}
+            <div className="hidden lg:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -289,7 +365,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <button
                                             onClick={() => toggleRow(result.id)}
-                                            className="text-blue-500 hover:text-blue-700"
+                                            className="text-blue-500 hover:text-blue-700 font-medium"
                                         >
                                             {expandedRows.has(result.id) ? 'Hide details' : 'Show details'}
                                         </button>

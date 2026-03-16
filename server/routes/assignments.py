@@ -50,8 +50,10 @@ def get_assignments(
             "full_name": a.user.full_name,
             "test_id": a.test_id,
             "test_name": a.test.name,
+            "test_code": a.test.code,
             "status": a.status,
-            "assigned_at": a.assigned_at
+            "assigned_at": a.assigned_at,
+            "pretest_completed": a.pretest_completed
         })
     return result
 
@@ -180,6 +182,8 @@ def submit_test(
     test_code = assignment.test.code
     score = 0
     details = None
+    answered_count = 0
+    total_questions = 0
 
     if test_code == "DISC":
         questions = (
@@ -188,8 +192,10 @@ def submit_test(
             .filter(Question.test_id == assignment.test_id)
             .all()
         )
+        total_questions = len(questions)
         details = score_disc(submission.answers, questions)
         score = len({ans["question_id"] for ans in submission.answers})
+        answered_count = score  # For DISC, each question answered = 1
 
     elif test_code == "SPEED":
         questions = (
@@ -198,8 +204,10 @@ def submit_test(
             .filter(Question.test_id == assignment.test_id)
             .all()
         )
+        total_questions = len(questions)
         details = score_speed(submission.answers, questions)
         score = details["score"]
+        answered_count = len(submission.answers)
 
     elif test_code == "TEMP":
         questions = (
@@ -208,8 +216,10 @@ def submit_test(
             .filter(Question.test_id == assignment.test_id)
             .all()
         )
+        total_questions = len(questions)
         details = score_temperament(submission.answers, questions)
         score = sum(details["raw_scores"].values()) if details["raw_scores"] else 0
+        answered_count = len({ans["question_id"] for ans in submission.answers})
 
     elif test_code == "MEM":
         questions = (
@@ -218,8 +228,10 @@ def submit_test(
             .filter(Question.test_id == assignment.test_id)
             .all()
         )
+        total_questions = len(questions)
         details = score_memory(submission.answers, questions)
         score = details["score"]
+        answered_count = len(submission.answers)
 
     elif test_code == "LOGIC":
         questions = (
@@ -228,8 +240,10 @@ def submit_test(
             .filter(Question.test_id == assignment.test_id)
             .all()
         )
+        total_questions = len(questions)
         details = score_logic(submission.answers, questions)
         score = details["score"]
+        answered_count = len(submission.answers)
 
     elif test_code == "LEAD":
         questions = (
@@ -238,16 +252,35 @@ def submit_test(
             .filter(Question.test_id == assignment.test_id)
             .all()
         )
+        total_questions = len(questions)
         details = score_leadership(submission.answers, questions)
         score = sum(details["raw_scores"].values())
+        answered_count = len(submission.answers)
 
     else:
         # Default: simple correct count
+        questions = (
+            db.query(Question)
+            .filter(Question.test_id == assignment.test_id)
+            .all()
+        )
+        total_questions = len(questions)
         for ans in submission.answers:
             if ans.get("type", "single") == "single":
                 option = db.query(Option).filter(Option.id == ans["option_id"]).first()
                 if option and option.scoring_logic.get("correct"):
                     score += 1
+        answered_count = len(submission.answers)
+
+    # Calculate completion status
+    is_complete = answered_count >= total_questions
+
+    # Add completion info to details
+    if details is None:
+        details = {}
+    details["answered_count"] = answered_count
+    details["total_questions"] = total_questions
+    details["is_complete"] = is_complete
 
     # 4. Create Result record
     result = Result(

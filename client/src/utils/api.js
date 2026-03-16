@@ -129,6 +129,9 @@ export const api = {
   getStatsTests: () => apiClient.get('/admin/stats/tests'),
   getStatsRecent: (limit = 10) =>
     apiClient.get(`/admin/stats/recent?limit=${limit}`),
+  getCompletionStats: () => apiClient.get('/admin/stats/completion'),
+  getSecurityEvents: (limit = 10) =>
+    apiClient.get(`/admin/stats/security-events?limit=${limit}`),
 
   // Export/Download methods (blob responses)
   exportParticipantPdf: (id) =>

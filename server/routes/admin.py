@@ -82,6 +82,80 @@ def get_recent_activity(
     return output
 
 
+@router.get("/admin/stats/completion")
+def get_completion_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Get assignment completion statistics (admin and superadmin)"""
+    total = db.query(Assignment).count()
+    completed = db.query(Assignment).filter(Assignment.status == "completed").count()
+    in_progress = db.query(Assignment).filter(Assignment.status == "in_progress").count()
+    pending = db.query(Assignment).filter(Assignment.status == "pending").count()
+    locked = db.query(Assignment).filter(Assignment.status == "locked").count()
+    
+    # Get incomplete submissions (answered < total questions)
+    incomplete_count = 0
+    results = db.query(Result).all()
+    for r in results:
+        if r.details and isinstance(r.details, dict):
+            if r.details.get("is_complete") == False:
+                incomplete_count += 1
+    
+    return {
+        "total": total,
+        "completed": completed,
+        "in_progress": in_progress,
+        "pending": pending,
+        "locked": locked,
+        "incomplete_submissions": incomplete_count
+    }
+
+
+@router.get("/admin/stats/security-events")
+def get_security_events(
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """Get recent security events (locked assignments, exit logs) (admin and superadmin)"""
+    # Get recent exit logs
+    exit_logs = db.query(ExitLog).order_by(desc(ExitLog.timestamp)).limit(limit).all()
+    
+    # Get locked assignments with user info
+    locked_assignments = db.query(Assignment).filter(
+        Assignment.status == "locked"
+    ).order_by(desc(Assignment.assigned_at)).limit(limit).all()
+    
+    events = []
+    
+    # Add exit log events
+    for log in exit_logs:
+        events.append({
+            "type": "exit_log",
+            "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+            "username": log.user.username if log.user else "Unknown",
+            "full_name": log.user.full_name if log.user else "Unknown",
+            "test_name": log.assignment.test.name if log.assignment and log.assignment.test else "Unknown",
+            "reason": "Exit attempt detected",
+            "severity": "warning"
+        })
+    
+    # Add locked assignment events
+    for a in locked_assignments:
+        events.append({
+            "type": "locked",
+            "timestamp": a.assigned_at.isoformat() if a.assigned_at else None,
+            "username": a.user.username,
+            "full_name": a.user.full_name,
+            "test_name": a.test.name,
+            "reason": "Test locked (security violation)",
+            "severity": "critical"
+        })
+    
+    # Sort by timestamp descending
+    events.sort(key=lambda x: x["timestamp"] or "", reverse=True)
+    
+    return events[:limit]
+
+
 # ==================== SECURITY & LOGS ====================
 
 @router.get("/admin/locked-assignments")
