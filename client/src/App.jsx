@@ -1,10 +1,11 @@
 // client/src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Login from './Login'
 import AdminLayout from './AdminLayout'
 import ParticipantDashboard from './ParticipantDashboard'
+import TestRoutes from './routes/TestRoutes'
 import './index.css'
 
 function AppContent() {
@@ -33,7 +34,21 @@ function AppContent() {
       </Router>
     )
   } else {
-    return <ParticipantDashboard onLogout={logout} />
+    // Participant routing with test support
+    return (
+      <Router>
+        <Routes>
+          {/* Test routes - must be before dashboard to match first */}
+          <Route path="/test/*" element={<TestRoutes />} />
+          
+          {/* Main participant dashboard */}
+          <Route path="/*" element={<ParticipantDashboard onLogout={logout} />} />
+          
+          {/* Catch-all: redirect to dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Router>
+    )
   }
 }
 

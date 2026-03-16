@@ -1,18 +1,14 @@
 // client/src/ParticipantDashboard.jsx
 import { useState, useEffect } from 'react';
+import { useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { api } from './utils/api';
-import TestScreen from './TestScreen';
-import TemperamentTest from './components/TemperamentTest';
-import MemoryTest from './components/MemoryTest';
-import LogicTest from './components/LogicTest';
 import Tutorial from './components/Tutorial';
-import DISCTest from './components/DISCTest';
 
 function ParticipantDashboard({ onLogout }) {
+  const navigate = useNavigate();
   const { token, user } = useAuth();
   const [assignments, setAssignments] = useState([]);
-  const [activeTest, setActiveTest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tutorialAssignment, setTutorialAssignment] = useState(null);
 
@@ -33,7 +29,15 @@ function ParticipantDashboard({ onLogout }) {
     if (assignment.status === 'pending' && !assignment.pretest_completed) {
       setTutorialAssignment(assignment);
     } else {
-      setActiveTest(assignment.id);
+      // Navigate to test route
+      navigate(`/test/${assignment.id}`);
+    }
+  };
+
+  const handleTutorialComplete = () => {
+    if (tutorialAssignment) {
+      navigate(`/test/${tutorialAssignment.id}`);
+      setTutorialAssignment(null);
     }
   };
 
@@ -41,78 +45,16 @@ function ParticipantDashboard({ onLogout }) {
     fetchAssignments();
   }, []);
 
-  // Priority 1: Show tutorial if one is pending
+  // Show tutorial if one is pending
   if (tutorialAssignment) {
     return (
       <Tutorial
         assignmentId={tutorialAssignment.id}
         testCode={tutorialAssignment.test_code}
         testName={tutorialAssignment.test_name}
-        onComplete={() => {
-          setTutorialAssignment(null);
-          setActiveTest(tutorialAssignment.id);
-        }}
+        onComplete={handleTutorialComplete}
       />
     );
-  }
-
-  // Priority 2: Show active test if one is selected
-  if (activeTest) {
-    const activeAssignment = assignments.find(a => a.id === activeTest);
-    if (!activeAssignment) return null; // Wait for assignments to load
-
-    switch (activeAssignment.test_code) {
-      case 'MEM':
-        return (
-          <MemoryTest
-            assignmentId={activeTest}
-            onFinish={() => {
-              setActiveTest(null);
-              fetchAssignments();
-            }}
-          />
-        );
-      case 'LOGIC':
-        return (
-          <LogicTest
-            assignmentId={activeTest}
-            onFinish={() => {
-              setActiveTest(null);
-              fetchAssignments();
-            }}
-          />
-        );
-      case 'TEMP': // Use consistent code from backend (TEMP for Temperament)
-        return (
-          <TemperamentTest
-            assignmentId={activeTest}
-            onFinish={() => {
-              setActiveTest(null);
-              fetchAssignments();
-            }}
-          />
-        );
-      case 'DISC':
-        return (
-          <DISCTest
-            assignmentId={activeTest}
-            onFinish={() => {
-              setActiveTest(null);
-              fetchAssignments();
-            }}
-          />
-        );
-      default:
-        return (
-          <TestScreen
-            assignmentId={activeTest}
-            onFinish={() => {
-              setActiveTest(null);
-              fetchAssignments();
-            }}
-          />
-        );
-    }
   }
 
   // Priority 3: Show the dashboard

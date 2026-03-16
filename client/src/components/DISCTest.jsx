@@ -1,11 +1,13 @@
 // client/src/components/DISCTest.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function DISCTest({ assignmentId, onFinish }) {
+    const navigate = useNavigate();
     const { token } = useAuth();
     const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
@@ -101,13 +103,13 @@ function DISCTest({ assignmentId, onFinish }) {
             const finalAnswers = formatDiscPayload(currentAnswers);
             await api.submitTest(assignmentId, finalAnswers, timeTaken);
             if (isTimeout) Swal.fire("Time is up!", "Your test has been submitted.", "info");
-            onFinish();
+            navigate('/dashboard');
         } catch (err) {
             console.error(err);
             setIsSubmitting(false);
             Swal.fire("Error", "Failed to submit test.", "error");
         }
-    }, [assignmentId, onFinish]); // Only stable props
+    }, [assignmentId, navigate]);
 
     // ----- Timer effect (depends only on stable handleSubmit) -----
     useEffect(() => {
@@ -148,11 +150,11 @@ function DISCTest({ assignmentId, onFinish }) {
                 if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
                     // already locked, just finish
                 }
-                onFinish();
+                navigate('/dashboard');
             }
         };
         loadTest();
-    }, [assignmentId, enterFullscreen, onFinish]);
+    }, [assignmentId, enterFullscreen, navigate]);
 
     // ----- Render locked screen -----
     if (isLocked) {
@@ -160,7 +162,7 @@ function DISCTest({ assignmentId, onFinish }) {
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
                 <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
                 <p className="mb-2">You have exited fullscreen too many times.</p>
-                <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                <button onClick={() => navigate('/dashboard')} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
                     Back to Dashboard
                 </button>
             </div>
@@ -179,20 +181,69 @@ function DISCTest({ assignmentId, onFinish }) {
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Header with timer */}
-            <div className="bg-white shadow p-4 flex justify-between items-center">
-                <h1 className="font-bold text-lg">{testData?.test_name}</h1>
-                <div className="text-xl font-mono bg-red-100 text-red-700 px-3 py-1 rounded">
-                    {timeLeft !== null ? formatTime(timeLeft) : "Unlimited Time"}
+            <div className="bg-white shadow px-3 sm:p-4 flex justify-between items-center sticky top-0 z-10">
+                <h1 className="font-bold text-base sm:text-lg truncate max-w-[150px] sm:max-w-none">{testData?.test_name}</h1>
+                <div className="text-base sm:text-xl font-mono bg-red-100 text-red-700 px-2 sm:px-3 py-1 rounded text-sm sm:text-base">
+                    {timeLeft !== null ? formatTime(timeLeft) : "∞"}
                 </div>
             </div>
 
             {/* DISC Table */}
-            <div className="flex-1 p-8 overflow-auto">
-                <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6 mx-auto">
-                    <h2 className="text-xl font-bold mb-4 text-center">
+            <div className="flex-1 p-3 sm:p-6 overflow-auto">
+                <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-auto">
+                    <h2 className="text-base sm:text-xl font-bold mb-4 text-center px-2">
                         Pilih yang PALING SESUAI (P) dan PALING TIDAK SESUAI (K)
                     </h2>
-                    <div className="overflow-x-auto">
+                    
+                    {/* Mobile: Card view */}
+                    <div className="lg:hidden space-y-4">
+                        {testData?.questions.map((q, qIdx) => (
+                            <div key={q.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">No. {qIdx + 1}</span>
+                                </div>
+                                {q.options.map((opt, optIdx) => {
+                                    const isMost = answers[q.id]?.most === opt.id;
+                                    const isLeast = answers[q.id]?.least === opt.id;
+                                    return (
+                                        <div key={opt.id} className="mb-3 last:mb-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="text-sm text-gray-700 flex-1">{opt.content}</p>
+                                                <div className="flex gap-2 flex-shrink-0">
+                                                    <button
+                                                        onClick={() => handleDiscRadio(q.id, opt.id, 'most')}
+                                                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all min-w-[40px] ${
+                                                            isMost 
+                                                                ? 'bg-green-500 border-green-600 text-white' 
+                                                                : 'bg-white border-gray-300 text-gray-400 hover:border-green-500'
+                                                        }`}
+                                                        title="Paling Sesuai"
+                                                    >
+                                                        <span className="text-xs font-bold">P</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDiscRadio(q.id, opt.id, 'least')}
+                                                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all min-w-[40px] ${
+                                                            isLeast 
+                                                                ? 'bg-red-500 border-red-600 text-white' 
+                                                                : 'bg-white border-gray-300 text-gray-400 hover:border-red-500'
+                                                        }`}
+                                                        title="Paling Tidak Sesuai"
+                                                    >
+                                                        <span className="text-xs font-bold">K</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {optIdx < q.options.length - 1 && <div className="border-t border-gray-200 mt-2"></div>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop: Table view */}
+                    <div className="hidden lg:block overflow-x-auto">
                         <table className="w-full border-collapse">
                             <thead>
                                 <tr className="bg-gray-50">
@@ -213,26 +264,36 @@ function DISCTest({ assignmentId, onFinish }) {
                                             if (isLeast) rowClass = "bg-red-100 border-red-300";
                                             return (
                                                 <tr key={opt.id} className={rowClass}>
-                                                    <td className="border p-3 text-center text-gray-500 font-bold">
+                                                    <td className="border p-2 text-center text-gray-500 font-bold">
                                                         {optIdx === 0 ? qIdx + 1 : ""}
                                                     </td>
-                                                    <td className="border p-3">{opt.content}</td>
+                                                    <td className="border p-2">{opt.content}</td>
                                                     <td
-                                                        className="border p-3 text-center cursor-pointer select-none"
+                                                        className="border p-2 text-center cursor-pointer select-none"
                                                         onClick={() => handleDiscRadio(q.id, opt.id, 'most')}
                                                     >
-                                                        <div className={`w-6 h-6 mx-auto rounded border-2 flex items-center justify-center ${isMost ? 'bg-green-500 border-green-600' : 'bg-white border-gray-300'
-                                                            }`}>
-                                                            {isMost && <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                                                        <div className={`w-8 h-8 mx-auto rounded-full border-2 flex items-center justify-center ${
+                                                            isMost ? 'bg-green-500 border-green-600' : 'bg-white border-gray-300'
+                                                        }`}>
+                                                            {isMost && (
+                                                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                </svg>
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <td
-                                                        className="border p-3 text-center cursor-pointer select-none"
+                                                        className="border p-2 text-center cursor-pointer select-none"
                                                         onClick={() => handleDiscRadio(q.id, opt.id, 'least')}
                                                     >
-                                                        <div className={`w-6 h-6 mx-auto rounded border-2 flex items-center justify-center ${isLeast ? 'bg-red-500 border-red-600' : 'bg-white border-gray-300'
-                                                            }`}>
-                                                            {isLeast && <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                                                        <div className={`w-8 h-8 mx-auto rounded-full border-2 flex items-center justify-center ${
+                                                            isLeast ? 'bg-red-500 border-red-600' : 'bg-white border-gray-300'
+                                                        }`}>
+                                                            {isLeast && (
+                                                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                </svg>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -252,7 +313,7 @@ function DISCTest({ assignmentId, onFinish }) {
                             onClick={() => {
                                 if (checkAllAnswered()) setShowConfirmModal(true);
                             }}
-                            className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-8 rounded text-lg"
+                            className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg w-full sm:w-auto min-h-[48px]"
                         >
                             Selesai & Kirim
                         </button>

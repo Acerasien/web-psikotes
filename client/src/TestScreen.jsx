@@ -175,48 +175,61 @@ function TestScreen({ assignmentId, onFinish }) {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
-      <div className="bg-white shadow p-4 flex justify-between items-center">
-        <h1 className="font-bold text-lg">{testData.test_name}</h1>
-        <div className="text-xl font-mono bg-red-100 text-red-700 px-3 py-1 rounded">
-          {timeLeft !== null ? formatTime(timeLeft) : "Unlimited Time"}
+      <div className="bg-white shadow px-3 sm:p-4 flex justify-between items-center sticky top-0 z-10">
+        <h1 className="font-bold text-base sm:text-lg truncate max-w-[150px] sm:max-w-none">{testData.test_name}</h1>
+        <div className="text-base sm:text-xl font-mono bg-red-100 text-red-700 px-2 sm:px-3 py-1 rounded text-sm sm:text-base">
+          {timeLeft !== null ? formatTime(timeLeft) : "∞"}
         </div>
       </div>
 
-      {/* Question Indicator Grid (Hidden for Speed) */}
+      {/* Question Indicator Grid - Wrapping grid for all test types */}
       {testData.settings?.type !== 'speed' && (
-        <div className="bg-gray-50 border-b p-2 flex justify-center space-x-1 overflow-x-auto">
-          {testData.questions.map((q, idx) => (
-            <div
-              key={q.id}
-              onClick={() => setCurrentIndex(idx)}
-              className={`w-8 h-8 flex items-center justify-center text-xs font-bold border rounded cursor-pointer ${answers[q.id] ? 'bg-green-500 text-white' : 'bg-white text-gray-500'
-                } ${idx === currentIndex ? 'ring-2 ring-blue-400' : ''}`}
-            >
-              {idx + 1}
-            </div>
-          ))}
+        <div className="bg-gray-50 border-b px-3 sm:px-4 py-2 sm:py-3 overflow-x-auto">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-start sm:justify-center">
+            {testData.questions.map((q, idx) => (
+              <button
+                key={q.id}
+                onClick={() => setCurrentIndex(idx)}
+                className={`w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0 flex items-center justify-center text-xs font-bold rounded-full transition-all ${
+                  answers[q.id] 
+                    ? 'bg-green-500 text-white hover:bg-green-600' 
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                } ${idx === currentIndex ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
+              >
+                {idx + 1}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* QUESTION AREA - Default Card View */}
-      <div className="flex-1 p-8 flex flex-col items-center justify-center overflow-y-auto">
-        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
-          <p className="text-sm text-gray-500 mb-2">Question {currentIndex + 1} of {testData.questions.length}</p>
-          <h2 className="text-xl font-semibold mb-6">{currentQuestion.content}</h2>
+      {/* QUESTION AREA */}
+      <div className="flex-1 p-3 sm:p-6 flex flex-col items-center justify-center overflow-y-auto">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-2xl">
+          <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+            Pertanyaan {currentIndex + 1} dari {testData.questions.length}
+          </p>
+          <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-4 sm:mb-6 leading-relaxed">
+            {currentQuestion.content}
+          </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {currentQuestion.options.map((opt) => {
-              let btnClass = "bg-white hover:bg-gray-50 border-gray-200";
-              if (answers[currentQuestion.id] === opt.id) {
-                btnClass = "bg-blue-500 text-white border-blue-500";
-              }
+              const isSelected = answers[currentQuestion.id] === opt.id;
               return (
                 <button
                   key={opt.id}
                   onClick={() => handleSelect(opt.id)}
-                  className={`w-full text-left p-4 border rounded-lg transition ${btnClass}`}
+                  className={`w-full text-left p-3 sm:p-4 border-2 rounded-lg transition-all min-h-[48px] sm:min-h-[52px] ${
+                    isSelected
+                      ? 'bg-blue-500 text-white border-blue-600 shadow-md'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                  }`}
                 >
-                  <span className="font-bold mr-2">{opt.label}.</span> {opt.content}
+                  <span className={`font-bold mr-2 sm:mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
+                    {opt.label}.
+                  </span>
+                  <span className="text-sm sm:text-base">{opt.content}</span>
                 </button>
               );
             })}
@@ -226,32 +239,42 @@ function TestScreen({ assignmentId, onFinish }) {
 
       {/* Footer Navigation (Hidden for Speed) */}
       {testData.settings?.type !== 'speed' && (
-        <div className="bg-white p-4 shadow flex justify-between items-center">
+        <div className="bg-white border-t px-3 sm:p-4 shadow flex justify-between items-center safe-area-pb">
           <button
             disabled={currentIndex === 0}
             onClick={() => setCurrentIndex(currentIndex - 1)}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition min-h-[44px] min-w-[44px] flex items-center justify-center ${
+              currentIndex === 0
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           >
-            Previous
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="hidden sm:inline ml-1">Sebelumnya</span>
           </button>
 
-          <div className="text-gray-600 flex-grow text-center">
-            {Object.keys(answers).length} / {testData.questions.length} Answered
+          <div className="text-xs sm:text-sm text-gray-600 font-medium bg-gray-100 px-3 py-1.5 rounded-lg">
+            {Object.keys(answers).length} / {testData.questions.length}
           </div>
 
           {currentIndex === testData.questions.length - 1 ? (
             <button
               onClick={() => setShowConfirmModal(true)}
-              className="px-4 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600"
+              className="px-4 sm:px-5 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 shadow-sm transition min-h-[44px] min-w-[44px]"
             >
-              Finish Test
+              Selesai
             </button>
           ) : (
             <button
               onClick={() => setCurrentIndex(currentIndex + 1)}
-              className="px-4 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600"
+              className="px-3 sm:px-5 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm transition min-h-[44px] min-w-[44px] flex items-center gap-1"
             >
-              Next
+              <span className="hidden sm:inline">Selanjutnya</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           )}
         </div>
@@ -259,16 +282,28 @@ function TestScreen({ assignmentId, onFinish }) {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
-            <h3 className="text-xl font-bold mb-4">Submit Test?</h3>
-            <p className="mb-6 text-gray-600">
-              You have answered {Object.keys(answers).length} questions.
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full text-center shadow-2xl">
+            <h3 className="text-lg sm:text-xl font-bold mb-4">Selesaikan Tes?</h3>
+            <p className="mb-6 text-gray-600 text-sm sm:text-base">
+              Anda telah menjawab <span className="font-semibold">{Object.keys(answers).length}</span> dari <span className="font-semibold">{testData.questions.length}</span> pertanyaan.
             </p>
-            <div className="flex gap-4 justify-center">
-              <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 bg-gray-200 rounded font-medium" disabled={isSubmitting}>Cancel</button>
-              <button onClick={() => handleSubmit()} disabled={isSubmitting} className={`px-4 py-2 text-white rounded font-bold ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}>
-                {isSubmitting ? "Submitting..." : "Submit Now"}
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={() => setShowConfirmModal(false)} 
+                className="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition min-h-[44px] flex-1"
+                disabled={isSubmitting}
+              >
+                Batal
+              </button>
+              <button 
+                onClick={() => handleSubmit()} 
+                className={`px-5 py-2.5 text-white rounded-lg font-semibold transition min-h-[44px] flex-1 ${
+                  isSubmitting ? 'bg-gray-400 cursor-wait' : 'bg-green-500 hover:bg-green-600'
+                }`}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Mengirim...' : 'Kirim'}
               </button>
             </div>
           </div>
@@ -277,10 +312,13 @@ function TestScreen({ assignmentId, onFinish }) {
 
       {/* Fullscreen Overlay */}
       {!isFullscreen && !isLocked && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
-          <h2 className="text-2xl font-bold mb-4">Paused</h2>
-          <p>Please return to fullscreen mode.</p>
-          <button onClick={() => { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }} className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600">
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white p-4">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Paused</h2>
+          <p className="mb-6 text-gray-200 text-center text-sm sm:text-base">Silakan kembali ke mode fullscreen.</p>
+          <button 
+            onClick={() => { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }} 
+            className="px-6 py-3 bg-blue-500 rounded-lg font-semibold hover:bg-blue-600 transition min-h-[48px] min-w-[48px]"
+          >
             Return to Fullscreen
           </button>
         </div>

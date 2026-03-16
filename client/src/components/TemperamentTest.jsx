@@ -1,11 +1,13 @@
 // client/src/components/TemperamentTest.jsx
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function TemperamentTest({ assignmentId, onFinish }) {
+    const navigate = useNavigate();
     const { token } = useAuth();
     const [testData, setTestData] = useState(null);
     const [answers, setAnswers] = useState({});
@@ -40,7 +42,7 @@ function TemperamentTest({ assignmentId, onFinish }) {
             }
         };
         loadTest();
-    }, [token, assignmentId, enterFullscreen, onFinish]);
+    }, [token, assignmentId, enterFullscreen, navigate]);
 
     // Prevent context menu and dev tools
     useEffect(() => {
@@ -132,7 +134,7 @@ function TemperamentTest({ assignmentId, onFinish }) {
             } else {
                 Swal.fire('Tes Selesai', 'Jawaban Anda telah disimpan.', 'success');
             }
-            onFinish();
+            navigate('/dashboard');
         } catch (err) {
             console.error(err);
             Swal.fire('Error', 'Gagal mengirim jawaban.', 'error');
@@ -151,7 +153,7 @@ function TemperamentTest({ assignmentId, onFinish }) {
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
                 <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
                 <p className="mb-2">You have exited fullscreen too many times.</p>
-                <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                <button onClick={() => navigate('/dashboard')} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
                     Back to Dashboard
                 </button>
             </div>

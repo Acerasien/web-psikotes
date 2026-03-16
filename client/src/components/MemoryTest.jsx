@@ -1,11 +1,13 @@
 // client/src/components/MemoryTest.jsx
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function MemoryTest({ assignmentId, onFinish }) {
+    const navigate = useNavigate();
     const { token } = useAuth();
     const [testData, setTestData] = useState(null);
     const [phase, setPhase] = useState('encoding');
@@ -86,12 +88,12 @@ function MemoryTest({ assignmentId, onFinish }) {
                     setLoading(false);
                 } else {
                     Swal.fire('Error', 'Gagal memuat tes.', 'error');
-                    onFinish();
+                    navigate('/dashboard');
                 }
             }
         };
         loadTest();
-    }, [assignmentId, enterFullscreen, onFinish]);
+    }, [assignmentId, enterFullscreen, navigate]);
 
     // Prevent context menu and dev tools (keep inline for now)
     useEffect(() => {
@@ -172,7 +174,7 @@ function MemoryTest({ assignmentId, onFinish }) {
             } else {
                 Swal.fire('Sukses', 'Jawaban Anda telah disimpan.', 'success');
             }
-            onFinish();
+            navigate('/dashboard');
         } catch (err) {
             console.error(err);
             Swal.fire('Error', 'Gagal mengirim jawaban.', 'error');
@@ -202,7 +204,7 @@ function MemoryTest({ assignmentId, onFinish }) {
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
                 <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
                 <p className="mb-2">You have exited fullscreen too many times.</p>
-                <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
+                <button onClick={() => navigate('/dashboard')} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
                     Back to Dashboard
                 </button>
             </div>
