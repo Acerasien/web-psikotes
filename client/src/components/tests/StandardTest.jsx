@@ -8,6 +8,11 @@ import { TestLayout, QuestionNavGrid, QuestionCard, TestFooter } from './TestLay
  * Standard test component for single-choice tests (Leadership, IQ, etc.)
  * Uses shared test session logic and layout components
  * Note: Speed, DISC, Memory, Logic, Temperament have their own components
+ *
+ * Auto-next behavior:
+ * - Leadership: Auto-next enabled, no back navigation
+ * - IQ: Auto-next enabled, no back navigation (config saved for future implementation)
+ * - Other tests: No auto-next, can navigate freely
  */
 export function StandardTest() {
   const { assignmentId } = useParams();
@@ -39,22 +44,22 @@ export function StandardTest() {
     onTestComplete: handleTestComplete
   });
 
-  // All hooks must be called before any conditional returns
+  // Auto-advance for tests with speed setting (Leadership, IQ)
   const handleSelect = useCallback((optionId) => {
     const qId = questions[currentIndex]?.id;
     if (!qId) return;
 
     setAnswers(prev => ({ ...prev, [qId]: optionId }));
 
-    // Auto-advance for speed tests
-    if (testData?.settings?.type === 'speed') {
+    // Auto-advance for leadership and IQ tests
+    if (testData?.settings?.type === 'speed' || testData?.test_code === 'LEAD') {
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex(prev => prev + 1);
         } else {
           setShowConfirmModal(true);
         }
-      }, 200);
+      }, 350);
     }
   }, [questions, currentIndex, setAnswers, testData, setCurrentIndex, setShowConfirmModal]);
 
@@ -115,7 +120,9 @@ export function StandardTest() {
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
   const isLastQuestion = currentIndex === questions.length - 1;
-  const showQuestionNav = testData?.settings?.type !== 'speed';
+  // Hide question nav and footer for auto-next tests (speed, leadership, IQ)
+  const isAutoNext = testData?.settings?.type === 'speed' || testData?.test_code === 'LEAD';
+  const showQuestionNav = !isAutoNext;
 
   return (
     <TestLayout
@@ -132,7 +139,15 @@ export function StandardTest() {
       answeredCount={answeredCount}
       totalQuestions={questions.length}
     >
-      {/* Question Navigation Grid */}
+      {/* Progress Bar - always visible */}
+      <div className="w-full bg-gray-200 h-2">
+        <div
+          className="bg-blue-500 h-2 transition-all duration-300"
+          style={{ width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%` }}
+        />
+      </div>
+
+      {/* Question Navigation Grid - hidden for auto-next tests */}
       {showQuestionNav && (
         <QuestionNavGrid
           questions={questions}
@@ -153,10 +168,10 @@ export function StandardTest() {
         onSelect={handleSelect}
         onFlag={toggleFlag}
         isFlagged={flagged.has(currentQuestion.id)}
-        showFlag={testData?.settings?.type !== 'speed'}
+        showFlag={!isAutoNext}
       />
 
-      {/* Footer Navigation */}
+      {/* Footer Navigation - hidden for auto-next tests */}
       {showQuestionNav && (
         <TestFooter
           currentIndex={currentIndex}

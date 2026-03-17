@@ -6,7 +6,7 @@ import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function TemperamentTest({ assignmentId, onFinish }) {
+function TemperamentTest({ assignmentId }) {
     const navigate = useNavigate();
     const { token } = useAuth();
     const [testData, setTestData] = useState(null);
@@ -16,6 +16,7 @@ function TemperamentTest({ assignmentId, onFinish }) {
     const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [justAnswered, setJustAnswered] = useState(false);
 
     const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
         assignmentId,
@@ -37,7 +38,8 @@ function TemperamentTest({ assignmentId, onFinish }) {
                 if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
                     setLoading(false);
                 } else {
-                    onFinish();
+                    Swal.fire('Error', 'Gagal memuat tes.', 'error');
+                    navigate('/dashboard');
                 }
             }
         };
@@ -83,25 +85,22 @@ function TemperamentTest({ assignmentId, onFinish }) {
     const handleSelect = (optionId) => {
         const qId = testData.questions[currentIndex].id;
         setAnswers({ ...answers, [qId]: optionId });
-        // Auto‑next after selection
+        setJustAnswered(true);
+        
+        // Auto‑next after delay with visual feedback
         setTimeout(() => {
+            setJustAnswered(false);
             if (currentIndex < testData.questions.length - 1) {
                 setCurrentIndex(currentIndex + 1);
             } else {
                 setShowConfirm(true);
             }
-        }, 200);
+        }, 350); // Increased delay for visual feedback
     };
 
     const goNext = () => {
         if (currentIndex < testData.questions.length - 1) {
             setCurrentIndex(currentIndex + 1);
-        }
-    };
-
-    const goPrev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
         }
     };
 
@@ -189,7 +188,9 @@ function TemperamentTest({ assignmentId, onFinish }) {
 
             {/* Question area */}
             <div className="flex-1 p-8 flex flex-col items-center">
-                <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
+                <div className={`bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl transition-all duration-300 ${
+                    justAnswered ? 'scale-[1.02] shadow-xl' : ''
+                }`}>
                     <p className="text-sm text-gray-500 mb-2">Pertanyaan {currentIndex + 1}</p>
                     <h2 className="text-xl font-semibold mb-6">{currentQ.content}</h2>
 
@@ -198,7 +199,7 @@ function TemperamentTest({ assignmentId, onFinish }) {
                             <label
                                 key={opt.id}
                                 className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${answers[currentQ.id] === opt.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white hover:bg-gray-50'
-                                    }`}
+                                    } ${justAnswered && answers[currentQ.id] === opt.id ? 'animate-pulse' : ''}`}
                             >
                                 <input
                                     type="radio"
@@ -215,15 +216,8 @@ function TemperamentTest({ assignmentId, onFinish }) {
                 </div>
             </div>
 
-            {/* Navigation footer */}
-            <div className="bg-white p-4 shadow flex justify-between">
-                <button
-                    onClick={goPrev}
-                    disabled={currentIndex === 0}
-                    className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-                >
-                    Sebelumnya
-                </button>
+            {/* Navigation footer - Forward only */}
+            <div className="bg-white p-4 shadow flex justify-end">
                 {currentIndex === testData.questions.length - 1 ? (
                     <button
                         onClick={() => setShowConfirm(true)}

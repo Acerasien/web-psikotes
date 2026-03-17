@@ -44,17 +44,18 @@ export function TestTypeRouter() {
   }
 
   // Route to specialized test components based on test_code
+  // All tests now use useNavigate() internally, no onFinish props needed
   switch (testCode) {
     case 'SPEED':
       return <SpeedTest assignmentId={assignmentId} />;
     case 'DISC':
-      return <DISCTest assignmentId={assignmentId} onFinish={() => window.location.href = '/dashboard'} />;
+      return <DISCTest assignmentId={assignmentId} />;
     case 'MEM':
-      return <MemoryTest assignmentId={assignmentId} onFinish={() => window.location.href = '/dashboard'} />;
+      return <MemoryTest assignmentId={assignmentId} />;
     case 'LOGIC':
-      return <LogicTest assignmentId={assignmentId} onFinish={() => window.location.href = '/dashboard'} />;
+      return <LogicTest assignmentId={assignmentId} />;
     case 'TEMP':
-      return <TemperamentTest assignmentId={assignmentId} onFinish={() => window.location.href = '/dashboard'} />;
+      return <TemperamentTest assignmentId={assignmentId} />;
     default:
       // Leadership, IQ, and other tests use StandardTest
       return <StandardTest />;

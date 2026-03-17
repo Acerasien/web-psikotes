@@ -6,7 +6,7 @@ import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function LogicTest({ assignmentId, onFinish }) {
+function LogicTest({ assignmentId }) {
     const navigate = useNavigate();
     const { token } = useAuth();
     const [testData, setTestData] = useState(null);
@@ -18,6 +18,7 @@ function LogicTest({ assignmentId, onFinish }) {
     const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [justAnswered, setJustAnswered] = useState(false);
 
     const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
         assignmentId,
@@ -39,11 +40,15 @@ function LogicTest({ assignmentId, onFinish }) {
         const qId = questions[currentIndex]?.id;
         if (!qId) return;
         setAnswers(prev => ({ ...prev, [qId]: optionId }));
+        setJustAnswered(true);
+        
+        // Auto-advance after delay (but can still go back)
         setTimeout(() => {
+            setJustAnswered(false);
             if (currentIndex < questions.length - 1) {
                 setCurrentIndex(prev => prev + 1);
             }
-        }, 200);
+        }, 350); // Increased delay for visual feedback
     };
 
     const goToQuestion = (index) => {
@@ -80,7 +85,7 @@ function LogicTest({ assignmentId, onFinish }) {
                     setLoading(false);
                 } else {
                     Swal.fire('Error', 'Gagal memuat tes.', 'error');
-                    onFinish();
+                    navigate('/dashboard');
                 }
             }
         };
@@ -235,7 +240,9 @@ function LogicTest({ assignmentId, onFinish }) {
             {/* Question Area */}
             <div className="flex-1 overflow-y-auto p-4 md:p-6">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white rounded-xl shadow-md p-6 md:p-8">
+                    <div className={`bg-white rounded-xl shadow-md p-6 md:p-8 transition-all duration-300 ${
+                        justAnswered ? 'scale-[1.02] shadow-xl' : ''
+                    }`}>
                         {/* Question Header */}
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                             <span className="text-sm text-gray-500">
@@ -268,7 +275,7 @@ function LogicTest({ assignmentId, onFinish }) {
                                         className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
                                                 ? 'bg-blue-500 text-white border-blue-600'
                                                 : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                            }`}
+                                            } ${justAnswered && isSelected ? 'animate-pulse' : ''}`}
                                     >
                                         <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
                                             {opt.label}.

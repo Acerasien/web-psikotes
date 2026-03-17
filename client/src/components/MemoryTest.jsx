@@ -6,7 +6,7 @@ import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function MemoryTest({ assignmentId, onFinish }) {
+function MemoryTest({ assignmentId }) {
     const navigate = useNavigate();
     const { token } = useAuth();
     const [testData, setTestData] = useState(null);
@@ -15,58 +15,45 @@ function MemoryTest({ assignmentId, onFinish }) {
     const [recallTimeLeft, setRecallTimeLeft] = useState(0);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
-    const [flagged, setFlagged] = useState(new Set());
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [justAnswered, setJustAnswered] = useState(false);
 
     const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
         assignmentId,
         token
     });
 
-    // Toggle flag for current question
     const toggleFlag = useCallback(() => {
-        if (questions.length === 0) return;
-        const qId = questions[currentIndex].id;
-        setFlagged(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(qId)) {
-                newSet.delete(qId);
-            } else {
-                newSet.add(qId);
-            }
-            return newSet;
-        });
-    }, [questions, currentIndex]);
+        // Disabled - no flagging in auto-next tests
+    }, []);
 
-    // Handle answer selection (auto‑next)
+    // Handle answer selection with auto-advance and visual feedback
     const handleSelect = useCallback((optionId) => {
         const qId = questions[currentIndex]?.id;
         if (!qId) return;
 
         setAnswers(prev => ({ ...prev, [qId]: optionId }));
+        setJustAnswered(true);
 
+        // Auto-advance after delay to let user see their selection
         setTimeout(() => {
+            setJustAnswered(false);
             if (currentIndex < questions.length - 1) {
                 setCurrentIndex(prev => prev + 1);
             } else {
+                // Last question - show confirm modal
                 setShowConfirm(true);
             }
-        }, 200);
+        }, 350); // Increased delay for visual feedback
     }, [questions, currentIndex]);
 
-    // Navigation
+    // Navigation - forward only (no back navigation)
     const goNext = () => {
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(currentIndex + 1);
-        }
-    };
-
-    const goPrev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
         }
     };
 
@@ -314,30 +301,6 @@ function MemoryTest({ assignmentId, onFinish }) {
                 </div>
             </div>
 
-            {/* Question Navigation Grid */}
-            <div className="bg-white border-b px-4 py-3">
-                <div className="flex flex-wrap gap-1.5 justify-center">
-                    {questions.map((q, idx) => {
-                        let btnClass = 'w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors ';
-                        if (answers[q.id]) {
-                            btnClass += 'bg-green-500 text-white hover:bg-green-600';
-                        } else if (flagged.has(q.id)) {
-                            btnClass += 'bg-yellow-400 text-white hover:bg-yellow-500';
-                        } else {
-                            btnClass += 'bg-gray-200 text-gray-700 hover:bg-gray-300';
-                        }
-                        if (idx === currentIndex) {
-                            btnClass += ' ring-2 ring-blue-500 ring-offset-2';
-                        }
-                        return (
-                            <button key={q.id} onClick={() => goToQuestion(idx)} className={btnClass}>
-                                {idx + 1}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
             {/* Progress Bar */}
             <div className="w-full bg-gray-200 h-2">
                 <div className="bg-blue-500 h-2 transition-all duration-300" style={{ width: `${progress}%` }}></div>
@@ -346,21 +309,14 @@ function MemoryTest({ assignmentId, onFinish }) {
             {/* Main Question Area */}
             <div className="flex-1 overflow-y-auto p-4 md:p-6">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white rounded-xl shadow-md p-6 md:p-8">
+                    <div className={`bg-white rounded-xl shadow-md p-6 md:p-8 transition-all duration-300 ${
+                        justAnswered ? 'scale-[1.02] shadow-xl' : ''
+                    }`}>
                         {/* Question Header */}
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                        <div className="flex justify-between items-center mb-6">
                             <span className="text-sm text-gray-500">
                                 Pertanyaan {currentIndex + 1} dari {questions.length}
                             </span>
-                            <button
-                                onClick={toggleFlag}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${flagged.has(currentQ.id)
-                                        ? 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200'
-                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                                    }`}
-                            >
-                                {flagged.has(currentQ.id) ? '⛳ Ditinggalkan' : 'Tandai'}
-                            </button>
                         </div>
 
                         {/* Question Text */}
@@ -379,7 +335,7 @@ function MemoryTest({ assignmentId, onFinish }) {
                                         className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
                                                 ? 'bg-blue-500 text-white border-blue-600'
                                                 : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                            }`}
+                                            } ${justAnswered && isSelected ? 'animate-pulse' : ''}`}
                                     >
                                         <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
                                             {opt.label}.
@@ -393,18 +349,9 @@ function MemoryTest({ assignmentId, onFinish }) {
                 </div>
             </div>
 
-            {/* Footer Navigation */}
+            {/* Footer Navigation - Forward only */}
             <div className="bg-white border-t px-4 py-3 flex items-center justify-between">
-                <button
-                    onClick={goPrev}
-                    disabled={currentIndex === 0}
-                    className={`px-4 py-2 rounded-md font-medium transition ${currentIndex === 0
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                >
-                    ← Sebelumnya
-                </button>
+                <div></div> {/* Empty div for spacing */}
                 <span className="text-sm text-gray-600 font-mono">
                     {answeredCount} / {questions.length}
                 </span>

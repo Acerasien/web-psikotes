@@ -117,8 +117,8 @@ export function useTestSession(assignmentId, options = {}) {
   }, [timeLeft, loading, isLocked]);
 
   // Submit test
-  const handleSubmit = useCallback(async (isTimeout = false) => {
-    const currentAnswers = answersRef.current;
+  const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
+    const currentAnswers = overrideAnswers || answersRef.current;
     const currentTestData = testDataRef.current;
     const currentTimeLeft = timeLeftRef.current;
 
@@ -141,7 +141,7 @@ export function useTestSession(assignmentId, options = {}) {
 
     try {
       // Use custom formatter or default
-      const finalAnswers = formatAnswers 
+      const finalAnswers = formatAnswers
         ? formatAnswers(currentAnswers)
         : Object.keys(currentAnswers).map(qId => ({
             question_id: parseInt(qId),

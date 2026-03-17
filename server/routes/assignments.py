@@ -134,6 +134,7 @@ def start_test(
         })
     return {
         "test_name": assignment.test.name,
+        "test_code": assignment.test.code,
         "time_limit": assignment.test.time_limit,
         "settings": assignment.test.settings,
         "questions": output
@@ -207,7 +208,7 @@ def submit_test(
         total_questions = len(questions)
         details = score_speed(submission.answers, questions)
         score = details["score"]
-        answered_count = len(submission.answers)
+        answered_count = details.get("total_answered", len(submission.answers))
 
     elif test_code == "TEMP":
         questions = (

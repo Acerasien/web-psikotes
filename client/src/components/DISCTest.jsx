@@ -6,7 +6,7 @@ import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
-function DISCTest({ assignmentId, onFinish }) {
+function DISCTest({ assignmentId }) {
     const navigate = useNavigate();
     const { token } = useAuth();
     const [testData, setTestData] = useState(null);

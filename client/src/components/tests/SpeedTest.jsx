@@ -13,6 +13,7 @@ export function SpeedTest({ assignmentId }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showLocalConfirm, setShowLocalConfirm] = useState(false);
+  const [justAnswered, setJustAnswered] = useState(false);
 
   const handleTestComplete = useCallback(() => {
     navigate('/dashboard');
@@ -29,12 +30,18 @@ export function SpeedTest({ assignmentId }) {
     isLocked,
     isFullscreen,
     enterFullscreen,
-    handleSubmit,
+    handleSubmit: submitTestSession,
     formatTime,
   } = useTestSession(assignmentId, {
     requireAllAnswers: false, // Speed tests allow partial answers
     onTestComplete: handleTestComplete
   });
+
+  // Custom submit handler that uses local answers state
+  const handleSubmit = useCallback(async () => {
+    // Call the original submit with our local answers
+    await submitTestSession(false, answers);
+  }, [submitTestSession, answers]);
 
   // Use local confirm state to avoid conflict with hook
   const showConfirm = showConfirmModal || showLocalConfirm;
@@ -45,18 +52,20 @@ export function SpeedTest({ assignmentId }) {
     const qId = questions[currentIndex]?.id;
     if (!qId) return;
 
-    // Record answer
+    // Record answer and trigger visual feedback
     setAnswers(prev => ({ ...prev, [qId]: optionId }));
+    setJustAnswered(true);
 
-    // Auto-advance after short delay
+    // Auto-advance after delay to let user see their selection
     setTimeout(() => {
+      setJustAnswered(false);
       if (currentIndex < questions.length - 1) {
         setCurrentIndex(prev => prev + 1);
       } else {
         // Last question - show confirm modal
         setShowConfirm(true);
       }
-    }, 150); // Slightly longer delay for visual feedback
+    }, 350); // Increased delay for visual feedback
   }, [questions, currentIndex, setShowConfirm]);
 
   // Keyboard navigation for faster interaction
@@ -151,7 +160,9 @@ export function SpeedTest({ assignmentId }) {
 
       {/* Question Card - Optimized for speed */}
       <div className="flex-1 p-4 sm:p-6 flex flex-col items-center justify-center overflow-y-auto">
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-2xl">
+        <div className={`bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-2xl transition-all duration-300 ${
+          justAnswered ? 'scale-[1.02] shadow-xl' : ''
+        }`}>
           {/* Question Text */}
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6 sm:mb-8 text-center text-gray-800">
             {currentQuestion.content}
@@ -169,7 +180,7 @@ export function SpeedTest({ assignmentId }) {
                     isSelected
                       ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-blue-600 shadow-lg'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                  }`}
+                  } ${justAnswered && isSelected ? 'animate-pulse' : ''}`}
                 >
                   <div className="flex items-center gap-3 sm:gap-4">
                     <span className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-bold text-lg ${
