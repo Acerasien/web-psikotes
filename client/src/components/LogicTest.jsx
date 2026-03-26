@@ -1,5 +1,5 @@
 // client/src/components/LogicTest.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
@@ -19,6 +19,28 @@ function LogicTest({ assignmentId }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
+
+    // Refs to hold latest values for stable callbacks
+    const answersRef = useRef(answers);
+    const testDataRef = useRef(testData);
+    const timeLeftRef = useRef(timeLeft);
+    const questionsRef = useRef(questions);
+
+    useEffect(() => {
+        answersRef.current = answers;
+    }, [answers]);
+
+    useEffect(() => {
+        testDataRef.current = testData;
+    }, [testData]);
+
+    useEffect(() => {
+        timeLeftRef.current = timeLeft;
+    }, [timeLeft]);
+
+    useEffect(() => {
+        questionsRef.current = questions;
+    }, [questions]);
 
     const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
         assignmentId,
@@ -111,13 +133,18 @@ function LogicTest({ assignmentId }) {
     }, []);
 
     // Timer
+    const isSubmittingRef = useRef(false);
+    
     useEffect(() => {
-        if (timeLeft <= 0 || isLocked) return;
+        if (timeLeft <= 0 || isLocked || isSubmittingRef.current) return;
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleSubmit(true);
+                    if (!isSubmittingRef.current) {
+                        isSubmittingRef.current = true;
+                        handleSubmit(true);
+                    }
                     return 0;
                 }
                 return prev - 1;
@@ -127,12 +154,18 @@ function LogicTest({ assignmentId }) {
     }, [timeLeft, isLocked]);
 
     const handleSubmit = async (isTimeout = false) => {
+        // Use refs for stable values
+        const currentAnswers = answersRef.current;
+        const currentTestData = testDataRef.current;
+        const currentTimeLeft = timeLeftRef.current;
+        const currentQuestions = questionsRef.current;
+        
         // Check if all questions answered
-        const answeredCount = Object.keys(answers).length;
-        if (!isTimeout && answeredCount < questions.length) {
+        const answeredCount = Object.keys(currentAnswers).length;
+        if (!isTimeout && currentQuestions.length > 0 && answeredCount < currentQuestions.length) {
             Swal.fire({
                 title: 'Belum Lengkap',
-                text: `Anda baru menjawab ${answeredCount} dari ${questions.length} pertanyaan. Silakan jawab semua pertanyaan sebelum menyelesaikan tes.`,
+                text: `Anda baru menjawab ${answeredCount} dari ${currentQuestions.length} pertanyaan. Silakan jawab semua pertanyaan sebelum menyelesaikan tes.`,
                 icon: 'warning',
                 confirmButtonText: 'OK'
             });
@@ -142,12 +175,12 @@ function LogicTest({ assignmentId }) {
         setIsSubmitting(true);
         try {
             const payload = {
-                answers: Object.keys(answers).map(qId => ({
+                answers: Object.keys(currentAnswers).map(qId => ({
                     question_id: parseInt(qId),
-                    option_id: answers[qId],
+                    option_id: currentAnswers[qId],
                     type: 'single'
                 })),
-                time_taken: (testData?.time_limit || 1800) - timeLeft
+                time_taken: (currentTestData?.time_limit || 1800) - currentTimeLeft
             };
             await api.submitTest(assignmentId, payload.answers, payload.time_taken);
             if (isTimeout) {

@@ -1,5 +1,5 @@
 // client/src/components/MemoryTest.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
@@ -20,6 +20,28 @@ function MemoryTest({ assignmentId }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
+
+    // Refs to hold latest values for stable callbacks
+    const answersRef = useRef(answers);
+    const testDataRef = useRef(testData);
+    const recallTimeLeftRef = useRef(recallTimeLeft);
+    const questionsRef = useRef(questions);
+
+    useEffect(() => {
+        answersRef.current = answers;
+    }, [answers]);
+
+    useEffect(() => {
+        testDataRef.current = testData;
+    }, [testData]);
+
+    useEffect(() => {
+        recallTimeLeftRef.current = recallTimeLeft;
+    }, [recallTimeLeft]);
+
+    useEffect(() => {
+        questionsRef.current = questions;
+    }, [questions]);
 
     const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
         assignmentId,
@@ -100,6 +122,9 @@ function MemoryTest({ assignmentId }) {
         };
     }, []);
 
+    // Timer state for submission prevention
+    const isSubmittingRef = useRef(false);
+
     // Encoding timer
     useEffect(() => {
         if (phase !== 'encoding' || encodingTimeLeft <= 0 || isLocked) return;
@@ -118,12 +143,15 @@ function MemoryTest({ assignmentId }) {
 
     // Recall timer
     useEffect(() => {
-        if (phase !== 'recall' || recallTimeLeft <= 0 || isLocked) return;
+        if (phase !== 'recall' || recallTimeLeft <= 0 || isLocked || isSubmittingRef.current) return;
         const timer = setInterval(() => {
             setRecallTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleSubmit(true);
+                    if (!isSubmittingRef.current) {
+                        isSubmittingRef.current = true;
+                        handleSubmit(true);
+                    }
                     return 0;
                 }
                 return prev - 1;
@@ -133,12 +161,18 @@ function MemoryTest({ assignmentId }) {
     }, [phase, recallTimeLeft, isLocked]);
 
     const handleSubmit = async (isTimeout = false) => {
+        // Use refs for stable values
+        const currentAnswers = answersRef.current;
+        const currentTestData = testDataRef.current;
+        const currentTimeLeft = recallTimeLeftRef.current;
+        const currentQuestions = questionsRef.current;
+        
         // Check if all questions answered
-        const answeredCount = Object.keys(answers).length;
-        if (!isTimeout && questions.length > 0 && answeredCount < questions.length) {
+        const answeredCount = Object.keys(currentAnswers).length;
+        if (!isTimeout && currentQuestions.length > 0 && answeredCount < currentQuestions.length) {
             Swal.fire({
                 title: 'Belum Lengkap',
-                text: `Anda baru menjawab ${answeredCount} dari ${questions.length} pertanyaan.`,
+                text: `Anda baru menjawab ${answeredCount} dari ${currentQuestions.length} pertanyaan.`,
                 icon: 'warning',
                 confirmButtonText: 'OK'
             });
@@ -148,12 +182,12 @@ function MemoryTest({ assignmentId }) {
         setIsSubmitting(true);
         try {
             const payload = {
-                answers: Object.keys(answers).map(qId => ({
+                answers: Object.keys(currentAnswers).map(qId => ({
                     question_id: parseInt(qId),
-                    option_id: answers[qId],
+                    option_id: currentAnswers[qId],
                     type: 'single'
                 })),
-                time_taken: testData.settings?.recall_time - recallTimeLeft
+                time_taken: currentTestData?.settings?.recall_time - currentTimeLeft
             };
             await api.submitTest(assignmentId, payload.answers, payload.time_taken);
             if (isTimeout) {

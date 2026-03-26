@@ -11,6 +11,8 @@ function ResultsTable({ filters, onFilterChange, tests }) {
     const [loading, setLoading] = useState(true);
     const [sortConfig, setSortConfig] = useState({ key: 'completed_at', direction: 'desc' });
     const [expandedRows, setExpandedRows] = useState(new Set());
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10); // Show 10 items per page
 
     // Fetch results when filters change
     useEffect(() => {
@@ -25,6 +27,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
 
                 const res = await api.getResults(params);
                 setResults(res.data);
+                setCurrentPage(1); // Reset to first page when filters change
             } catch (err) {
                 console.error(err);
             } finally {
@@ -76,6 +79,61 @@ function ResultsTable({ filters, onFilterChange, tests }) {
             newExpanded.add(id);
         }
         setExpandedRows(newExpanded);
+    };
+
+    // Pagination logic
+    const totalPages = Math.ceil(sortedResults.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedResults = sortedResults.slice(startIndex, endIndex);
+
+    const goToPage = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
+
+    const renderPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+        if (endPage - startPage + 1 < maxVisible) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        if (startPage > 1) {
+            pages.push(
+                <button key={1} onClick={() => goToPage(1)} className="px-3 py-1 rounded hover:bg-gray-200">1</button>
+            );
+            if (startPage > 2) {
+                pages.push(<span key="start-ellipsis" className="px-2">...</span>);
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(
+                <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    className={`px-3 py-1 rounded ${currentPage === i ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'}`}
+                >
+                    {i}
+                </button>
+            );
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                pages.push(<span key="end-ellipsis" className="px-2">...</span>);
+            }
+            pages.push(
+                <button key={totalPages} onClick={() => goToPage(totalPages)} className="px-3 py-1 rounded hover:bg-gray-200">{totalPages}</button>
+            );
+        }
+
+        return pages;
     };
 
     const renderDetails = (result) => {
@@ -237,8 +295,8 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                         <p className="text-gray-500 mt-2 text-sm">Loading results...</p>
                     </div>
                 )}
-                
-                {!loading && sortedResults.length === 0 && (
+
+                {!loading && paginatedResults.length === 0 && (
                     <div className="p-8 text-center text-gray-500">
                         <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -247,18 +305,19 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                     </div>
                 )}
 
-                {!loading && sortedResults.map(result => (
+                {!loading && paginatedResults.map(result => (
                     <div key={result.id} className="p-4 space-y-3">
                         {/* Header */}
                         <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                                <Link 
-                                    to={`/participants/${result.user_id}`} 
-                                    className="text-blue-600 hover:text-blue-800 font-medium text-sm block truncate"
+                                <Link
+                                    to={`/participants/${result.user_id}`}
+                                    className="text-blue-600 hover:text-blue-800 font-medium text-sm block truncate max-w-[200px]"
+                                    title={result.full_name || result.username}
                                 >
                                     {result.full_name || result.username}
                                 </Link>
-                                <p className="text-xs text-gray-500 mt-0.5">{result.test_name}</p>
+                                <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]" title={result.test_name}>{result.test_name}</p>
                             </div>
                             <div className="text-right flex-shrink-0">
                                 <div className="text-lg font-bold text-green-600">
@@ -305,6 +364,39 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                 ))}
             </div>
 
+            {/* Pagination - Mobile */}
+            {!loading && paginatedResults.length > 0 && (
+                <div className="lg:hidden p-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm text-gray-700">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                            {startIndex + 1}-{Math.min(endIndex, sortedResults.length)} of {sortedResults.length}
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                        <button
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Previous
+                        </button>
+                        <div className="flex items-center gap-1">
+                            {renderPageNumbers()}
+                        </div>
+                        <button
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Desktop Table View - hidden on mobile */}
             <div className="hidden lg:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -335,18 +427,24 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {sortedResults.length === 0 && (
+                        {paginatedResults.length === 0 && (
                             <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-500">No results found.</td></tr>
                         )}
-                        {sortedResults.map(result => (
+                        {paginatedResults.map(result => (
                             <>
                                 <tr key={result.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <Link to={`/participants/${result.user_id}`} className="text-blue-600 hover:underline">
+                                    <td className="px-6 py-4 whitespace-nowrap max-w-[200px]">
+                                        <Link 
+                                            to={`/participants/${result.user_id}`} 
+                                            className="text-blue-600 hover:underline truncate block"
+                                            title={result.full_name || result.username}
+                                        >
                                             {result.full_name || result.username}
                                         </Link>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.test_name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[150px] truncate" title={result.test_name}>
+                                        {result.test_name}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
                                         {result.details?.primary ? (
                                             <span>{result.details.primary}</span>
@@ -383,6 +481,36 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination - Desktop */}
+            {!loading && paginatedResults.length > 0 && (
+                <div className="hidden lg:flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-700">
+                        Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                        <span className="font-medium">{Math.min(endIndex, sortedResults.length)}</span> of{' '}
+                        <span className="font-medium">{sortedResults.length}</span> results
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+                        >
+                            Previous
+                        </button>
+                        <div className="flex items-center gap-1">
+                            {renderPageNumbers()}
+                        </div>
+                        <button
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

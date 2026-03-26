@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ipconfig)",
+      "Bash(.venv\\scripts\\activate)",
+      "Bash(uvicorn *)",
+      "Bash(npm run *)",
+      "Bash(dir *)",
+      "Bash(taskkill *)",
+      "Bash(curl *)",
+      "Bash(type *)",
+      "Bash(python *)",
+      "Bash(venv\\scripts\\activate)",
+      "Bash(git add *)"
+    ]
+  },
+  "$version": 3
+}

@@ -1,5 +1,5 @@
 // client/src/components/tests/SpeedTest.jsx
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTestSession } from '../../hooks/useTestSession';
 import { TestLayout } from './TestLayout';
@@ -14,6 +14,13 @@ export function SpeedTest({ assignmentId }) {
   const [answers, setAnswers] = useState({});
   const [showLocalConfirm, setShowLocalConfirm] = useState(false);
   const [justAnswered, setJustAnswered] = useState(false);
+  
+  // Use a ref to always have the latest answers for submit
+  const answersRef = useRef(answers);
+  
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   const handleTestComplete = useCallback(() => {
     navigate('/dashboard');
@@ -34,14 +41,27 @@ export function SpeedTest({ assignmentId }) {
     formatTime,
   } = useTestSession(assignmentId, {
     requireAllAnswers: false, // Speed tests allow partial answers
-    onTestComplete: handleTestComplete
+    onTestComplete: handleTestComplete,
+    // Pass a ref getter so the hook can access local answers on timeout
+    formatAnswers: () => Object.keys(answersRef.current).map(qId => ({
+      question_id: parseInt(qId),
+      option_id: answersRef.current[qId],
+      type: 'single'
+    }))
   });
 
   // Custom submit handler that uses local answers state
   const handleSubmit = useCallback(async () => {
-    // Call the original submit with our local answers
-    await submitTestSession(false, answers);
-  }, [submitTestSession, answers]);
+    // Convert to array format for the API
+    const formattedAnswers = Object.keys(answersRef.current).map(qId => ({
+      question_id: parseInt(qId),
+      option_id: answersRef.current[qId],
+      type: 'single'
+    }));
+    
+    // Call the original submit with formatted answers
+    await submitTestSession(false, formattedAnswers);
+  }, [submitTestSession]);
 
   // Use local confirm state to avoid conflict with hook
   const showConfirm = showConfirmModal || showLocalConfirm;
@@ -65,7 +85,7 @@ export function SpeedTest({ assignmentId }) {
         // Last question - show confirm modal
         setShowConfirm(true);
       }
-    }, 350); // Increased delay for visual feedback
+    }, 350);
   }, [questions, currentIndex, setShowConfirm]);
 
   // Keyboard navigation for faster interaction

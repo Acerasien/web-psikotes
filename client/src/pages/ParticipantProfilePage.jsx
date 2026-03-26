@@ -142,30 +142,50 @@ function ParticipantProfilePage() {
     }
 
     return (
-        <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto font-sans">
-            <div className="flex justify-between items-center mb-4">
-                <button onClick={() => navigate(-1)} className="text-blue-600 hover:text-blue-800">
-                    ← Back
-                </button>
-                {/* Show export button only if the logged-in user is superadmin */}
-                {isSuperadmin && (
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleExportParticipant}
-                            disabled={exporting}
-                            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm"
-                        >
-                            {exporting ? 'Exporting...' : 'Export CSV'}
-                        </button>
-                        <button
-                            onClick={handleExportPDF}
-                            disabled={pdfExporting}
-                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm"
-                        >
-                            {pdfExporting ? 'Generating...' : 'Export PDF'}
-                        </button>
+        <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto font-sans">
+            {/* Page Header with Back and Actions */}
+            <div className="bg-white shadow rounded-lg">
+                <div className="px-6 py-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back
+                            </button>
+                            <h1 className="text-2xl font-bold text-gray-900">Participant Profile</h1>
+                        </div>
+                        {/* Show export buttons only if the logged-in user is superadmin */}
+                        {isSuperadmin && (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleExportParticipant}
+                                    disabled={exporting}
+                                    className={`inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    {exporting ? 'Exporting...' : 'Export CSV'}
+                                </button>
+                                <button
+                                    onClick={handleExportPDF}
+                                    disabled={pdfExporting}
+                                    className={`inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    {pdfExporting ? 'Generating...' : 'Export PDF'}
+                                </button>
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Profile Header */}

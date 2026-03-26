@@ -133,7 +133,17 @@ def export_participant_results(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    results = db.query(Result).filter(Result.user_id == user_id).order_by(Result.completed_at).all()
+    # Get all results and deduplicate by test_id (keep latest per test)
+    all_results = db.query(Result).filter(Result.user_id == user_id).all()
+    
+    # Deduplicate: keep only the latest result per test
+    latest_results = {}
+    for r in all_results:
+        if r.test_id not in latest_results or (r.completed_at and latest_results[r.test_id].completed_at and r.completed_at > latest_results[r.test_id].completed_at):
+            latest_results[r.test_id] = r
+    
+    results = list(latest_results.values())
+    results.sort(key=lambda x: x.completed_at or datetime.min)
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -145,7 +155,7 @@ def export_participant_results(
         max_score = get_max_score(r.test.code)
         if max_score is None:
             max_score = db.query(Question).filter(Question.test_id == r.test_id).count()
-        
+
         percentage = round((r.score / max_score * 100), 2) if isinstance(max_score, int) and max_score > 0 else "N/A"
 
         writer.writerow([
@@ -173,7 +183,16 @@ def export_participant_pdf(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    results = db.query(Result).filter(Result.user_id == user_id).order_by(Result.test_id).all()
+    # Get all results and deduplicate by test_id (keep latest per test)
+    all_results = db.query(Result).filter(Result.user_id == user_id).all()
+    
+    # Deduplicate: keep only the latest result per test
+    latest_results = {}
+    for r in all_results:
+        if r.test_id not in latest_results or (r.completed_at and latest_results[r.test_id].completed_at and r.completed_at > latest_results[r.test_id].completed_at):
+            latest_results[r.test_id] = r
+    
+    results = list(latest_results.values())
 
     pdf_bytes = generate_participant_pdf(user, results)
 

@@ -163,7 +163,7 @@ def submit_test(
     ).first()
     if existing_result:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail="This test has already been submitted. Duplicate submissions are not allowed."
         )
 
@@ -283,7 +283,20 @@ def submit_test(
     details["total_questions"] = total_questions
     details["is_complete"] = is_complete
 
-    # 4. Create Result record
+    # 4. Create Result record with additional race condition check
+    # Re-check assignment status to prevent race condition duplicate submissions
+    assignment = db.query(Assignment).with_for_update().filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        db.rollback()
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    
+    if assignment.status != "in_progress":
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Test has already been submitted or is no longer in progress."
+        )
+    
     result = Result(
         user_id=current_user.id,
         test_id=assignment.test_id,

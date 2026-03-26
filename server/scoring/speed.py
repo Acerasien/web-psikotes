@@ -28,12 +28,14 @@ def score_speed(answers, questions):
     # Count correct answers across ALL questions (skipped = wrong)
     correct = 0
     total_questions = len(questions)
-    
+    total_answered = len(submitted_answers)
+
     for q in questions:
         user_answer = submitted_answers.get(q.id)
         if user_answer is not None:
             # User answered this question
-            if user_answer == correct_option_ids.get(q.id):
+            correct_answer = correct_option_ids.get(q.id)
+            if user_answer == correct_answer:
                 correct += 1
         # else: skipped = wrong (no points added)
 

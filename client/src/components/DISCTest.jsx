@@ -111,16 +111,22 @@ function DISCTest({ assignmentId }) {
         }
     }, [assignmentId, navigate]);
 
+    // ----- Timer state for submission prevention -----
+    const isSubmittingRef = useRef(false);
+
     // ----- Timer effect (depends only on stable handleSubmit) -----
     useEffect(() => {
-        if (loading || isLocked || timeLeft === null) return;
+        if (loading || isLocked || timeLeft === null || isSubmittingRef.current) return;
 
         timerRef.current = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timerRef.current);
                     timerRef.current = null;
-                    handleSubmit(true);
+                    if (!isSubmittingRef.current) {
+                        isSubmittingRef.current = true;
+                        handleSubmit(true);
+                    }
                     return 0;
                 }
                 return prev - 1;

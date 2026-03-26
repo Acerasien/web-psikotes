@@ -490,13 +490,14 @@ function ParticipantsPage() {
                                     <div className="flex flex-wrap gap-1.5">
                                         {userAssignments.length > 0 ? (
                                             userAssignments.slice(0, 5).map(a => {
-                                                let bgColor = 'bg-green-100 text-green-700';
-                                                if (a.status === 'locked') bgColor = 'bg-red-100 text-red-700';
-                                                else if (a.status === 'in_progress') bgColor = 'bg-yellow-100 text-yellow-700';
+                                                let bgColor = 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-600/20';
+                                                if (a.status === 'locked') bgColor = 'bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20';
+                                                else if (a.status === 'in_progress') bgColor = 'bg-yellow-100 text-yellow-700 ring-1 ring-inset ring-yellow-600/20';
                                                 return (
                                                     <span
                                                         key={a.id}
-                                                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${bgColor}`}
+                                                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap ${bgColor}`}
+                                                        title={a.test_name}
                                                     >
                                                         {a.test_name}
                                                         {a.status === 'locked' && isSuperadmin && (
@@ -516,10 +517,15 @@ function ParticipantsPage() {
                                                 );
                                             })
                                         ) : (
-                                            <span className="text-sm text-gray-400 italic">No tests assigned</span>
+                                            <span className="inline-flex items-center gap-1 text-sm text-gray-400 italic">
+                                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                No tests assigned
+                                            </span>
                                         )}
                                         {userAssignments.length > 5 && (
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
                                                 +{userAssignments.length - 5} more
                                             </span>
                                         )}
@@ -681,9 +687,13 @@ function ParticipantsPage() {
                                                         <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
                                                             {(u.full_name || u.username).charAt(0).toUpperCase()}
                                                         </div>
-                                                        <div className="ml-4">
-                                                            <div className="text-sm font-semibold text-gray-900">{u.full_name || u.username}</div>
-                                                            <div className="text-sm text-gray-500">@{u.username}</div>
+                                                        <div className="ml-4 min-w-0 flex-1">
+                                                            <div className="text-sm font-semibold text-gray-900 truncate max-w-[200px]" title={u.full_name || u.username}>
+                                                                {u.full_name || u.username}
+                                                            </div>
+                                                            <div className="text-sm text-gray-500 truncate max-w-[200px]" title={`@${u.username}`}>
+                                                                @{u.username}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -699,27 +709,28 @@ function ParticipantsPage() {
                                                     {userAssignments.length > 0 ? (
                                                         <div className="flex flex-wrap gap-1.5">
                                                             {userAssignments.slice(0, 3).map(a => {
-                                                                let bgColor = 'bg-green-100 text-green-700 ring-green-600/20';
-                                                                if (a.status === 'locked') bgColor = 'bg-red-100 text-red-700 ring-red-600/20';
-                                                                else if (a.status === 'in_progress') bgColor = 'bg-yellow-100 text-yellow-700 ring-yellow-600/20';
+                                                                let bgColor = 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-600/20';
+                                                                if (a.status === 'locked') bgColor = 'bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20';
+                                                                else if (a.status === 'in_progress') bgColor = 'bg-yellow-100 text-yellow-700 ring-1 ring-inset ring-yellow-600/20';
                                                                 return (
                                                                     <span
                                                                         key={a.id}
-                                                                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ring-1 ring-inset ${bgColor}`}
+                                                                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap ${bgColor}`}
+                                                                        title={a.test_name}
                                                                     >
                                                                         {a.test_name}
                                                                     </span>
                                                                 );
                                                             })}
                                                             {userAssignments.length > 3 && (
-                                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/20">
+                                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/20 whitespace-nowrap">
                                                                     +{userAssignments.length - 3} more
                                                                 </span>
                                                             )}
                                                         </div>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1 text-sm text-gray-400">
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <span className="inline-flex items-center gap-1 text-sm text-gray-400 italic">
+                                                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                                             </svg>
                                                             No tests assigned
@@ -783,17 +794,17 @@ function ParticipantsPage() {
 
                                                         {/* Edit & Delete icons, only for superadmin */}
                                                         {isSuperadmin && (
-                                                            <div className="flex items-center gap-1 ml-2 pl-2 border-l border-gray-200">
+                                                            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-gray-200">
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         setEditingUser(u);
                                                                         setShowEditModal(true);
                                                                     }}
-                                                                    className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded transition-colors"
+                                                                    className="p-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
                                                                     title="Edit participant"
                                                                 >
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                                     </svg>
                                                                 </button>
@@ -802,10 +813,10 @@ function ParticipantsPage() {
                                                                         e.stopPropagation();
                                                                         handleDelete(u.id, u.full_name || u.username);
                                                                     }}
-                                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                                     title="Delete participant"
                                                                 >
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                                     </svg>
                                                                 </button>

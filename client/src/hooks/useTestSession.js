@@ -98,15 +98,21 @@ export function useTestSession(assignmentId, options = {}) {
     };
   }, []);
 
+  // Timer state for submission prevention
+  const isSubmittingRef = useRef(false);
+
   // Timer
   useEffect(() => {
-    if (timeLeft === null || loading || isLocked) return;
+    if (timeLeft === null || loading || isLocked || isSubmittingRef.current) return;
 
     const timerId = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerId);
-          handleSubmit(true);
+          if (!isSubmittingRef.current) {
+            isSubmittingRef.current = true;
+            handleSubmit(true);
+          }
           return 0;
         }
         return prev - 1;
@@ -114,11 +120,22 @@ export function useTestSession(assignmentId, options = {}) {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [timeLeft, loading, isLocked]);
+  }, [timeLeft, loading, isLocked, handleSubmit]);
 
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
-    const currentAnswers = overrideAnswers || answersRef.current;
+    let currentAnswers;
+    
+    // Priority: 1) overrideAnswers, 2) formatAnswers() if provided (for custom answer storage), 3) answersRef.current
+    if (overrideAnswers !== null) {
+      currentAnswers = overrideAnswers;
+    } else if (formatAnswers && isTimeout) {
+      // On timeout, use the custom formatter if provided (for SpeedTest, etc.)
+      currentAnswers = formatAnswers();
+    } else {
+      currentAnswers = answersRef.current;
+    }
+    
     const currentTestData = testDataRef.current;
     const currentTimeLeft = timeLeftRef.current;
 
@@ -140,14 +157,23 @@ export function useTestSession(assignmentId, options = {}) {
     const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);
 
     try {
-      // Use custom formatter or default
-      const finalAnswers = formatAnswers
-        ? formatAnswers(currentAnswers)
-        : Object.keys(currentAnswers).map(qId => ({
-            question_id: parseInt(qId),
-            option_id: currentAnswers[qId],
-            type: 'single'
-          }));
+      // Format answers - if formatAnswers was used to get currentAnswers, it's already formatted
+      // Otherwise, format from object to array
+      let finalAnswers;
+      if (overrideAnswers !== null) {
+        // overrideAnswers is already in array format from SpeedTest
+        finalAnswers = overrideAnswers;
+      } else if (formatAnswers && isTimeout) {
+        // formatAnswers returns array format directly
+        finalAnswers = formatAnswers();
+      } else {
+        // Default: convert from { qId: optionId } to array format
+        finalAnswers = Object.keys(currentAnswers).map(qId => ({
+          question_id: parseInt(qId),
+          option_id: currentAnswers[qId],
+          type: 'single'
+        }));
+      }
 
       await api.submitTest(assignmentId, finalAnswers, timeTaken);
 

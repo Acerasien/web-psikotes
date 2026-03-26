@@ -210,8 +210,12 @@ function Dashboard() {
                             <tbody className="divide-y divide-gray-200">
                                 {recent.map(item => (
                                     <tr key={item.id} className="hover:bg-gray-50">
-                                        <td className="px-4 py-2 text-sm">{item.participant_name}</td>
-                                        <td className="px-4 py-2 text-sm">{item.test_name}</td>
+                                        <td className="px-4 py-2 text-sm max-w-[200px] truncate" title={item.participant_name}>
+                                            {item.participant_name}
+                                        </td>
+                                        <td className="px-4 py-2 text-sm max-w-[150px] truncate" title={item.test_name}>
+                                            {item.test_name}
+                                        </td>
                                         <td className="px-4 py-2 text-sm font-medium text-green-600">{item.score} / {item.total_questions}</td>
                                         <td className="px-4 py-2 text-sm text-gray-500">
                                             {new Date(item.completed_at).toLocaleDateString()}

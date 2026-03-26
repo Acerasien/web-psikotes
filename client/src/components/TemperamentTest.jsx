@@ -1,5 +1,5 @@
 // client/src/components/TemperamentTest.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
@@ -17,6 +17,23 @@ function TemperamentTest({ assignmentId }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
+
+    // Refs to hold latest values for stable callbacks
+    const answersRef = useRef(answers);
+    const testDataRef = useRef(testData);
+    const timeLeftRef = useRef(timeLeft);
+
+    useEffect(() => {
+        answersRef.current = answers;
+    }, [answers]);
+
+    useEffect(() => {
+        testDataRef.current = testData;
+    }, [testData]);
+
+    useEffect(() => {
+        timeLeftRef.current = timeLeft;
+    }, [timeLeft]);
 
     const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
         assignmentId,
@@ -64,15 +81,21 @@ function TemperamentTest({ assignmentId }) {
         };
     }, []);
 
+    // Timer state for submission prevention
+    const isSubmittingRef = useRef(false);
+
     // Timer
     useEffect(() => {
-        if (timeLeft === null || loading || isLocked) return;
+        if (timeLeft === null || loading || isLocked || isSubmittingRef.current) return;
         if (timeLeft > 0) {
             const timerId = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
                         clearInterval(timerId);
-                        handleSubmit(true);
+                        if (!isSubmittingRef.current) {
+                            isSubmittingRef.current = true;
+                            handleSubmit(true);
+                        }
                         return 0;
                     }
                     return prev - 1;
@@ -105,12 +128,17 @@ function TemperamentTest({ assignmentId }) {
     };
 
     const handleSubmit = async (isTimeout = false) => {
+        // Use refs for stable values
+        const currentAnswers = answersRef.current;
+        const currentTestData = testDataRef.current;
+        const currentTimeLeft = timeLeftRef.current;
+        
         // Check if all questions answered
-        const answeredCount = Object.keys(answers).length;
-        if (!isTimeout && answeredCount < testData.questions.length) {
+        const answeredCount = Object.keys(currentAnswers).length;
+        if (!isTimeout && currentTestData?.questions?.length && answeredCount < currentTestData.questions.length) {
             Swal.fire({
                 title: 'Belum Lengkap',
-                text: `Anda baru menjawab ${answeredCount} dari ${testData.questions.length} pertanyaan.`,
+                text: `Anda baru menjawab ${answeredCount} dari ${currentTestData.questions.length} pertanyaan.`,
                 icon: 'warning'
             });
             return;
@@ -118,11 +146,11 @@ function TemperamentTest({ assignmentId }) {
 
         setIsSubmitting(true);
         try {
-            const timeTaken = testData.time_limit === 0 ? 0 : testData.time_limit - (timeLeft ?? 0);
+            const timeTaken = currentTestData?.time_limit === 0 ? 0 : currentTestData.time_limit - (currentTimeLeft ?? 0);
             const payload = {
-                answers: Object.keys(answers).map(qId => ({
+                answers: Object.keys(currentAnswers).map(qId => ({
                     question_id: parseInt(qId),
-                    option_id: answers[qId],
+                    option_id: currentAnswers[qId],
                     type: 'single'
                 })),
                 time_taken: timeTaken

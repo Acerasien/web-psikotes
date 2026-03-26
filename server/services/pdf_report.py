@@ -388,20 +388,6 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
                 'C': "menjadi lebih kritis, perfeksionis, dan cenderung menarik diri."
             }
 
-            # Build narrative
-            narrative = (
-                f"Berdasarkan hasil tes DISC, testee menunjukkan perilaku utama alami yang dominan {trait_names[nat_primary]} ({nat_primary}). "
-                f"Artinya testee cenderung {natural_desc[nat_primary]} "
-            )
-
-            narrative += (
-                f"Saat di bawah tekanan, testee cenderung {pressure_desc[pre_primary]} "
-            )
-
-            narrative += (
-                f"Secara alami (True Self), testee cenderung {natural_desc[nat_primary].lower()} "
-            )
-
             # Suitability based on stress gap
             if stress_gap < 5:
                 suitability = "Sesuai dengan Norm Standard Andamas – memenuhi persyaratan level posisi saat ini."
@@ -410,7 +396,13 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
             else:
                 suitability = "Profil menunjukkan perbedaan signifikan antara diri alami dan penampilan publik – disarankan konseling atau penyesuaian peran."
 
-            narrative += f"Berdasarkan hasil tes DISC, testee menunjukkan profil kepribadian yang {suitability}"
+            # Build narrative
+            narrative = (
+                f"Berdasarkan hasil tes DISC, testee menunjukkan perilaku utama alami yang dominan {trait_names[nat_primary]} ({nat_primary}). "
+                f"Artinya testee cenderung {natural_desc[nat_primary]} "
+                f"Saat di bawah tekanan, testee cenderung {pressure_desc[pre_primary]}. "
+                f"Profil kepribadian testee {suitability}"
+            )
 
             html_content += f'<div class="narrative">{narrative}</div>'
 
