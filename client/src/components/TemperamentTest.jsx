@@ -1,22 +1,39 @@
 // client/src/components/TemperamentTest.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../utils/api';
+import { useTestSession } from '../hooks/useTestSession';
 import Swal from 'sweetalert2';
-import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function TemperamentTest({ assignmentId }) {
     const navigate = useNavigate();
-    const { token } = useAuth();
-    const [testData, setTestData] = useState(null);
-    const [answers, setAnswers] = useState({});
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
+
+    const handleTestComplete = useCallback(() => {
+        navigate('/dashboard');
+    }, [navigate]);
+
+    const {
+        testData,
+        questions,
+        answers,
+        setAnswers,
+        timeLeft,
+        loading,
+        isSubmitting: hookIsSubmitting,
+        showConfirmModal,
+        setShowConfirmModal,
+        isLocked,
+        isFullscreen,
+        enterFullscreen,
+        handleSubmit,
+        formatTime,
+    } = useTestSession(assignmentId, {
+        requireAllAnswers: true,
+        onTestComplete: handleTestComplete
+    });
 
     // Refs to hold latest values for stable callbacks
     const answersRef = useRef(answers);
@@ -34,34 +51,6 @@ function TemperamentTest({ assignmentId }) {
     useEffect(() => {
         timeLeftRef.current = timeLeft;
     }, [timeLeft]);
-
-    const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
-        assignmentId,
-        token
-    });
-
-    // Load test data
-    useEffect(() => {
-        const loadTest = async () => {
-            try {
-                const res = await api.startTest(assignmentId);
-                setTestData(res.data);
-                if (res.data.time_limit === 0) setTimeLeft(null);
-                else setTimeLeft(res.data.time_limit);
-                setLoading(false);
-                enterFullscreen();
-            } catch (err) {
-                console.error(err);
-                if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
-                    setLoading(false);
-                } else {
-                    Swal.fire('Error', 'Gagal memuat tes.', 'error');
-                    navigate('/dashboard');
-                }
-            }
-        };
-        loadTest();
-    }, [token, assignmentId, enterFullscreen, navigate]);
 
     // Prevent context menu and dev tools
     useEffect(() => {
@@ -81,99 +70,34 @@ function TemperamentTest({ assignmentId }) {
         };
     }, []);
 
-    // Timer state for submission prevention
-    const isSubmittingRef = useRef(false);
-
-    // Timer
-    useEffect(() => {
-        if (timeLeft === null || loading || isLocked || isSubmittingRef.current) return;
-        if (timeLeft > 0) {
-            const timerId = setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        clearInterval(timerId);
-                        if (!isSubmittingRef.current) {
-                            isSubmittingRef.current = true;
-                            handleSubmit(true);
-                        }
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-            return () => clearInterval(timerId);
-        }
-    }, [timeLeft, loading, isLocked]);
-
+    // Handle answer selection with auto-advance
     const handleSelect = (optionId) => {
-        const qId = testData.questions[currentIndex].id;
+        const qId = questions[currentIndex].id;
         setAnswers({ ...answers, [qId]: optionId });
         setJustAnswered(true);
-        
+
         // Auto‑next after delay with visual feedback
         setTimeout(() => {
             setJustAnswered(false);
-            if (currentIndex < testData.questions.length - 1) {
+            if (currentIndex < questions.length - 1) {
                 setCurrentIndex(currentIndex + 1);
             } else {
                 setShowConfirm(true);
             }
-        }, 350); // Increased delay for visual feedback
+        }, 350);
     };
 
     const goNext = () => {
-        if (currentIndex < testData.questions.length - 1) {
+        if (currentIndex < questions.length - 1) {
             setCurrentIndex(currentIndex + 1);
         }
     };
 
-    const handleSubmit = async (isTimeout = false) => {
-        // Use refs for stable values
-        const currentAnswers = answersRef.current;
-        const currentTestData = testDataRef.current;
-        const currentTimeLeft = timeLeftRef.current;
-        
-        // Check if all questions answered
-        const answeredCount = Object.keys(currentAnswers).length;
-        if (!isTimeout && currentTestData?.questions?.length && answeredCount < currentTestData.questions.length) {
-            Swal.fire({
-                title: 'Belum Lengkap',
-                text: `Anda baru menjawab ${answeredCount} dari ${currentTestData.questions.length} pertanyaan.`,
-                icon: 'warning'
-            });
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const timeTaken = currentTestData?.time_limit === 0 ? 0 : currentTestData.time_limit - (currentTimeLeft ?? 0);
-            const payload = {
-                answers: Object.keys(currentAnswers).map(qId => ({
-                    question_id: parseInt(qId),
-                    option_id: currentAnswers[qId],
-                    type: 'single'
-                })),
-                time_taken: timeTaken
-            };
-            await api.submitTest(assignmentId, payload.answers, payload.time_taken);
-            if (isTimeout) {
-                Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
-            } else {
-                Swal.fire('Tes Selesai', 'Jawaban Anda telah disimpan.', 'success');
-            }
-            navigate('/dashboard');
-        } catch (err) {
-            console.error(err);
-            Swal.fire('Error', 'Gagal mengirim jawaban.', 'error');
-            setIsSubmitting(false);
-        }
-    };
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    };
+    // Handle confirm submission
+    const handleConfirmSubmit = useCallback(() => {
+        setShowConfirm(false);
+        handleSubmit(false);
+    }, [handleSubmit]);
 
     if (isLocked) {
         return (
@@ -276,7 +200,7 @@ function TemperamentTest({ assignmentId }) {
                                 Batal
                             </button>
                             <button
-                                onClick={() => handleSubmit()}
+                                onClick={handleConfirmSubmit}
                                 disabled={isSubmitting}
                                 className={`px-4 py-2 text-white rounded font-bold ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
                                     }`}

@@ -1,25 +1,43 @@
 // client/src/components/MemoryTest.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../utils/api';
+import { useTestSession } from '../hooks/useTestSession';
 import Swal from 'sweetalert2';
-import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function MemoryTest({ assignmentId }) {
     const navigate = useNavigate();
-    const { token } = useAuth();
-    const [testData, setTestData] = useState(null);
     const [phase, setPhase] = useState('encoding');
     const [encodingTimeLeft, setEncodingTimeLeft] = useState(0);
     const [recallTimeLeft, setRecallTimeLeft] = useState(0);
-    const [questions, setQuestions] = useState([]);
-    const [answers, setAnswers] = useState({});
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
+
+    const handleTestComplete = useCallback(() => {
+        navigate('/dashboard');
+    }, [navigate]);
+
+    const {
+        testData,
+        questions,
+        answers,
+        setAnswers,
+        timeLeft,
+        loading,
+        isSubmitting: hookIsSubmitting,
+        showConfirmModal,
+        setShowConfirmModal,
+        isLocked,
+        isFullscreen,
+        enterFullscreen,
+        handleSubmit,
+        formatTime,
+    } = useTestSession(assignmentId, {
+        requireAllAnswers: false, // Memory test has its own validation
+        onTestComplete: handleTestComplete,
+        disableTimer: true // Memory test uses custom encoding/recall timers
+    });
 
     // Refs to hold latest values for stable callbacks
     const answersRef = useRef(answers);
@@ -43,11 +61,6 @@ function MemoryTest({ assignmentId }) {
         questionsRef.current = questions;
     }, [questions]);
 
-    const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
-        assignmentId,
-        token
-    });
-
     const toggleFlag = useCallback(() => {
         // Disabled - no flagging in auto-next tests
     }, []);
@@ -69,8 +82,8 @@ function MemoryTest({ assignmentId }) {
                 // Last question - show confirm modal
                 setShowConfirm(true);
             }
-        }, 350); // Increased delay for visual feedback
-    }, [questions, currentIndex]);
+        }, 350);
+    }, [questions, currentIndex, setAnswers]);
 
     // Navigation - forward only (no back navigation)
     const goNext = () => {
@@ -79,32 +92,15 @@ function MemoryTest({ assignmentId }) {
         }
     };
 
-    // Load test data
+    // Set encoding and recall times when test data loads
     useEffect(() => {
-        const loadTest = async () => {
-            try {
-                const res = await api.startTest(assignmentId);
-                setTestData(res.data);
-                setQuestions(res.data.questions || []);
-                setEncodingTimeLeft(res.data.settings?.encoding_time || 180);
-                setRecallTimeLeft(res.data.settings?.recall_time || 600);
-                setLoading(false);
-                enterFullscreen();
-            } catch (err) {
-                console.error(err);
-                if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
-                    setIsLocked?.(true); // if needed, but hook handles it
-                    setLoading(false);
-                } else {
-                    Swal.fire('Error', 'Gagal memuat tes.', 'error');
-                    navigate('/dashboard');
-                }
-            }
-        };
-        loadTest();
-    }, [assignmentId, enterFullscreen, navigate]);
+        if (testData && !loading) {
+            setEncodingTimeLeft(testData.settings?.encoding_time || 180);
+            setRecallTimeLeft(testData.settings?.recall_time || 600);
+        }
+    }, [testData, loading]);
 
-    // Prevent context menu and dev tools (keep inline for now)
+    // Prevent context menu and dev tools
     useEffect(() => {
         const handleContextMenu = (e) => e.preventDefault();
         const handleKeyDown = (e) => {
@@ -141,7 +137,7 @@ function MemoryTest({ assignmentId }) {
         return () => clearInterval(timer);
     }, [phase, encodingTimeLeft, isLocked]);
 
-    // Recall timer
+    // Recall timer (uses hook's handleSubmit)
     useEffect(() => {
         if (phase !== 'recall' || recallTimeLeft <= 0 || isLocked || isSubmittingRef.current) return;
         const timer = setInterval(() => {
@@ -158,57 +154,13 @@ function MemoryTest({ assignmentId }) {
             });
         }, 1000);
         return () => clearInterval(timer);
-    }, [phase, recallTimeLeft, isLocked]);
+    }, [phase, recallTimeLeft, isLocked, handleSubmit]);
 
-    const handleSubmit = async (isTimeout = false) => {
-        // Use refs for stable values
-        const currentAnswers = answersRef.current;
-        const currentTestData = testDataRef.current;
-        const currentTimeLeft = recallTimeLeftRef.current;
-        const currentQuestions = questionsRef.current;
-        
-        // Check if all questions answered
-        const answeredCount = Object.keys(currentAnswers).length;
-        if (!isTimeout && currentQuestions.length > 0 && answeredCount < currentQuestions.length) {
-            Swal.fire({
-                title: 'Belum Lengkap',
-                text: `Anda baru menjawab ${answeredCount} dari ${currentQuestions.length} pertanyaan.`,
-                icon: 'warning',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const payload = {
-                answers: Object.keys(currentAnswers).map(qId => ({
-                    question_id: parseInt(qId),
-                    option_id: currentAnswers[qId],
-                    type: 'single'
-                })),
-                time_taken: currentTestData?.settings?.recall_time - currentTimeLeft
-            };
-            await api.submitTest(assignmentId, payload.answers, payload.time_taken);
-            if (isTimeout) {
-                Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
-            } else {
-                Swal.fire('Sukses', 'Jawaban Anda telah disimpan.', 'success');
-            }
-            navigate('/dashboard');
-        } catch (err) {
-            console.error(err);
-            Swal.fire('Error', 'Gagal mengirim jawaban.', 'error');
-            setIsSubmitting(false);
-        }
-    };
-
-    const formatTime = (seconds) => {
-        if (seconds < 0) return "0:00";
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    };
+    // Handle confirm submission
+    const handleConfirmSubmit = useCallback(() => {
+        setShowConfirm(false);
+        handleSubmit(false);
+    }, [handleSubmit]);
 
     const getTableRows = (tableData) => {
         if (!tableData) return 0;
@@ -422,10 +374,7 @@ function MemoryTest({ assignmentId }) {
                                 Batal
                             </button>
                             <button
-                                onClick={() => {
-                                    setShowConfirm(false);
-                                    handleSubmit();
-                                }}
+                                onClick={handleConfirmSubmit}
                                 disabled={isSubmitting}
                                 className={`px-5 py-2 text-white rounded-lg shadow transition ${isSubmitting
                                         ? 'bg-blue-400 cursor-wait'

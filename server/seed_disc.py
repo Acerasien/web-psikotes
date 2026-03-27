@@ -1,4 +1,5 @@
 # server/seed_disc.py
+import random
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Test, Question, Option
@@ -27,8 +28,9 @@ else:
     db.query(Question).filter(Question.test_id == disc_test.id).delete()
     db.commit()
 
-# 2. Define Indonesian Blocks (Positive/Neutral Valence)
-# Format: [D, I, S, C]
+# 2. Define DISC Blocks with Trait Balance Validation
+# Each block: [D statement, I statement, S statement, C statement]
+# Position in array = trait index, NOT display position (will be randomized)
 blocks = [
     ["Saya cenderung mengambil keputusan dengan cepat", "Saya mudah bergaul dan menyapa orang baru", "Saya sabar dalam mendengarkan keluhan orang lain", "Saya suka memeriksa detail pekerjaan dengan teliti"],
     ["Saya tegas dalam mempertahankan pendapat", "Saya mampu menghidupkan suasana dalam pertemuan", "Saya setia dan dapat diandalkan oleh rekan kerja", "Saya mengikuti prosedur yang telah ditetapkan"],
@@ -57,10 +59,28 @@ blocks = [
 ]
 
 traits = ["D", "I", "S", "C"]
+trait_names = {"D": "Dominance", "I": "Influence", "S": "Steadiness", "C": "Conscientiousness"}
 
-print("Seeding DISC Questions (Indonesian) with improved phrasing...")
+print("Seeding DISC Questions with randomized option positions...")
+
+# Validate trait balance across all blocks
+trait_counts = {"D": 0, "I": 0, "S": 0, "C": 0}
+for block in blocks:
+    if len(block) != 4:
+        raise ValueError(f"Block has {len(block)} statements, expected 4")
+
+# Count trait occurrences (each position = specific trait)
+for trait_idx in range(4):
+    trait_counts[traits[trait_idx]] = len(blocks)
+
+print(f"Trait distribution: {trait_counts}")
+print(f"Each trait appears {len(blocks)} times across all blocks (balanced ✓)")
+
+# Set random seed for reproducibility (optional - remove for true random)
+# random.seed(42)
 
 for idx, block_statements in enumerate(blocks):
+    # Create question
     new_q = Question(
         test_id=disc_test.id,
         content=f"Pilih satu pernyataan yang PALING SESUAI dan satu yang PALING TIDAK SESUAI dengan diri Anda.",
@@ -70,16 +90,40 @@ for idx, block_statements in enumerate(blocks):
     db.commit()
     db.refresh(new_q)
 
+    # Create options with RANDOMIZED positions
+    # Step 1: Create (trait, statement) pairs
+    trait_statement_pairs = list(zip(traits, block_statements))
+    
+    # Step 2: Shuffle the pairs to randomize display order
+    random.shuffle(trait_statement_pairs)
+    
+    # Step 3: Assign labels A, B, C, D to shuffled positions
     labels = ["A", "B", "C", "D"]
-    for i, statement in enumerate(block_statements):
+    for i, (trait, statement) in enumerate(trait_statement_pairs):
         new_opt = Option(
             question_id=new_q.id,
             label=labels[i],
             content=statement,
-            scoring_logic={"trait": traits[i]}
+            scoring_logic={"trait": trait}  # Trait stays with original statement
         )
         db.add(new_opt)
+    
+    # Log first block for verification
+    if idx == 0:
+        print(f"\nBlock 1 example (randomized order):")
+        for i, (trait, statement) in enumerate(trait_statement_pairs):
+            print(f"  {labels[i]} ({trait}): {statement[:50]}...")
 
 db.commit()
-print("Successfully seeded 24 DISC blocks with improved Indonesian phrasing!")
+
+# Final validation
+total_options = db.query(Option).join(Question).filter(Question.test_id == disc_test.id).count()
+total_questions = db.query(Question).filter(Question.test_id == disc_test.id).count()
+
+print(f"\n✅ Successfully seeded DISC Assessment!")
+print(f"   - Total questions: {total_questions} (expected: 24)")
+print(f"   - Total options: {total_options} (expected: 96)")
+print(f"   - Option positions: Randomized to prevent position bias")
+print(f"   - Trait balance: Each trait appears exactly {len(blocks)} times")
+
 db.close()

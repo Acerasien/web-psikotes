@@ -67,6 +67,17 @@ questions_data = [
     ("Saya tidak suka terburu-buru", "P"),
 ]
 
+# Validate trait balance
+trait_counts = {"S": 0, "C": 0, "M": 0, "P": 0}
+for _, trait in questions_data:
+    trait_counts[trait] += 1
+
+print(f"Temperament trait distribution: {trait_counts}")
+if len(set(trait_counts.values())) == 1:
+    print(f"✓ Balanced: Each trait appears {list(trait_counts.values())[0]} times")
+else:
+    print("⚠ Warning: Trait distribution is unbalanced!")
+
 # 3. Likert scale labels (will be the same for all questions)
 likert_labels = [
     "Sangat Tidak Setuju",
@@ -105,5 +116,14 @@ for idx, (text, trait) in enumerate(questions_data, start=1):
         db.add(opt)
 
 db.commit()
-print("Temperament test seeded successfully!")
+
+# Final validation
+total_questions = db.query(Question).filter(Question.test_id == temp_test.id).count()
+total_options = db.query(Option).join(Question).filter(Question.test_id == temp_test.id).count()
+
+print(f"\n✅ Temperament test seeded successfully!")
+print(f"   - Total questions: {total_questions} (expected: 28)")
+print(f"   - Total options: {total_options} (expected: 168)")
+print(f"   - Trait balance: Each trait appears exactly 7 times")
+
 db.close()

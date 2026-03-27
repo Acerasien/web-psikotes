@@ -13,16 +13,21 @@ import { useFullscreenLock } from './useFullscreenLock';
  * @param {boolean} options.requireAllAnswers - Whether all questions must be answered
  * @param {function} options.formatAnswers - Function to format answers for submission
  * @param {function} options.onTestComplete - Callback when test is completed
+ * @param {boolean} options.disableTimer - Disable the built-in timer (for tests with custom timers like Memory)
  */
 export function useTestSession(assignmentId, options = {}) {
   const navigate = useNavigate();
   const { token } = useAuth();
-  
+
   const {
     requireAllAnswers = true,
     formatAnswers = null,
-    onTestComplete
+    onTestComplete,
+    disableTimer = false
   } = options;
+
+  // Session storage key
+  const sessionKey = `test_session_${assignmentId}`;
 
   // Test state
   const [testData, setTestData] = useState(null);
@@ -32,6 +37,7 @@ export function useTestSession(assignmentId, options = {}) {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   // Refs for stable callbacks
   const answersRef = useRef(answers);
@@ -51,10 +57,40 @@ export function useTestSession(assignmentId, options = {}) {
   }, [timeLeft]);
 
   // Fullscreen lock
-  const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
+  const { isLocked, isFullscreen, enterFullscreen, exitCount, setExitCount } = useFullscreenLock({
     assignmentId,
     token
   });
+
+  // Restore session from sessionStorage on mount
+  useEffect(() => {
+    const savedSession = sessionStorage.getItem(sessionKey);
+    if (savedSession) {
+      try {
+        const parsed = JSON.parse(savedSession);
+        console.log('🔄 Restored test session from storage:', parsed);
+        if (parsed.answers) setAnswers(parsed.answers);
+        if (parsed.currentQuestion !== undefined) setCurrentQuestion(parsed.currentQuestion);
+        // Don't restore timeLeft from session - it will be set by loadTest effect
+        // The timer will continue from where it should be based on elapsed time
+      } catch (e) {
+        console.error('Failed to restore session:', e);
+        sessionStorage.removeItem(sessionKey);
+      }
+    }
+  }, [sessionKey]);
+
+  // Save session to sessionStorage whenever state changes
+  useEffect(() => {
+    if (!testData) return; // Don't save until test data is loaded
+
+    const sessionData = {
+      answers,
+      currentQuestion,
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem(sessionKey, JSON.stringify(sessionData));
+  }, [answers, currentQuestion, testData, sessionKey]);
 
   // Load test data
   useEffect(() => {
@@ -84,7 +120,7 @@ export function useTestSession(assignmentId, options = {}) {
   useEffect(() => {
     const handleContextMenu = (e) => e.preventDefault();
     const handleKeyDown = (e) => {
-      if (e.key === 'F12' || 
+      if (e.key === 'F12' ||
           (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j'].includes(e.key)) ||
           (e.ctrlKey && ['U', 'u'].includes(e.key))) {
         e.preventDefault();
@@ -98,12 +134,48 @@ export function useTestSession(assignmentId, options = {}) {
     };
   }, []);
 
+  // Prevent browser back button and tab navigation during test
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    // Push a state to the history stack to intercept back button
+    window.history.pushState(null, '', window.location.href);
+    
+    const handlePopState = () => {
+      // Push the state again to prevent navigation
+      window.history.pushState(null, '', window.location.href);
+      
+      // Show warning
+      Swal.fire({
+        title: 'Tidak Bisa Kembali',
+        text: 'Anda tidak dapat meninggalkan halaman ini saat tes sedang berlangsung.',
+        icon: 'warning',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false
+      });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   // Timer state for submission prevention
   const isSubmittingRef = useRef(false);
 
   // Timer
+  const handleSubmitRef = useRef(null);
+
   useEffect(() => {
-    if (timeLeft === null || loading || isLocked || isSubmittingRef.current) return;
+    if (disableTimer || timeLeft === null || loading || isLocked || isSubmittingRef.current) return;
 
     const timerId = setInterval(() => {
       setTimeLeft((prev) => {
@@ -111,7 +183,7 @@ export function useTestSession(assignmentId, options = {}) {
           clearInterval(timerId);
           if (!isSubmittingRef.current) {
             isSubmittingRef.current = true;
-            handleSubmit(true);
+            handleSubmitRef.current?.(true);
           }
           return 0;
         }
@@ -120,7 +192,7 @@ export function useTestSession(assignmentId, options = {}) {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [timeLeft, loading, isLocked, handleSubmit]);
+  }, [timeLeft, loading, isLocked, disableTimer]);
 
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
@@ -177,6 +249,12 @@ export function useTestSession(assignmentId, options = {}) {
 
       await api.submitTest(assignmentId, finalAnswers, timeTaken);
 
+      // Clear session storage on successful submission
+      sessionStorage.removeItem(sessionKey);
+
+      // Clean up history state before navigating away
+      window.history.go(-1); // Remove the pushed state
+
       if (isTimeout) {
         Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
       }
@@ -192,6 +270,11 @@ export function useTestSession(assignmentId, options = {}) {
       Swal.fire('Error', 'Failed to submit test.', 'error');
     }
   }, [assignmentId, formatAnswers, requireAllAnswers, onTestComplete, navigate]);
+
+  // Store handleSubmit in ref for timer access
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   // Format time
   const formatTime = useCallback((seconds) => {
@@ -212,12 +295,15 @@ export function useTestSession(assignmentId, options = {}) {
     isSubmitting,
     showConfirmModal,
     setShowConfirmModal,
-    
+    currentQuestion,
+    setCurrentQuestion,
+
     // Fullscreen
     isLocked,
     isFullscreen,
     enterFullscreen,
-    
+    exitCount,
+
     // Actions
     handleSubmit,
     formatTime,

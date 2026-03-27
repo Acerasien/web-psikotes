@@ -359,11 +359,14 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
             traits = ['D', 'I', 'S', 'C']
             graph_ii = details.get('graph_ii', {})
             graph_i = details.get('graph_i', {})
+            graph_iii = details.get('graph_iii', {})
+            percentages = details.get('percentages', {})
             stress_gap = details.get('stress_gap', 0)
 
             # Find primary natural trait (True Self) and primary under pressure
             nat_primary = max(traits, key=lambda t: graph_ii.get(t, 0))
             pre_primary = max(traits, key=lambda t: graph_i.get(t, 0))
+            integrated_primary = max(traits, key=lambda t: graph_iii.get(t, 0))
 
             trait_names = {
                 'D': 'Dominance',
@@ -382,10 +385,10 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
 
             # Descriptions for under pressure
             pressure_desc = {
-                'D': "lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain.",
-                'I': "lebih ekspresif dan emosional, namun bisa kehilangan fokus dan menjadi kurang teratur.",
-                'S': "menjadi lebih lambat dalam mengambil keputusan dan cenderung menghindari konflik.",
-                'C': "menjadi lebih kritis, perfeksionis, dan cenderung menarik diri."
+                'D': "lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain",
+                'I': "lebih ekspresif dan emosional, namun bisa kehilangan fokus dan menjadi kurang teratur",
+                'S': "menjadi lebih lambat dalam mengambil keputusan dan cenderung menghindari konflik",
+                'C': "menjadi lebih kritis, perfeksionis, dan cenderung menarik diri"
             }
 
             # Suitability based on stress gap
@@ -396,7 +399,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
             else:
                 suitability = "Profil menunjukkan perbedaan signifikan antara diri alami dan penampilan publik – disarankan konseling atau penyesuaian peran."
 
-            # Build narrative
+            # Build main narrative
             narrative = (
                 f"Berdasarkan hasil tes DISC, testee menunjukkan perilaku utama alami yang dominan {trait_names[nat_primary]} ({nat_primary}). "
                 f"Artinya testee cenderung {natural_desc[nat_primary]} "
@@ -405,6 +408,36 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
             )
 
             html_content += f'<div class="narrative">{narrative}</div>'
+
+            # Build detailed interpretation for each graph as one continuous paragraph
+            # Graph I interpretation (Most - Public Self under pressure)
+            graph_i_interpretation = (
+                f"Grafik I menunjukkan perilaku testee saat menghadapi tekanan atau tuntutan eksternal, di mana testee menampilkan dominan {trait_names[pre_primary]} ({pre_primary}) dengan kecenderungan {pressure_desc[pre_primary]}"
+            )
+
+            # Graph II interpretation (Least - Natural Self)
+            graph_ii_interpretation = (
+                f"Grafik II menggambarkan kecenderungan alami testee – sisi autentik yang muncul saat merasa nyaman dan tidak tertekan – dengan dominan {trait_names[nat_primary]} ({nat_primary}), di mana testee cenderung {natural_desc[nat_primary]}"
+            )
+
+            # Graph III interpretation (Integrated - Overall Profile)
+            graph_iii_interpretation = (
+                f"Grafik III merupakan profil kepribadian terintegrasi yang mencerminkan keseimbangan antara tuntutan lingkungan dan kecenderungan alami, dengan dominan {trait_names[integrated_primary]} ({integrated_primary})"
+            )
+
+            # Stress gap interpretation
+            if stress_gap < 5:
+                stress_interpretation = "Selisih yang kecil antara Grafik I dan II menunjukkan bahwa testee memiliki kestabilan emosi yang baik, mampu beradaptasi dengan tuntutan lingkungan tanpa mengalami tekanan psikologis yang signifikan, serta terdapat konsistensi yang tinggi antara diri alami dan cara testee merespons lingkungan."
+            elif stress_gap < 10:
+                stress_interpretation = "Selisih moderat menunjukkan bahwa testee sedang dalam proses adaptasi terhadap tuntutan lingkungan; testee mampu menyesuaikan diri namun memerlukan usaha sadar untuk mempertahankan keseimbangan, sehingga direkomendasikan untuk mengembangkan strategi coping yang efektif dalam menghadapi tekanan."
+            else:
+                stress_interpretation = "Selisih yang signifikan antara Grafik I dan II dapat mengindikasikan tekanan psikologis yang cukup tinggi; terdapat perbedaan yang nyata antara diri alami testee dan cara testee menampilkan diri di lingkungan, sehingga disarankan untuk melakukan konseling atau evaluasi lebih lanjut mengenai beban kerja dan kesesuaian peran."
+
+            html_content += f"""
+<div class="conclusion-box" style="margin-top:0.8rem">
+    <strong>Interpretasi Lengkap Profil DISC:</strong> {graph_i_interpretation}. Secara lebih mendalam, {graph_ii_interpretation}. Sementara itu, {graph_iii_interpretation}. Terkait tingkat stres, {stress_interpretation}
+</div>
+"""
 
         # -------------------------- TEMPERAMENT --------------------------
         elif test_code == "TEMP" and details:

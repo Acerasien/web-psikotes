@@ -330,9 +330,148 @@
 
 ---
 
-**Ready? Let's start testing!**
+## Bugs Fixed (March 27, 2026)
 
-Which section would you like to test first? I can help you:
-- Create test data
-- Check specific functionality
-- Debug any issues found
+### 1. Test Session Lost on Page Refresh 🔴 Critical
+**Issue:** When users refreshed the page during a test, all progress was lost:
+- Answers were cleared
+- Question position reset to #1
+- Fullscreen exit warnings reset to 0
+- No "Continue Test" option
+
+**Root Cause:**
+- Test state (answers, question index, exit count) stored only in React component state
+- No sessionStorage or localStorage persistence
+- No backend session tracking for in-progress tests
+
+**Fix:** Added sessionStorage persistence:
+- `useTestSession` hook saves answers and currentQuestion to sessionStorage
+- `useFullscreenLock` hook saves exitCount to sessionStorage
+- State restored automatically on page refresh
+- SessionStorage cleared on successful submission
+- Test lock status persists (stored in backend)
+
+**Files Changed:**
+- `client/src/hooks/useTestSession.js` - Added session persistence logic
+- `client/src/hooks/useFullscreenLock.js` - Exit count persistence
+- `client/src/components/SpeedTest.jsx` - Uses hook state
+- `client/src/components/DISCTest.jsx` - Uses hook state  
+- `client/src/components/LogicTest.jsx` - Uses hook state
+
+**Verified:**
+- ✅ Answers persist after F5
+- ✅ Question position persists after F5
+- ✅ Fullscreen exit count persists after F5
+- ✅ Test locks correctly on 3rd exit (even after refresh)
+- ✅ Session cleared on submission
+
+---
+
+### 2. Browser Back Button Not Blocked During Test 🟡 High
+**Issue:** Users could navigate away from test using browser back button, potentially bypassing test security.
+
+**Root Cause:**
+- No back button prevention implemented
+- React Router navigation not intercepted
+- No beforeunload warning
+
+**Fix:** Added back button prevention:
+- `popstate` event listener intercepts back button
+- History manipulation (pushState) prevents navigation
+- Warning modal shown: "Tidak Bisa Kembali"
+- `beforeunload` warning for tab close
+- Cleanup on test submission
+
+**Files Changed:**
+- `client/src/hooks/useTestSession.js` - Added back button prevention
+
+**Verified:**
+- ✅ Back button shows warning modal
+- ✅ User stays on test page
+- ✅ Keyboard shortcut (Alt+Left) also blocked
+- ✅ Tab close shows browser warning
+- ✅ Normal navigation after submission
+
+---
+
+### 3. Fullscreen Exit Count Not Persisting After Refresh 🟡 High
+**Issue:** After page refresh, fullscreen exit counter reset to 0, allowing users to bypass the 3-exit lock by refreshing.
+
+**Root Cause:**
+- Exit count stored only in React state
+- Ref-based tracking (`hasEnteredFullscreen`) reset on refresh
+- No sessionStorage persistence
+
+**Fix:** 
+- Exit count saved to sessionStorage per assignmentId
+- 100ms delay on mount to avoid counting browser's automatic F5 exit
+- Every manual exit after page load increments counter
+- Counter persists across refreshes
+
+**Files Changed:**
+- `client/src/hooks/useFullscreenLock.js` - Added persistence
+
+**Verified:**
+- ✅ Exit 1/3 → F5 → Exit = 2/3 ✅
+- ✅ Exit 2/3 → F5 → Exit = 3/3 → Test locks ✅
+- ✅ Lock persists after F5 (redirects to dashboard) ✅
+
+---
+
+## Known Issues (Not Yet Fixed)
+
+### 1. Multiple Tab Detection ❌ Removed
+**Issue:** Users can open the same test in multiple browser tabs simultaneously.
+
+**Attempted Fix:** localStorage with heartbeat mechanism
+- **Result:** Caused false positives - users couldn't reopen test after clicking "Leave" on refresh dialog
+
+**Status:** ❌ **Removed** - Feature caused more problems than it solved. May implement a better solution in the future using:
+- BroadcastChannel API (more reliable cross-tab communication)
+- Backend session tracking
+- WebSocket-based presence detection
+
+---
+
+### 2. Timer Persistence ⏸️ Pending
+**Issue:** Timer resets to original value on page refresh (doesn't account for elapsed time).
+
+**Status:** Not implemented - would require:
+- Saving timestamp when test starts
+- Calculating elapsed time on restore
+- Adjusting timer accordingly
+
+---
+
+### 3. Memory/Temperament Test Refactor ✅ Completed
+**Issue:** These tests still use old state management (not refactored to useTestSession hook).
+
+**Status:** ✅ **Completed** - Both tests now use `useTestSession` hook
+
+**Fix:**
+- Refactored `MemoryTest.jsx` to use `useTestSession` hook
+- Refactored `TemperamentTest.jsx` to use `useTestSession` hook
+- Kept phase logic (encoding/recall) for Memory Test
+- Kept auto-advance behavior for both tests
+- Removed duplicate `handleSubmit` functions
+- Now benefits from session persistence, back button prevention, fullscreen lock
+
+**Files Changed:**
+- `client/src/components/MemoryTest.jsx` - Refactored to use hook
+- `client/src/components/TemperamentTest.jsx` - Refactored to use hook
+
+**Verified:**
+- ✅ Build successful
+- ✅ Session persistence works
+- ✅ Back button prevention works
+- ✅ Fullscreen lock works
+
+---
+
+**Ready? Let's continue testing!**
+
+Which section would you like to test next?
+- No Internet connectivity during test
+- Admin panel (verify results)
+- Mobile responsiveness
+- PDF export

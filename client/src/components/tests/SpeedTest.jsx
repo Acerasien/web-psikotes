@@ -10,17 +10,8 @@ import { TestLayout } from './TestLayout';
  */
 export function SpeedTest({ assignmentId }) {
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
   const [showLocalConfirm, setShowLocalConfirm] = useState(false);
   const [justAnswered, setJustAnswered] = useState(false);
-  
-  // Use a ref to always have the latest answers for submit
-  const answersRef = useRef(answers);
-  
-  useEffect(() => {
-    answersRef.current = answers;
-  }, [answers]);
 
   const handleTestComplete = useCallback(() => {
     navigate('/dashboard');
@@ -29,6 +20,8 @@ export function SpeedTest({ assignmentId }) {
   const {
     testData,
     questions,
+    answers,
+    setAnswers,
     timeLeft,
     loading,
     isSubmitting,
@@ -39,29 +32,31 @@ export function SpeedTest({ assignmentId }) {
     enterFullscreen,
     handleSubmit: submitTestSession,
     formatTime,
+    currentQuestion: currentIndex,
+    setCurrentQuestion: setCurrentIndex,
   } = useTestSession(assignmentId, {
     requireAllAnswers: false, // Speed tests allow partial answers
     onTestComplete: handleTestComplete,
     // Pass a ref getter so the hook can access local answers on timeout
-    formatAnswers: () => Object.keys(answersRef.current).map(qId => ({
+    formatAnswers: () => Object.keys(answers).map(qId => ({
       question_id: parseInt(qId),
-      option_id: answersRef.current[qId],
+      option_id: answers[qId],
       type: 'single'
     }))
   });
 
-  // Custom submit handler that uses local answers state
+  // Custom submit handler that uses answers from hook
   const handleSubmit = useCallback(async () => {
     // Convert to array format for the API
-    const formattedAnswers = Object.keys(answersRef.current).map(qId => ({
+    const formattedAnswers = Object.keys(answers).map(qId => ({
       question_id: parseInt(qId),
-      option_id: answersRef.current[qId],
+      option_id: answers[qId],
       type: 'single'
     }));
-    
+
     // Call the original submit with formatted answers
     await submitTestSession(false, formattedAnswers);
-  }, [submitTestSession]);
+  }, [submitTestSession, answers]);
 
   // Use local confirm state to avoid conflict with hook
   const showConfirm = showConfirmModal || showLocalConfirm;

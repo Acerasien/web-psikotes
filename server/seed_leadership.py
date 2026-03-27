@@ -32,7 +32,7 @@ if not lead_test:
     print("Created Leadership Test container (20 questions).")
 else:
     # Clear old data and update settings
-    lead_test.time_limit = 0
+    lead_test.time_limit = 420  # 7 minutes
     lead_test.settings = {"type": "leadership", "randomize_options": True}
     old_qs = db.query(Question).filter(Question.test_id == lead_test.id).all()
     for q in old_qs:

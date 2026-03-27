@@ -1,20 +1,48 @@
 // client/src/components/DISCTest.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../utils/api';
+import { useTestSession } from '../hooks/useTestSession';
 import Swal from 'sweetalert2';
-import { useFullscreenLock } from '../hooks/useFullscreenLock';
 
 function DISCTest({ assignmentId }) {
     const navigate = useNavigate();
-    const { token } = useAuth();
-    const [testData, setTestData] = useState(null);
-    const [answers, setAnswers] = useState({});
-    const [timeLeft, setTimeLeft] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleTestComplete = useCallback(() => {
+        navigate('/dashboard');
+    }, [navigate]);
+
+    const {
+        testData,
+        questions,
+        answers,
+        setAnswers,
+        timeLeft,
+        loading,
+        isSubmitting,
+        showConfirmModal,
+        setShowConfirmModal,
+        isLocked,
+        isFullscreen,
+        enterFullscreen,
+        handleSubmit,
+        formatTime,
+    } = useTestSession(assignmentId, {
+        requireAllAnswers: true,
+        onTestComplete: handleTestComplete,
+        formatAnswers: () => {
+            const payload = [];
+            Object.keys(answers).forEach(qId => {
+                const selection = answers[qId];
+                if (selection.most) {
+                    payload.push({ question_id: parseInt(qId), option_id: selection.most, type: 'most' });
+                }
+                if (selection.least) {
+                    payload.push({ question_id: parseInt(qId), option_id: selection.least, type: 'least' });
+                }
+            });
+            return payload;
+        }
+    });
 
     // Refs to hold latest values for stable callbacks
     const answersRef = useRef(answers);
@@ -32,12 +60,6 @@ function DISCTest({ assignmentId }) {
     useEffect(() => {
         timeLeftRef.current = timeLeft;
     }, [timeLeft]);
-
-    const { isLocked, isFullscreen, enterFullscreen } = useFullscreenLock({
-        assignmentId,
-        token,
-        onLock: () => setLoading(false)
-    });
 
     const timerRef = useRef(null);
 
@@ -59,20 +81,6 @@ function DISCTest({ assignmentId }) {
         });
     };
 
-    const formatDiscPayload = (answersObj) => {
-        const payload = [];
-        Object.keys(answersObj).forEach(qId => {
-            const selection = answersObj[qId];
-            if (selection.most) {
-                payload.push({ question_id: parseInt(qId), option_id: selection.most, type: 'most' });
-            }
-            if (selection.least) {
-                payload.push({ question_id: parseInt(qId), option_id: selection.least, type: 'least' });
-            }
-        });
-        return payload;
-    };
-
     const checkAllAnswered = () => {
         let missing = [];
         testData?.questions.forEach((q, idx) => {
@@ -91,76 +99,13 @@ function DISCTest({ assignmentId }) {
         return true;
     };
 
-    // ----- Stable submission handler (uses refs) -----
-    const handleSubmit = useCallback(async (isTimeout = false) => {
-        setIsSubmitting(true);
-        const currentTestData = testDataRef.current;
-        const currentAnswers = answersRef.current;
-        const currentTimeLeft = timeLeftRef.current;
-
-        const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);
-        try {
-            const finalAnswers = formatDiscPayload(currentAnswers);
-            await api.submitTest(assignmentId, finalAnswers, timeTaken);
-            if (isTimeout) Swal.fire("Time is up!", "Your test has been submitted.", "info");
-            navigate('/dashboard');
-        } catch (err) {
-            console.error(err);
-            setIsSubmitting(false);
-            Swal.fire("Error", "Failed to submit test.", "error");
+    // Handle confirm submission
+    const handleConfirmSubmit = useCallback(() => {
+        if (checkAllAnswered()) {
+            setShowConfirmModal(false);
+            handleSubmit(false);
         }
-    }, [assignmentId, navigate]);
-
-    // ----- Timer state for submission prevention -----
-    const isSubmittingRef = useRef(false);
-
-    // ----- Timer effect (depends only on stable handleSubmit) -----
-    useEffect(() => {
-        if (loading || isLocked || timeLeft === null || isSubmittingRef.current) return;
-
-        timerRef.current = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timerRef.current);
-                    timerRef.current = null;
-                    if (!isSubmittingRef.current) {
-                        isSubmittingRef.current = true;
-                        handleSubmit(true);
-                    }
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-            }
-        };
-    }, [loading, isLocked, handleSubmit]); // handleSubmit is now stable
-
-    // ----- Load test data -----
-    useEffect(() => {
-        const loadTest = async () => {
-            try {
-                const res = await api.startTest(assignmentId);
-                setTestData(res.data);
-                if (res.data.time_limit === 0) setTimeLeft(null);
-                else setTimeLeft(res.data.time_limit);
-                setLoading(false);
-                enterFullscreen();
-            } catch (err) {
-                console.error(err);
-                if (err.response?.status === 403 && err.response.data.detail.includes("locked")) {
-                    // already locked, just finish
-                }
-                navigate('/dashboard');
-            }
-        };
-        loadTest();
-    }, [assignmentId, enterFullscreen, navigate]);
+    }, [handleSubmit, setShowConfirmModal]);
 
     // ----- Render locked screen -----
     if (isLocked) {
@@ -176,12 +121,6 @@ function DISCTest({ assignmentId }) {
     }
 
     if (loading) return <div className="p-8 text-center">Loading Test...</div>;
-
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    };
 
     // ----- Render DISC table -----
     return (
@@ -337,7 +276,7 @@ function DISCTest({ assignmentId }) {
                         </p>
                         <div className="flex gap-4 justify-center">
                             <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 bg-gray-200 rounded" disabled={isSubmitting}>Cancel</button>
-                            <button onClick={() => handleSubmit()} disabled={isSubmitting} className={`px-4 py-2 text-white rounded font-bold ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}>
+                            <button onClick={handleConfirmSubmit} disabled={isSubmitting} className={`px-4 py-2 text-white rounded font-bold ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}>
                                 {isSubmitting ? "Submitting..." : "Submit Now"}
                             </button>
                         </div>
