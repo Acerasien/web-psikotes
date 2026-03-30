@@ -11,6 +11,18 @@ function DISCTest({ assignmentId }) {
         navigate('/dashboard');
     }, [navigate]);
 
+    // Check if fullscreen is supported (for UI messaging)
+    const isFullscreenSupported = !!(
+        document.documentElement.requestFullscreen ||
+        document.documentElement.webkitRequestFullscreen ||
+        document.documentElement.msRequestFullscreen
+    );
+
+    // Refs to hold latest values for stable callbacks
+    const answersRef = useRef({});
+    const testDataRef = useRef(null);
+    const timeLeftRef = useRef(null);
+
     const {
         testData,
         questions,
@@ -31,8 +43,8 @@ function DISCTest({ assignmentId }) {
         onTestComplete: handleTestComplete,
         formatAnswers: () => {
             const payload = [];
-            Object.keys(answers).forEach(qId => {
-                const selection = answers[qId];
+            Object.keys(answersRef.current).forEach(qId => {
+                const selection = answersRef.current[qId];
                 if (selection.most) {
                     payload.push({ question_id: parseInt(qId), option_id: selection.most, type: 'most' });
                 }
@@ -43,11 +55,6 @@ function DISCTest({ assignmentId }) {
             return payload;
         }
     });
-
-    // Refs to hold latest values for stable callbacks
-    const answersRef = useRef(answers);
-    const testDataRef = useRef(testData);
-    const timeLeftRef = useRef(timeLeft);
 
     useEffect(() => {
         answersRef.current = answers;
@@ -284,14 +291,21 @@ function DISCTest({ assignmentId }) {
                 </div>
             )}
 
-            {/* Fullscreen overlay */}
-            {!isFullscreen && !isLocked && (
+            {/* Fullscreen overlay - Only show if fullscreen is supported */}
+            {!isFullscreen && !isLocked && isFullscreenSupported && (
                 <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
                     <h2 className="text-2xl font-bold mb-4">Paused</h2>
                     <p>Please return to fullscreen mode.</p>
                     <button onClick={enterFullscreen} className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600">
                         Return to Fullscreen
                     </button>
+                </div>
+            )}
+
+            {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
+            {!isFullscreen && !isLocked && !isFullscreenSupported && (
+                <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
+                    ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
                 </div>
             )}
         </div>

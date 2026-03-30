@@ -16,6 +16,13 @@ function LogicTest({ assignmentId }) {
         navigate('/dashboard');
     }, [navigate]);
 
+    // Check if fullscreen is supported (for UI messaging)
+    const isFullscreenSupported = !!(
+        document.documentElement.requestFullscreen ||
+        document.documentElement.webkitRequestFullscreen ||
+        document.documentElement.msRequestFullscreen
+    );
+
     const {
         testData,
         questions,
@@ -308,8 +315,8 @@ function LogicTest({ assignmentId }) {
                 </div>
             )}
 
-            {/* Fullscreen Overlay */}
-            {!isFullscreen && !isLocked && (
+            {/* Fullscreen Overlay - Only show if fullscreen is supported */}
+            {!isFullscreen && !isLocked && isFullscreenSupported && (
                 <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 text-white">
                     <h2 className="text-2xl font-bold mb-4">Paused</h2>
                     <p className="mb-6 text-gray-200">Please return to fullscreen mode.</p>
@@ -319,6 +326,13 @@ function LogicTest({ assignmentId }) {
                     >
                         Return to Fullscreen
                     </button>
+                </div>
+            )}
+
+            {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
+            {!isFullscreen && !isLocked && !isFullscreenSupported && (
+                <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-50">
+                    ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
                 </div>
             )}
         </div>

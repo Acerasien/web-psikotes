@@ -29,7 +29,8 @@ def score_disc(answers, questions):
 
     # Aggregate scores
     for ans in answers:
-        trait = option_trait.get(ans["option_id"])
+        option_id = ans.get("option_id") if isinstance(ans, dict) else None
+        trait = option_trait.get(option_id)
         if not trait:
             continue
         if ans["type"] == "most":

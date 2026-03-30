@@ -3,6 +3,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 
+// Check if fullscreen API is supported
+const isFullscreenSupported = () => {
+    return !!(
+        document.documentElement.requestFullscreen ||
+        document.documentElement.webkitRequestFullscreen ||  // Safari
+        document.documentElement.msRequestFullscreen  // IE/Edge
+    );
+};
+
 export function useFullscreenLock({ assignmentId, token, onLock }) {
     const [exitCount, setExitCount] = useState(() => {
         // Restore exitCount from sessionStorage on mount
@@ -10,7 +19,10 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
         return saved ? parseInt(saved, 10) : 0;
     });
     const [isLocked, setIsLocked] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(true); // Start as true, will be updated
+    
+    // Check fullscreen support - if not supported (e.g., iOS Safari), start as fullscreen
+    const fullscreenSupported = isFullscreenSupported();
+    const [isFullscreen, setIsFullscreen] = useState(fullscreenSupported ? false : true);
     const [isInitialized, setIsInitialized] = useState(false);
 
     // Save exitCount to sessionStorage whenever it changes
@@ -21,23 +33,30 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
     // Initialize fullscreen state after a small delay to avoid counting browser's F5 exit
     useEffect(() => {
         const timer = setTimeout(() => {
-            const isCurrentlyFullscreen = document.fullscreenElement !== null;
-            setIsFullscreen(isCurrentlyFullscreen);
+            if (fullscreenSupported) {
+                const isCurrentlyFullscreen = document.fullscreenElement !== null;
+                setIsFullscreen(isCurrentlyFullscreen);
+            }
             setIsInitialized(true);
         }, 100); // 100ms delay to let browser finish its fullscreen exit animation
-        
+
         return () => clearTimeout(timer);
-    }, []);
+    }, [fullscreenSupported]);
 
     // ✅ Stable enterFullscreen function (memoized)
     const enterFullscreen = useCallback(() => {
+        if (!fullscreenSupported) return; // Skip if not supported
+
         const elem = document.documentElement;
+        // Safari requires webkit prefix
         if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-    }, []);
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();  // Safari
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();  // IE/Edge
+    }, [fullscreenSupported]);
 
     useEffect(() => {
+        if (!fullscreenSupported) return; // Skip fullscreen tracking if not supported
+
         const handleFullscreenChange = () => {
             const isCurrentlyFullscreen = document.fullscreenElement !== null;
 
@@ -75,9 +94,14 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
             }
         };
 
+        // Safari uses webkitfullscreenchange event
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, [exitCount, isLocked, isInitialized, assignmentId, onLock]);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);  // Safari
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);  // Safari
+        };
+    }, [exitCount, isLocked, isInitialized, assignmentId, onLock, fullscreenSupported]);
 
     return { isLocked, isFullscreen, enterFullscreen, exitCount, setExitCount };
 }

@@ -1,11 +1,20 @@
 // client/src/components/tests/TestLayout.jsx
 import { useNavigate } from 'react-router-dom';
 
+// Check if fullscreen is supported (for UI messaging)
+const isFullscreenSupported = () => {
+    return !!(
+        document.documentElement.requestFullscreen ||
+        document.documentElement.webkitRequestFullscreen ||
+        document.documentElement.msRequestFullscreen
+    );
+};
+
 /**
  * Common layout wrapper for test screens
  * Provides consistent header, fullscreen overlay, and confirmation modal
  */
-export function TestLayout({ 
+export function TestLayout({
   children,
   testTitle,
   timeLeft,
@@ -21,6 +30,7 @@ export function TestLayout({
   totalQuestions
 }) {
   const navigate = useNavigate();
+  const fullscreenSupported = isFullscreenSupported();
 
   // Locked screen
   if (isLocked) {
@@ -30,8 +40,8 @@ export function TestLayout({
         <p className="mb-6 text-gray-300 text-center text-sm sm:text-base">
           You have exited fullscreen too many times.
         </p>
-        <button 
-          onClick={() => navigate('/dashboard')} 
+        <button
+          onClick={() => navigate('/dashboard')}
           className="px-6 py-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition min-h-[48px]"
         >
           Back to Dashboard
@@ -64,15 +74,15 @@ export function TestLayout({
               Anda telah menjawab <span className="font-semibold">{answeredCount}</span> dari <span className="font-semibold">{totalQuestions}</span> pertanyaan.
             </p>
             <div className="flex gap-3 justify-center">
-              <button 
-                onClick={() => setShowConfirmModal(false)} 
+              <button
+                onClick={() => setShowConfirmModal(false)}
                 className="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition min-h-[44px] flex-1"
                 disabled={isSubmitting}
               >
                 Batal
               </button>
-              <button 
-                onClick={onConfirmSubmit} 
+              <button
+                onClick={onConfirmSubmit}
                 className={`px-5 py-2.5 text-white rounded-lg font-semibold transition min-h-[44px] flex-1 ${
                   isSubmitting ? 'bg-gray-400 cursor-wait' : 'bg-green-500 hover:bg-green-600'
                 }`}
@@ -85,17 +95,24 @@ export function TestLayout({
         </div>
       )}
 
-      {/* Fullscreen Overlay */}
-      {!isFullscreen && !isLocked && (
+      {/* Fullscreen Overlay - Only show if fullscreen is supported */}
+      {!isFullscreen && !isLocked && fullscreenSupported && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white p-4">
           <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Paused</h2>
           <p className="mb-6 text-gray-200 text-center text-sm sm:text-base">Silakan kembali ke mode fullscreen.</p>
-          <button 
-            onClick={onReturnFullscreen} 
+          <button
+            onClick={onReturnFullscreen}
             className="px-6 py-3 bg-blue-500 rounded-lg font-semibold hover:bg-blue-600 transition min-h-[48px] min-w-[48px]"
           >
             Return to Fullscreen
           </button>
+        </div>
+      )}
+
+      {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
+      {!isFullscreen && !isLocked && !fullscreenSupported && (
+        <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
+          ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
         </div>
       )}
     </div>

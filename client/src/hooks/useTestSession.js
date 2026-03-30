@@ -135,20 +135,24 @@ export function useTestSession(assignmentId, options = {}) {
   }, []);
 
   // Prevent browser back button and tab navigation during test
+  // Returns a cleanup function that can be called to disable the prevention
+  const disableBackButtonPrevention = useRef(null);
+
   useEffect(() => {
     const handleBeforeUnload = (e) => {
+      // Safari requires returnValue to be set to a non-empty string
       e.preventDefault();
-      e.returnValue = '';
-      return '';
+      e.returnValue = 'You have unsaved changes';
+      return e.returnValue;
     };
 
     // Push a state to the history stack to intercept back button
     window.history.pushState(null, '', window.location.href);
-    
+
     const handlePopState = () => {
       // Push the state again to prevent navigation
       window.history.pushState(null, '', window.location.href);
-      
+
       // Show warning
       Swal.fire({
         title: 'Tidak Bisa Kembali',
@@ -161,6 +165,12 @@ export function useTestSession(assignmentId, options = {}) {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('popstate', handlePopState);
+
+    // Store cleanup function for manual invocation
+    disableBackButtonPrevention.current = () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -197,12 +207,14 @@ export function useTestSession(assignmentId, options = {}) {
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
     let currentAnswers;
-    
-    // Priority: 1) overrideAnswers, 2) formatAnswers() if provided (for custom answer storage), 3) answersRef.current
+
+    // Priority: 1) overrideAnswers, 2) formatAnswers() if provided (for custom answer storage like DISC), 3) answersRef.current
+    // Note: formatAnswers is always used when provided (not just on timeout) to ensure proper answer formatting
+    // This is critical for Safari which has stricter closure handling
     if (overrideAnswers !== null) {
       currentAnswers = overrideAnswers;
-    } else if (formatAnswers && isTimeout) {
-      // On timeout, use the custom formatter if provided (for SpeedTest, etc.)
+    } else if (formatAnswers) {
+      // Always use the custom formatter when provided (for DISC, SpeedTest, etc.)
       currentAnswers = formatAnswers();
     } else {
       currentAnswers = answersRef.current;
@@ -229,14 +241,13 @@ export function useTestSession(assignmentId, options = {}) {
     const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);
 
     try {
-      // Format answers - if formatAnswers was used to get currentAnswers, it's already formatted
-      // Otherwise, format from object to array
+      // Format answers - if formatAnswers is provided, always use it (for DISC, etc.)
       let finalAnswers;
       if (overrideAnswers !== null) {
         // overrideAnswers is already in array format from SpeedTest
         finalAnswers = overrideAnswers;
-      } else if (formatAnswers && isTimeout) {
-        // formatAnswers returns array format directly
+      } else if (formatAnswers) {
+        // formatAnswers returns array format directly (for DISC, etc.)
         finalAnswers = formatAnswers();
       } else {
         // Default: convert from { qId: optionId } to array format
@@ -252,8 +263,13 @@ export function useTestSession(assignmentId, options = {}) {
       // Clear session storage on successful submission
       sessionStorage.removeItem(sessionKey);
 
-      // Clean up history state before navigating away
-      window.history.go(-1); // Remove the pushed state
+      // Disable back button prevention before navigating
+      if (disableBackButtonPrevention.current) {
+        disableBackButtonPrevention.current();
+      }
+
+      // Clear all history states by replacing the current state
+      window.history.replaceState(null, '', window.location.pathname);
 
       if (isTimeout) {
         Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
@@ -262,7 +278,7 @@ export function useTestSession(assignmentId, options = {}) {
       if (onTestComplete) {
         onTestComplete();
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       console.error('Failed to submit test:', err);

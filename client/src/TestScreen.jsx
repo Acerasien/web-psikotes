@@ -20,6 +20,13 @@ function TestScreen({ assignmentId, onFinish }) {
     token
   });
 
+  // Check if fullscreen is supported (for UI messaging)
+  const isFullscreenSupported = !!(
+    document.documentElement.requestFullscreen ||
+    document.documentElement.webkitRequestFullscreen ||
+    document.documentElement.msRequestFullscreen
+  );
+
   // --- HELPERS ---
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -310,17 +317,24 @@ function TestScreen({ assignmentId, onFinish }) {
         </div>
       )}
 
-      {/* Fullscreen Overlay */}
-      {!isFullscreen && !isLocked && (
+      {/* Fullscreen Overlay - Only show if fullscreen is supported */}
+      {!isFullscreen && !isLocked && isFullscreenSupported && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white p-4">
           <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Paused</h2>
           <p className="mb-6 text-gray-200 text-center text-sm sm:text-base">Silakan kembali ke mode fullscreen.</p>
-          <button 
-            onClick={() => { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }} 
+          <button
+            onClick={enterFullscreen}
             className="px-6 py-3 bg-blue-500 rounded-lg font-semibold hover:bg-blue-600 transition min-h-[48px] min-w-[48px]"
           >
             Return to Fullscreen
           </button>
+        </div>
+      )}
+
+      {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
+      {!isFullscreen && !isLocked && !isFullscreenSupported && (
+        <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
+          ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
         </div>
       )}
     </div>
