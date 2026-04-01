@@ -11,6 +11,7 @@ function LogicTest({ assignmentId }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
+    const [multiSelectAnswers, setMultiSelectAnswers] = useState({}); // For Q23, Q41
 
     const handleTestComplete = useCallback(() => {
         navigate('/dashboard');
@@ -53,6 +54,24 @@ function LogicTest({ assignmentId }) {
         answersRef.current = answers;
     }, [answers]);
 
+    // Sync multi-select answers to main answers state
+    useEffect(() => {
+        if (Object.keys(multiSelectAnswers).length > 0) {
+            setAnswers(prev => {
+                const updated = { ...prev };
+                let changed = false;
+                Object.entries(multiSelectAnswers).forEach(([qId, optionIds]) => {
+                    const newValue = optionIds.join(',');
+                    if (prev[qId] !== newValue) {
+                        updated[qId] = newValue;
+                        changed = true;
+                    }
+                });
+                return changed ? updated : prev;
+            });
+        }
+    }, [multiSelectAnswers, setAnswers]);
+
     useEffect(() => {
         testDataRef.current = testData;
     }, [testData]);
@@ -79,16 +98,42 @@ function LogicTest({ assignmentId }) {
     const handleSelect = (optionId) => {
         const qId = questions[currentIndex]?.id;
         if (!qId) return;
-        setAnswers(prev => ({ ...prev, [qId]: optionId }));
+
+        const currentQuestion = questions[currentIndex];
+        // Backend sends settings = meta_data directly
+        const isMultiSelect = currentQuestion.settings?.multi_select || currentQuestion.settings?.multiSelect;
+
+        if (isMultiSelect) {
+            // Multi-select mode (Q23, Q41) - toggle selection
+            setMultiSelectAnswers(prev => {
+                const current = prev[qId] || [];
+                const updated = current.includes(optionId)
+                    ? current.filter(id => id !== optionId)
+                    : [...current, optionId];
+                // Limit to 2 selections
+                if (updated.length > 2) return prev;
+                return { ...prev, [qId]: updated };
+            });
+        } else {
+            // Single select mode
+            setAnswers(prev => ({ ...prev, [qId]: optionId }));
+        }
+
         setJustAnswered(true);
-        
-        // Auto-advance after delay (but can still go back)
-        setTimeout(() => {
-            setJustAnswered(false);
-            if (currentIndex < questions.length - 1) {
-                setCurrentIndex(prev => prev + 1);
-            }
-        }, 350); // Increased delay for visual feedback
+
+        // Auto-advance after delay (but can still go back) - only for single select
+        if (!isMultiSelect) {
+            setTimeout(() => {
+                setJustAnswered(false);
+                if (currentIndex < questions.length - 1) {
+                    setCurrentIndex(prev => prev + 1);
+                }
+            }, 350);
+        } else {
+            setTimeout(() => {
+                setJustAnswered(false);
+            }, 350);
+        }
     };
 
     const goToQuestion = (index) => {
@@ -112,6 +157,7 @@ function LogicTest({ assignmentId }) {
     // Handle confirm submission
     const handleConfirmSubmit = useCallback(() => {
         setShowConfirm(false);
+        // Answers are already synced via useEffect, just submit
         handleSubmit(false);
     }, [handleSubmit]);
 
@@ -172,7 +218,14 @@ function LogicTest({ assignmentId }) {
                 <div className="flex flex-wrap gap-1.5 justify-center">
                     {questions.map((q, idx) => {
                         let btnClass = 'w-8 h-8 rounded-full text-sm font-medium flex items-center justify-center transition-colors cursor-pointer ';
-                        if (answers[q.id]) {
+                        
+                        // Check if answered (handle both single and multi-select)
+                        const isMultiSelect = q.settings?.multi_select || q.settings?.multiSelect;
+                        const isAnswered = isMultiSelect 
+                            ? (multiSelectAnswers[q.id] && multiSelectAnswers[q.id].length > 0)
+                            : answers[q.id];
+                        
+                        if (isAnswered) {
                             btnClass += 'bg-green-500 text-white hover:bg-green-600';
                         } else if (flagged.has(q.id)) {
                             btnClass += 'bg-yellow-400 text-white hover:bg-yellow-500';
@@ -183,10 +236,10 @@ function LogicTest({ assignmentId }) {
                             btnClass += ' ring-2 ring-blue-500 ring-offset-2';
                         }
                         return (
-                            <button 
-                                key={q.id} 
+                            <button
+                                key={q.id}
                                 type="button"
-                                onClick={() => goToQuestion(idx)} 
+                                onClick={() => goToQuestion(idx)}
                                 className={btnClass}
                             >
                                 {idx + 1}
@@ -225,26 +278,45 @@ function LogicTest({ assignmentId }) {
 
                         {/* Question Text */}
                         <h2 className="text-xl font-medium text-gray-800 mb-8 leading-relaxed">
-                            {currentQ.content}
+                            <div dangerouslySetInnerHTML={{ __html: currentQ.content }} />
                         </h2>
 
                         {/* Options */}
                         <div className="space-y-3">
                             {currentQ.options?.map(opt => {
-                                const isSelected = answers[currentQ.id] === opt.id;
+                                // Backend sends settings = meta_data directly
+                                const isMultiSelect = currentQ.settings?.multi_select || currentQ.settings?.multiSelect;
+                                const isSelected = isMultiSelect 
+                                    ? (multiSelectAnswers[currentQ.id] || []).includes(opt.id)
+                                    : answers[currentQ.id] === opt.id;
+                                const selectionCount = multiSelectAnswers[currentQ.id]?.length || 0;
+                                const isMaxSelected = selectionCount >= 2 && !isSelected;
+                                
                                 return (
                                     <button
                                         key={opt.id}
                                         onClick={() => handleSelect(opt.id)}
-                                        className={`w-full text-left p-4 rounded-lg border-2 transition ${isSelected
+                                        disabled={isMaxSelected}
+                                        className={`w-full text-left p-4 rounded-lg border-2 transition ${
+                                            isSelected
                                                 ? 'bg-blue-500 text-white border-blue-600'
-                                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                            } ${justAnswered && isSelected ? 'animate-pulse' : ''}`}
+                                                : isMaxSelected
+                                                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                        } ${justAnswered && isSelected ? 'animate-pulse' : ''}`}
                                     >
-                                        <span className={`font-bold mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
-                                            {opt.label}.
-                                        </span>
-                                        <span>{opt.content}</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className={`font-bold ${isSelected ? 'text-white' : 'text-gray-500'}`}>
+                                                {isMultiSelect ? (
+                                                    <span className="w-5 h-5 border-2 border-current rounded flex items-center justify-center">
+                                                        {isSelected ? '✓' : ''}
+                                                    </span>
+                                                ) : (
+                                                    opt.label
+                                                )}
+                                            </span>
+                                            <span dangerouslySetInnerHTML={{ __html: opt.content }} />
+                                        </div>
                                     </button>
                                 );
                             })}
@@ -335,6 +407,52 @@ function LogicTest({ assignmentId }) {
                     ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
                 </div>
             )}
+
+            {/* CSS for question and option images */}
+            <style>{`
+                .question-image, .option-image {
+                    max-width: 100%;
+                    height: auto;
+                    display: block;
+                    margin: 1rem auto;
+                }
+                .option-image {
+                    max-width: 200px;
+                    margin: 0.5rem auto;
+                }
+                .comparison-table {
+                    width: 100%;
+                    margin: 1rem 0;
+                }
+                .comparison-table table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 0.5rem 0;
+                }
+                .comparison-table td {
+                    padding: 0.75rem;
+                    border: 1px solid #e5e7eb;
+                    font-family: monospace;
+                    font-size: 0.9rem;
+                }
+                .comparison-table tr:nth-child(even) {
+                    background-color: #f9fafb;
+                }
+                .comparison-table p {
+                    margin-bottom: 0.5rem;
+                    font-weight: 500;
+                }
+                .multi-select-instruction {
+                    background-color: #fef3c7;
+                    border-left: 4px solid #f59e0b;
+                    padding: 0.75rem 1rem;
+                    margin-bottom: 1rem;
+                    border-radius: 0.25rem;
+                }
+                .multi-select-instruction strong {
+                    color: #92400e;
+                }
+            `}</style>
         </div>
     );
 }

@@ -549,7 +549,7 @@ function ParticipantProfilePage() {
                                         <h4 className="font-bold text-gray-700 mb-3">Logic & Arithmetic Performance</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                             <div><span className="font-medium">Score:</span> {r.details.score} / 100</div>
-                                            <div><span className="font-medium">Correct:</span> {r.details.correct_count} / 25</div>
+                                            <div><span className="font-medium">Correct:</span> {r.details.correct_count} / 50</div>
                                             <div><span className="font-medium">Percentage:</span> {r.details.percentage}%</div>
                                             <div>
                                                 <span className="font-medium">Band:</span>{' '}

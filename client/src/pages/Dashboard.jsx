@@ -7,13 +7,16 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PageWrapper from '../components/PageWrapper';
 
 function Dashboard() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const [summary, setSummary] = useState(null);
     const [completionStats, setCompletionStats] = useState(null);
     const [securityEvents, setSecurityEvents] = useState([]);
     const [recent, setRecent] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Check if user is superadmin
+    const isSuperadmin = user?.role === 'superadmin';
 
     const fetchData = async () => {
         try {
@@ -194,38 +197,40 @@ function Dashboard() {
                     </div>
                 </div>
 
-                {/* Recent Activity */}
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <h3 className="text-lg font-semibold mb-4">🕒 Recent Test Completions</h3>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Participant</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Test</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {recent.map(item => (
-                                    <tr key={item.id} className="hover:bg-gray-50">
-                                        <td className="px-4 py-2 text-sm max-w-[200px] truncate" title={item.participant_name}>
-                                            {item.participant_name}
-                                        </td>
-                                        <td className="px-4 py-2 text-sm max-w-[150px] truncate" title={item.test_name}>
-                                            {item.test_name}
-                                        </td>
-                                        <td className="px-4 py-2 text-sm font-medium text-green-600">{item.score} / {item.total_questions}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-500">
-                                            {new Date(item.completed_at).toLocaleDateString()}
-                                        </td>
+                {/* Recent Activity - Superadmin Only */}
+                {isSuperadmin && (
+                    <div className="bg-white p-4 rounded-lg shadow">
+                        <h3 className="text-lg font-semibold mb-4">🕒 Recent Test Completions</h3>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Participant</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Test</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {recent.map(item => (
+                                        <tr key={item.id} className="hover:bg-gray-50">
+                                            <td className="px-4 py-2 text-sm max-w-[200px] truncate" title={item.participant_name}>
+                                                {item.participant_name}
+                                            </td>
+                                            <td className="px-4 py-2 text-sm max-w-[150px] truncate" title={item.test_name}>
+                                                {item.test_name}
+                                            </td>
+                                            <td className="px-4 py-2 text-sm font-medium text-green-600">{item.score} / {item.total_questions}</td>
+                                            <td className="px-4 py-2 text-sm text-gray-500">
+                                                {new Date(item.completed_at).toLocaleDateString()}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </PageWrapper>
     );

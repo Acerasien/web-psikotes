@@ -126,11 +126,13 @@ def start_test(
                 "label": opt.label,
                 "content": opt.content
             })
+        q_settings = q.meta_data  # Store in variable
         output.append({
             "id": q.id,
             "content": q.content,
             "order": q.order_index,
-            "options": options_data
+            "options": options_data,
+            "settings": q_settings
         })
     return {
         "test_name": assignment.test.name,
@@ -169,15 +171,32 @@ def submit_test(
 
     # 2. Save all responses
     for ans in submission.answers:
-        resp = Response(
-            user_id=current_user.id,
-            test_id=assignment.test_id,
-            assignment_id=assignment.id,
-            question_id=ans["question_id"],
-            selected_option_id=ans.get("option_id"),
-            selection_type=ans.get("type", "single"),
-        )
-        db.add(resp)
+        option_id = ans.get("option_id")
+        # Handle multi-select (comma-separated option IDs)
+        if option_id and "," in str(option_id):
+            # Multi-select question - create multiple response records
+            option_ids = [int(x.strip()) for x in str(option_id).split(",")]
+            for opt_id in option_ids:
+                resp = Response(
+                    user_id=current_user.id,
+                    test_id=assignment.test_id,
+                    assignment_id=assignment.id,
+                    question_id=ans["question_id"],
+                    selected_option_id=opt_id,
+                    selection_type="multi",  # Mark as multi-select
+                )
+                db.add(resp)
+        else:
+            # Single select - normal behavior
+            resp = Response(
+                user_id=current_user.id,
+                test_id=assignment.test_id,
+                assignment_id=assignment.id,
+                question_id=ans["question_id"],
+                selected_option_id=ans.get("option_id"),
+                selection_type=ans.get("type", "single"),
+            )
+            db.add(resp)
 
     # 3. Score based on test code
     test_code = assignment.test.code

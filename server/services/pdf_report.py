@@ -19,7 +19,7 @@ def get_max_score(test_code: str) -> Optional[int]:
         "DISC": 24,
         "SPEED": 100,
         "MEM": 100,
-        "LOGIC": 100,
+        "LOGIC": 100,  # 50 questions × 2 points each
         "TEMP": None,
         "LEAD": None
     }
@@ -546,7 +546,7 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
         # ----------------------- LOGIC & ARITHMETIC --------------------
         elif test_code == "LOGIC" and details:
             correct = details.get('correct_count', 0)
-            total = 25
+            total = 50  # Updated to 50 questions
             rating = get_rating(correct, total, test_name)
             pct = int((correct / total) * 100)
             html_content += f"""
@@ -558,8 +558,8 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
                 <span class="score-value">{correct}/{total}</span>
             </div>
             <div class="narrative">
-                Testee menjawab <strong>{correct}</strong> soal benar dari {total} soal. 
-                Kemampuan logika dan pemecahan masalah dinilai 
+                Testee menjawab <strong>{correct}</strong> soal benar dari {total} soal.
+                Kemampuan logika dan pemecahan masalah dinilai
                 <span class="rating-badge rating-{rating['class']}">{rating['label']}</span>.
                 <br>{rating['desc']}
             </div>

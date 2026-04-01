@@ -1,30 +1,116 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 import { api } from './utils/api';
 
 function ParticipantDetail({ token }) {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [participant, setParticipant] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchParticipant = async () => {
             try {
+                // Check if user has permission
+                if (user?.role !== 'superadmin') {
+                    setError('access_denied');
+                    setLoading(false);
+                    return;
+                }
+                
                 const response = await api.getUser(id);
                 setParticipant(response.data);
-            } catch (error) {
-                console.error('Error fetching participant:', error);
+            } catch (err) {
+                console.error('Error fetching participant:', err);
+                
+                // Check if it's a permission error (403)
+                if (err.response?.status === 403) {
+                    setError('access_denied');
+                } else if (err.response?.status === 404) {
+                    setError('not_found');
+                } else {
+                    setError('error');
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchParticipant();
-    }, [id]);
+    }, [id, user]);
 
-    if (loading) return <div>Loading...</div>;
-    if (!participant) return <div>Participant not found.</div>;
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
+    
+    if (error === 'access_denied') {
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+                    <div className="text-6xl mb-4">🔒</div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
+                    <p className="text-gray-600 mb-6">
+                        You don't have permission to view participant details. Only superadmins can access this page.
+                    </p>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    
+    if (error === 'not_found') {
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+                    <div className="text-6xl mb-4">❓</div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Participant Not Found</h2>
+                    <p className="text-gray-600 mb-6">
+                        The participant you're looking for doesn't exist or has been removed.
+                    </p>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+                    <div className="text-6xl mb-4">⚠️</div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Something Went Wrong</h2>
+                    <p className="text-gray-600 mb-6">
+                        Unable to load participant details. Please try again.
+                    </p>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    
+    if (!participant) return null;
 
     return (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
