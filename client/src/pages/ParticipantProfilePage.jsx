@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
 import Swal from 'sweetalert2';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 function ParticipantProfilePage() {
     const { id } = useParams();
@@ -360,9 +360,14 @@ function ParticipantProfilePage() {
                                 <div className="bg-gray-50 px-5 py-4 border-b">
                                     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                                         <h3 className="text-xl font-semibold text-gray-800">{r.test_name}</h3>
-                                        {r.max_score && (
+                                        {r.max_score && r.test_name !== "PAPI Kostick Test" && (
                                             <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
                                                 {r.score} / {r.max_score}
+                                            </div>
+                                        )}
+                                        {r.test_name === "PAPI Kostick Test" && (
+                                            <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+                                                Personality Profile
                                             </div>
                                         )}
                                     </div>
@@ -564,7 +569,140 @@ function ParticipantProfilePage() {
                                         </div>
                                     </div>
                                 )}
-                                {/* Leadership Test */}
+                                {/* PAPI Kostick Test (LEAD) */}
+                                {r.test_name === "PAPI Kostick Test" && r.details && r.details.categories && (
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-4">PAPI Kostick Profile</h4>
+
+                                        {/* Radar Chart */}
+                                        <div className="flex justify-center mb-6">
+                                            <ResponsiveContainer width="100%" height={400}>
+                                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={
+                                                    (() => {
+                                                        // Flatten all categories into a single array for the radar
+                                                        const chartData = [];
+                                                        const categoryOrder = [
+                                                            "Work Direction - Arah Kerja",
+                                                            "Leadership - Kepemimpinan",
+                                                            "Activity - Aktivitas Kerja",
+                                                            "Social Nature - Relasi Sosial",
+                                                            "Work Style - Gaya Kerja",
+                                                            "Temperament - Sifat Temperamen",
+                                                            "Followership - Posisi Atasan-Bawahan",
+                                                        ];
+                                                        categoryOrder.forEach(cat => {
+                                                            if (r.details.categories[cat]) {
+                                                                Object.entries(r.details.categories[cat]).forEach(([code, data]) => {
+                                                                    chartData.push({
+                                                                        trait: code,
+                                                                        score: data.stanine,
+                                                                        fullName: data.description?.split('—')[0]?.trim() || code,
+                                                                    });
+                                                                });
+                                                            }
+                                                        });
+                                                        return chartData;
+                                                    })()
+                                                }>
+                                                    <PolarGrid stroke="#e5e7eb" />
+                                                    <PolarAngleAxis
+                                                        dataKey="trait"
+                                                        tick={{ fill: '#374151', fontSize: 12, fontWeight: 600 }}
+                                                    />
+                                                    <PolarRadiusAxis
+                                                        domain={[0, 10]}
+                                                        tick={{ fill: '#9ca3af', fontSize: 10 }}
+                                                        tickCount={10}
+                                                    />
+                                                    <Radar
+                                                        name="Role"
+                                                        dataKey="score"
+                                                        stroke="#3b82f6"
+                                                        strokeWidth={2}
+                                                        fill="#3b82f6"
+                                                        fillOpacity={0.25}
+                                                    />
+                                                    <Tooltip
+                                                        formatter={(value, name, props) => [
+                                                            `Stanine: ${value}`,
+                                                            props.payload.fullName
+                                                        ]}
+                                                        contentStyle={{
+                                                            borderRadius: '8px',
+                                                            border: '1px solid #e5e7eb',
+                                                            fontSize: '13px',
+                                                        }}
+                                                    />
+                                                    <Legend
+                                                        formatter={() => 'Role'}
+                                                        wrapperStyle={{ fontSize: '13px' }}
+                                                    />
+                                                </RadarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+
+                                        {Object.entries(r.details.categories).map(([categoryName, norms]) => (
+                                            <div key={categoryName} className="mb-6">
+                                                <h5 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 pb-1 border-b border-gray-100">
+                                                    {categoryName}
+                                                </h5>
+                                                <div className="space-y-2">
+                                                    {Object.entries(norms).map(([normCode, normData]) => {
+                                                        // Stanine color coding
+                                                        const stanine = normData.stanine;
+                                                        let barColor = 'bg-gray-300';
+                                                        let textColor = 'text-gray-500';
+                                                        if (stanine >= 7) { barColor = 'bg-emerald-500'; textColor = 'text-emerald-700'; }
+                                                        else if (stanine >= 5) { barColor = 'bg-blue-500'; textColor = 'text-blue-700'; }
+                                                        else if (stanine >= 3) { barColor = 'bg-amber-500'; textColor = 'text-amber-700'; }
+                                                        else { barColor = 'bg-red-400'; textColor = 'text-red-600'; }
+
+                                                        return (
+                                                            <div key={normCode} className="flex items-center gap-3">
+                                                                {/* Norm label */}
+                                                                <div className="w-28 flex-shrink-0">
+                                                                    <span className="text-sm font-semibold text-gray-800">{normCode}</span>
+                                                                    <p className="text-[11px] text-gray-400 truncate" title={normData.description}>
+                                                                        {normData.description?.split('—')[0]?.trim() || ''}
+                                                                    </p>
+                                                                </div>
+
+                                                                {/* Stanine bar (9 segments) */}
+                                                                <div className="flex-1 flex gap-0.5">
+                                                                    {Array.from({ length: 9 }, (_, i) => (
+                                                                        <div
+                                                                            key={i}
+                                                                            className={`
+                                                                                h-5 flex-1 rounded-sm transition-all
+                                                                                ${i + 1 <= stanine ? barColor : 'bg-gray-100'}
+                                                                            `}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* Stanine number */}
+                                                                <div className={`w-8 text-right text-sm font-bold ${textColor}`}>
+                                                                    {stanine}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* Stanine legend */}
+                                        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400">
+                                            <span>Stanine:</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-400"></span> 1–2 Low</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-500"></span> 3–4 Below Avg</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-500"></span> 5 Average</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 6–7 Above Avg</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 8–9 High</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {/* Legacy Leadership Test (fallback) */}
                                 {r.test_name === "Leadership Test" && r.details && (
                                     <div className="p-5">
                                         <h4 className="font-bold text-gray-700 mb-3">Leadership Profile</h4>

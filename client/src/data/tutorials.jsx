@@ -112,5 +112,19 @@ export const tutorials = {
                 explanation: "Total = (3 × 15.000) + (2 × 2.500) = 45.000 + 5.000 = 50.000."
             }
         ]
+    },
+    LEAD: {
+        title: "Tutorial PAPI Kostick",
+        instructions: "Pada tes ini, Anda akan melihat dua pernyataan di setiap nomor. Pilih SATU pernyataan yang paling sesuai dengan diri Anda. Tidak ada jawaban benar atau salah — pilihlah yang paling menggambarkan kepribadian Anda.",
+        samples: [
+            {
+                question: "Pilih satu pernyataan yang paling sesuai dengan diri Anda:",
+                options: [
+                    { label: "A", content: "Saya suka memimpin diskusi kelompok", correct: true },
+                    { label: "B", content: "Saya senang membantu rekan yang kesulitan" }
+                ],
+                explanation: "Pilih pernyataan yang paling mencerminkan diri Anda. Di tes sesungguhnya, ada 90 pasangan pernyataan yang harus dijawab."
+            }
+        ]
     }
 };

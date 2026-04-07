@@ -9,10 +9,20 @@ from typing import List
 
 from auth import hash_password, verify_password, require_admin, require_superadmin, get_current_user
 from database import get_db
-from models import User, ExitLog, Result, Assignment
-from schemas import UserCreate, UserUpdate
+from models import User, ExitLog, Result, Assignment, ClassConfig
+from schemas import UserCreate, UserUpdate, ClassConfigOut
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/classes", response_model=List[ClassConfigOut])
+def get_classes(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """Get all class configurations (for dropdown on add participant)"""
+    classes = db.query(ClassConfig).order_by(ClassConfig.name).all()
+    return classes
 
 
 @router.get("/", response_model=List[dict])
@@ -29,7 +39,9 @@ def get_users(
             "role": u.role,
             "full_name": u.full_name,
             "department": u.department,
-            "position": u.position
+            "position": u.position,
+            "class_id": u.class_id,
+            "class_name": u.class_config.name if u.class_config else None
         }
         for u in users
     ]
@@ -53,6 +65,12 @@ def create_user(
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
 
+    # Validate class_id if provided
+    if user.class_id is not None:
+        class_exists = db.query(ClassConfig).filter(ClassConfig.id == user.class_id).first()
+        if not class_exists:
+            raise HTTPException(status_code=400, detail="Class not found")
+
     new_user = User(
         username=user.username,
         password_hash=hash_password(user.password),
@@ -62,7 +80,8 @@ def create_user(
         age=user.age,
         education=user.education,
         department=user.department,
-        position=user.position
+        position=user.position,
+        class_id=user.class_id
     )
     db.add(new_user)
     db.commit()
@@ -89,7 +108,9 @@ def get_user(
         "age": user.age,
         "education": user.education,
         "department": user.department,
-        "position": user.position
+        "position": user.position,
+        "class_id": user.class_id,
+        "class_name": user.class_config.name if user.class_config else None
     }
 
 
@@ -140,6 +161,14 @@ def update_user(
         user.position = user_update.position
     if user_update.role is not None:
         user.role = user_update.role
+    if user_update.class_id is not None:
+        if user_update.class_id == 0:
+            user.class_id = None  # Allow clearing the class
+        else:
+            class_exists = db.query(ClassConfig).filter(ClassConfig.id == user_update.class_id).first()
+            if not class_exists:
+                raise HTTPException(status_code=400, detail="Class not found")
+            user.class_id = user_update.class_id
     if user_update.password is not None and user_update.password != "":
         user.password_hash = hash_password(user_update.password)
 

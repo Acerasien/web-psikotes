@@ -1,12 +1,8 @@
 # Qwen configuration
 .qwen/
 
-# Documentation
-AUTO_NEXT_IMPLEMENTATION.md
-BUG_HUNT.md
-QWEN.md
-REFACTOR_COMPLETED.md
-REFACTOR_PLAN.md
+# Documentation (project root notes)
+*.md
 
 # Python
 __pycache__/

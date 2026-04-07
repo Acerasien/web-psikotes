@@ -1,11 +1,12 @@
 // client/src/CreateUser.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { api } from './utils/api';
 import Swal from 'sweetalert2';
 
 function CreateUser({ onUserCreated }) {
   const { token, isSuperadmin: currentUserRole } = useAuth();
+  const [classes, setClasses] = useState([]);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -15,10 +16,25 @@ function CreateUser({ onUserCreated }) {
     education: '',
     department: '',
     position: '',
-    role: 'participant' // default role
+    role: 'participant', // default role
+    class_id: ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Fetch classes on mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await api.getClasses();
+        setClasses(res.data);
+      } catch (err) {
+        // Silently fail - classes are optional
+        console.error('Failed to fetch classes:', err);
+      }
+    };
+    fetchClasses();
+  }, []);
 
   // Determine which roles are allowed based on current user's role
   const allowedRoles = currentUserRole === 'superadmin'
@@ -89,7 +105,8 @@ function CreateUser({ onUserCreated }) {
       education: formData.education.trim() || null,
       department: formData.department.trim() || null,
       position: formData.position.trim() || null,
-      role: formData.role
+      role: formData.role,
+      class_id: formData.class_id || null
     };
 
     try {
@@ -113,7 +130,8 @@ function CreateUser({ onUserCreated }) {
         education: '',
         department: '',
         position: '',
-        role: 'participant'
+        role: 'participant',
+        class_id: ''
       });
       setErrors({});
       
@@ -293,6 +311,29 @@ function CreateUser({ onUserCreated }) {
               />
             </div>
 
+            {/* Class dropdown */}
+            {classes.length > 0 && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Kelas <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="class_id"
+                  value={formData.class_id || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Pilih kelas</option>
+                  {classes.map(cls => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}{cls.description ? ` — ${cls.description}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Role dropdown – only if multiple roles allowed */}
             {allowedRoles.length > 1 && (
               <div>
@@ -359,7 +400,8 @@ function CreateUser({ onUserCreated }) {
                 education: '',
                 department: '',
                 position: '',
-                role: 'participant'
+                role: 'participant',
+                class_id: ''
               });
               setErrors({});
             }}

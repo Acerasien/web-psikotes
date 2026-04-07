@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 function EditParticipantModal({ user, onClose, onSaved }) {
     const { token } = useAuth();
+    const [classes, setClasses] = useState([]);
     const [formData, setFormData] = useState({
         username: '',
         password: '',
@@ -14,22 +15,29 @@ function EditParticipantModal({ user, onClose, onSaved }) {
         education: '',
         department: '',
         position: '',
-        role: 'participant'
+        role: 'participant',
+        class_id: ''
     });
     const [loading, setLoading] = useState(false);
+
+    // Fetch classes on mount
+    useEffect(() => {
+        api.getClasses().then(res => setClasses(res.data)).catch(() => {});
+    }, []);
 
     // Populate form when user prop changes
     useEffect(() => {
         if (user) {
             setFormData({
                 username: user.username || '',
-                password: '', // leave empty; only fill if admin wants to change
+                password: '',
                 full_name: user.full_name || '',
                 age: user.age || '',
                 education: user.education || '',
                 department: user.department || '',
                 position: user.position || '',
-                role: user.role || 'participant'
+                role: user.role || 'participant',
+                class_id: user.class_id || ''
             });
         }
     }, [user]);
@@ -46,8 +54,8 @@ function EditParticipantModal({ user, onClose, onSaved }) {
         const payload = {
             ...formData,
             age: formData.age === '' ? null : Number(formData.age),
-            // If password is empty, don't send it (or send empty string, backend checks)
-            password: formData.password || undefined
+            password: formData.password || undefined,
+            class_id: formData.class_id ? Number(formData.class_id) : null,
         };
 
         try {
@@ -144,6 +152,22 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                             />
                         </div>
+                        {classes.length > 0 && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Kelas</label>
+                                <select
+                                    name="class_id"
+                                    value={formData.class_id}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                >
+                                    <option value="">— Tidak ada —</option>
+                                    {classes.map(cls => (
+                                        <option key={cls.id} value={cls.id}>{cls.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Role</label>
                             <select

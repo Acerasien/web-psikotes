@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from auth import get_current_user, require_admin, require_superadmin
 from database import engine, Base, SessionLocal, get_db
-from models import User, Test, Assignment, Result, Question, Option, ExitLog
+from models import User, Test, Assignment, Result, Question, Option, ExitLog, ClassConfig
 from models import Response as DBResponse
 from schemas import TestSubmission, Token, UserCreate, UserUpdate
 

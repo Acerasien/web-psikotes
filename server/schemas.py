@@ -16,6 +16,16 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
+# ClassConfig schemas
+class ClassConfigOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    config: dict
+
+    class Config:
+        from_attributes = True
+
 # Schema for creating a new user
 class UserCreate(BaseModel):
     username: str
@@ -28,11 +38,12 @@ class UserCreate(BaseModel):
     education: Optional[str] = None
     department: Optional[str] = None
     position: Optional[str] = None
+    class_id: Optional[int] = None
 
 class TestSubmission(BaseModel):
     answers: List[dict]  # Make sure this is List[dict], not dict
     time_taken: int
-    
+
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
@@ -43,3 +54,4 @@ class UserUpdate(BaseModel):
     education: Optional[str] = None
     department: Optional[str] = None
     position: Optional[str] = None
+    class_id: Optional[int] = None

@@ -109,9 +109,9 @@ function BulkUploadModal({ onClose, onSuccess }) {
     const downloadTemplate = () => {
         // Create sample data
         const wsData = [
-            ['username', 'password', 'full_name', 'age', 'gender', 'education', 'department', 'position'],
-            ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'IT', 'Manager'],
-            ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'HR', 'Staff']
+            ['username', 'password', 'full_name', 'age', 'gender', 'education', 'department', 'position', 'class'],
+            ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'IT', 'Manager', 'Karyawan Tetap'],
+            ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'HR', 'Staff', 'Magang']
         ];
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -149,6 +149,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <th className="border border-gray-300 px-3 py-2">education</th>
                                             <th className="border border-gray-300 px-3 py-2">department</th>
                                             <th className="border border-gray-300 px-3 py-2">position</th>
+                                            <th className="border border-gray-300 px-3 py-2">class</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -161,6 +162,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <td className="border border-gray-300 px-3 py-2">S1</td>
                                             <td className="border border-gray-300 px-3 py-2">IT</td>
                                             <td className="border border-gray-300 px-3 py-2">Manager</td>
+                                            <td className="border border-gray-300 px-3 py-2">Karyawan Tetap</td>
                                         </tr>
                                         <tr className="bg-gray-50">
                                             <td className="border border-gray-300 px-3 py-2">janedoe</td>
@@ -171,10 +173,11 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <td className="border border-gray-300 px-3 py-2">S2</td>
                                             <td className="border border-gray-300 px-3 py-2">HR</td>
                                             <td className="border border-gray-300 px-3 py-2">Staff</td>
+                                            <td className="border border-gray-300 px-3 py-2">Magang</td>
                                         </tr>
                                     </tbody>
                                 </table>
-                                <p className="text-xs text-gray-500 mt-1">* Kolom wajib. Kolom lain opsional.</p>
+                                <p className="text-xs text-gray-500 mt-1">* Kolom wajib. Kolom lain opsional. Kelas: nama kelas sesuai konfigurasi (opsional).</p>
                             </div>
 
                             <div className="flex justify-between items-center mb-6">

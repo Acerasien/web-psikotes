@@ -10,7 +10,6 @@ import { TestLayout, QuestionNavGrid, QuestionCard, TestFooter } from './TestLay
  * Note: Speed, DISC, Memory, Logic, Temperament have their own components
  *
  * Auto-next behavior:
- * - Leadership: Auto-next enabled, no back navigation
  * - IQ: Auto-next enabled, no back navigation (config saved for future implementation)
  * - Other tests: No auto-next, can navigate freely
  */
@@ -51,8 +50,8 @@ export function StandardTest() {
 
     setAnswers(prev => ({ ...prev, [qId]: optionId }));
 
-    // Auto-advance for leadership and IQ tests
-    if (testData?.settings?.type === 'speed' || testData?.test_code === 'LEAD') {
+    // Auto-advance for IQ tests
+    if (testData?.settings?.type === 'speed') {
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex(prev => prev + 1);
@@ -120,8 +119,8 @@ export function StandardTest() {
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
   const isLastQuestion = currentIndex === questions.length - 1;
-  // Hide question nav and footer for auto-next tests (speed, leadership, IQ)
-  const isAutoNext = testData?.settings?.type === 'speed' || testData?.test_code === 'LEAD';
+  // Hide question nav and footer for auto-next tests (speed, IQ)
+  const isAutoNext = testData?.settings?.type === 'speed';
   const showQuestionNav = !isAutoNext;
 
   return (

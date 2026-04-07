@@ -7,6 +7,7 @@ import DISCTest from '../components/DISCTest';
 import MemoryTest from '../components/MemoryTest';
 import LogicTest from '../components/LogicTest';
 import TemperamentTest from '../components/TemperamentTest';
+import PapiKostickTest from '../components/tests/PapiKostickTest';
 import { StandardTest } from '../components/tests/StandardTest';
 
 /**
@@ -56,8 +57,10 @@ export function TestTypeRouter() {
       return <LogicTest assignmentId={assignmentId} />;
     case 'TEMP':
       return <TemperamentTest assignmentId={assignmentId} />;
+    case 'LEAD':
+      return <PapiKostickTest assignmentId={assignmentId} />;
     default:
-      // Leadership, IQ, and other tests use StandardTest
+      // IQ and other tests use StandardTest
       return <StandardTest />;
   }
 }

@@ -11,7 +11,7 @@ import io
 
 from auth import require_admin, require_superadmin, get_current_user, hash_password
 from database import get_db
-from models import User, Test, Assignment, Result, Question, Option, ExitLog, Response
+from models import User, Test, Assignment, Result, Question, Option, ExitLog, Response, ClassConfig
 from schemas import TestSubmission
 
 # Import scoring functions
@@ -21,6 +21,7 @@ from scoring.temperament import score_temperament
 from scoring.memory import score_memory
 from scoring.logic import score_logic
 from scoring.leadership import score_leadership
+from scoring.papi_kostick import score_papi_kostick
 
 # Import helper
 from utils import get_max_score
@@ -116,6 +117,16 @@ def start_test(
     if assignment.status == "pending":
         assignment.status = "in_progress"
         db.commit()
+
+    # Determine time limit: check user's class override first, then fall back to test default
+    time_limit = assignment.test.time_limit
+    if current_user.class_id:
+        class_config = db.query(ClassConfig).filter(ClassConfig.id == current_user.class_id).first()
+        if class_config:
+            time_overrides = class_config.config.get("time_overrides", {})
+            if assignment.test.code in time_overrides:
+                time_limit = time_overrides[assignment.test.code]
+
     questions = db.query(Question).filter(Question.test_id == assignment.test_id).order_by(Question.order_index).all()
     output = []
     for q in questions:
@@ -137,7 +148,7 @@ def start_test(
     return {
         "test_name": assignment.test.name,
         "test_code": assignment.test.code,
-        "time_limit": assignment.test.time_limit,
+        "time_limit": time_limit,
         "settings": assignment.test.settings,
         "questions": output
     }
@@ -273,8 +284,9 @@ def submit_test(
             .all()
         )
         total_questions = len(questions)
-        details = score_leadership(submission.answers, questions)
-        score = sum(details["raw_scores"].values())
+        details = score_papi_kostick(submission.answers, questions)
+        # Score = total number of answers (PAPI is personality, no "correct")
+        score = len(submission.answers)
         answered_count = len(submission.answers)
 
     else:

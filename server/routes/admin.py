@@ -13,7 +13,7 @@ import string
 
 from auth import require_admin, require_superadmin, hash_password
 from database import get_db
-from models import User, Test, Assignment, Result, ExitLog, Question
+from models import User, Test, Assignment, Result, ExitLog, Question, ClassConfig
 from utils import get_max_score
 
 router = APIRouter(tags=["admin"])
@@ -296,6 +296,7 @@ def bulk_create_users(
             'education': row.get('education'),
             'department': row.get('department'),
             'position': row.get('position'),
+            'class_name': row.get('class', '').strip() or row.get('kelas', '').strip() or None,
             'role': 'participant'
         }
         if user_data['age']:
@@ -304,6 +305,19 @@ def bulk_create_users(
             except ValueError:
                 results["failed"] += 1
                 results["errors"].append(f"Row {row_num}: Age must be a number")
+                continue
+
+        # Resolve class_id from class name
+        class_id = None
+        if user_data['class_name']:
+            class_config = db.query(ClassConfig).filter(
+                ClassConfig.name.ilike(user_data['class_name'])
+            ).first()
+            if class_config:
+                class_id = class_config.id
+            else:
+                results["failed"] += 1
+                results["errors"].append(f"Row {row_num}: Class '{user_data['class_name']}' not found")
                 continue
 
         new_user = User(
@@ -315,7 +329,8 @@ def bulk_create_users(
             gender=user_data['gender'],
             education=user_data['education'],
             department=user_data['department'],
-            position=user_data['position']
+            position=user_data['position'],
+            class_id=class_id
         )
         db.add(new_user)
         db.flush()

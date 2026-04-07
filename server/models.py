@@ -11,6 +11,18 @@ class UserRole(enum.Enum):
     admin = "admin"
     participant = "participant"
 
+# Class Config Model - Per-class time limits and passing grades
+class ClassConfig(Base):
+    __tablename__ = "class_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False, index=True)  # e.g., "Karyawan Tetap"
+    description = Column(String, nullable=True)
+    config = Column(JSON, nullable=False, default=dict)  # {time_overrides: {TEST_CODE: seconds}, passing_grades: {...}}
+
+    # Relationships
+    users = relationship("User", back_populates="class_config")
+
 # Define the User Model
 class User(Base):
     __tablename__ = "users"
@@ -27,12 +39,14 @@ class User(Base):
     education = Column(String, nullable=True)
     department = Column(String, nullable=True, index=True)
     position = Column(String, nullable=True)
+    class_id = Column(Integer, ForeignKey("class_configs.id"), nullable=True, index=True)
 
     # Relationships with cascade delete
     assignments = relationship("Assignment", back_populates="user", cascade="all, delete-orphan")
     results = relationship("Result", back_populates="user", cascade="all, delete-orphan")
     responses = relationship("Response", back_populates="user", cascade="all, delete-orphan")
     exit_logs = relationship("ExitLog", back_populates="user", cascade="all, delete-orphan")
+    class_config = relationship("ClassConfig", back_populates="users")
 
 # 1. The Test Model (e.g., IQ Test, DISC)
 class Test(Base):

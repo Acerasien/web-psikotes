@@ -88,6 +88,7 @@ export const api = {
   deleteUser: (userId) => apiClient.delete(`/users/${userId}`),
   resetPassword: (userId) => apiClient.post(`/admin/reset-password/${userId}`),
   getCurrentUser: () => apiClient.get('/users/me'),
+  getClasses: () => apiClient.get('/users/classes'),
   completeTutorial: (assignmentId) => apiClient.post(`/assignments/${assignmentId}/complete-tutorial`),
 
   // Tests
