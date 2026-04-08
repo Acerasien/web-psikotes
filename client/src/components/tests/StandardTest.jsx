@@ -5,9 +5,9 @@ import { useTestSession } from '../../hooks/useTestSession';
 import { TestLayout, QuestionNavGrid, QuestionCard, TestFooter } from './TestLayout';
 
 /**
- * Standard test component for single-choice tests (Leadership, IQ, etc.)
+ * Standard test component for single-choice tests (IQ, etc.)
  * Uses shared test session logic and layout components
- * Note: Speed, DISC, Memory, Logic, Temperament have their own components
+ * Note: Speed, DISC, Memory, Logic, Temperament, PAPI Kostick have their own components
  *
  * Auto-next behavior:
  * - IQ: Auto-next enabled, no back navigation (config saved for future implementation)
@@ -43,7 +43,7 @@ export function StandardTest() {
     onTestComplete: handleTestComplete
   });
 
-  // Auto-advance for tests with speed setting (Leadership, IQ)
+  // Auto-advance for tests with speed setting (IQ)
   const handleSelect = useCallback((optionId) => {
     const qId = questions[currentIndex]?.id;
     if (!qId) return;

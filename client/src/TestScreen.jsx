@@ -58,9 +58,9 @@ function TestScreen({ assignmentId, onFinish }) {
       try {
         const res = await api.startTest(assignmentId);
 
-        // Shuffle questions only for Leadership test
+        // Shuffle questions only for PAPI Kostick test
         let testDataFromServer = res.data;
-        if (testDataFromServer.settings?.type === 'leadership') {
+        if (testDataFromServer.settings?.type === 'papi_kostick') {
           testDataFromServer = {
             ...testDataFromServer,
             questions: shuffleArray([...testDataFromServer.questions])
@@ -114,7 +114,7 @@ function TestScreen({ assignmentId, onFinish }) {
           setShowConfirmModal(true);
         }
       }, 200);
-    } else if (testData.settings?.type === 'leadership') {
+    } else if (testData.settings?.type === 'papi_kostick') {
       setAnswers({ ...answers, [currentQuestionId]: optionId });
       setTimeout(() => {
         if (currentIndex < testData.questions.length - 1) {

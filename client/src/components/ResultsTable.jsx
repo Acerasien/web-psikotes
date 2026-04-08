@@ -219,6 +219,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                 </div>
             );
         }
+        // Legacy Leadership test results (deprecated, kept for backward compatibility)
         if (result.test_name.includes('Leadership')) {
             const d = result.details;
             if (!d) return null;

@@ -702,7 +702,7 @@ function ParticipantProfilePage() {
                                         </div>
                                     </div>
                                 )}
-                                {/* Legacy Leadership Test (fallback) */}
+                                {/* Legacy Leadership Test results (deprecated, kept for backward compatibility with old data) */}
                                 {r.test_name === "Leadership Test" && r.details && (
                                     <div className="p-5">
                                         <h4 className="font-bold text-gray-700 mb-3">Leadership Profile</h4>

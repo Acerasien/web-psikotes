@@ -9,7 +9,7 @@ scripts = [
     "seed_temperament.py",
     "seed_memory.py",
     "seed_logic.py",
-    "seed_leadership.py",
+    "seed_papi.py",
 ]
 
 for script in scripts:

@@ -20,7 +20,6 @@ from scoring.speed import score_speed
 from scoring.temperament import score_temperament
 from scoring.memory import score_memory
 from scoring.logic import score_logic
-from scoring.leadership import score_leadership
 from scoring.papi_kostick import score_papi_kostick
 
 # Import helper
