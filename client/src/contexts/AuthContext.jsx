@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
       const response = await api.getCurrentUser();
       setUser(response.data);
     } catch (err) {
-      console.error('Failed to fetch user:', err);
+      console.error('Gagal mengambil data pengguna:', err);
       handleLogout();
     } finally {
       setLoading(false);

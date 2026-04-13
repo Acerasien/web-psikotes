@@ -132,6 +132,16 @@ def score_papi_kostick(answers, questions):
                 "description": NORM_DESCRIPTIONS.get(norm, ""),
             }
 
+    # Compute primary trait(s) — highest percentage, join ties with '&'
+    max_pct = max(percentages.values())
+    top_norms = [norm for norm in ALL_NORMS if percentages[norm] == max_pct]
+    # Format as "NORM (description)" or "NORM & NORM" if tied
+    if len(top_norms) == 1:
+        primary_trait = f"{top_norms[0]} ({NORM_DESCRIPTIONS.get(top_norms[0], '')})"
+    else:
+        # For ties, show just the norm codes joined
+        primary_trait = " & ".join(top_norms)
+
     return {
         "raw_scores": raw_scores,
         "max_scores": max_scores,
@@ -140,4 +150,5 @@ def score_papi_kostick(answers, questions):
         "categories": categories,
         "all_norms": ALL_NORMS,
         "norm_descriptions": NORM_DESCRIPTIONS,
+        "primary_trait": primary_trait,
     }

@@ -10,6 +10,7 @@ scripts = [
     "seed_memory.py",
     "seed_logic.py",
     "seed_papi.py",
+    "seed_iq.py",
 ]
 
 for script in scripts:

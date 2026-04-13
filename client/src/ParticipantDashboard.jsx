@@ -130,7 +130,7 @@ function ParticipantDashboard({ onLogout }) {
                 }`} />
 
               <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between gap-2 flex-wrap mb-3">
                   <h3 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
                     {a.test_name}
                   </h3>
@@ -188,7 +188,7 @@ function ParticipantDashboard({ onLogout }) {
                   ) : (
                     <button
                       onClick={() => handleStartTest(a)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                      className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 min-h-[44px]"
                     >
                       {a.status === 'in_progress' ? (
                         <>

@@ -118,16 +118,16 @@ function DISCTest({ assignmentId }) {
     if (isLocked) {
         return (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
-                <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
-                <p className="mb-2">You have exited fullscreen too many times.</p>
+                <h2 className="text-3xl font-bold mb-4">Tes Terkunci</h2>
+                <p className="mb-2">Anda terlalu sering keluar dari mode layar penuh.</p>
                 <button onClick={() => navigate('/dashboard')} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
-                    Back to Dashboard
+                    Kembali ke Dashboard
                 </button>
             </div>
         );
     }
 
-    if (loading) return <div className="p-8 text-center">Loading Test...</div>;
+    if (loading) return <div className="p-8 text-center">Memuat Tes...</div>;
 
     // ----- Render DISC table -----
     return (
@@ -164,7 +164,7 @@ function DISCTest({ assignmentId }) {
                                                 <div className="flex gap-2 flex-shrink-0">
                                                     <button
                                                         onClick={() => handleDiscRadio(q.id, opt.id, 'most')}
-                                                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all min-w-[40px] ${
+                                                        className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all min-w-[44px] ${
                                                             isMost 
                                                                 ? 'bg-green-500 border-green-600 text-white' 
                                                                 : 'bg-white border-gray-300 text-gray-400 hover:border-green-500'
@@ -175,7 +175,7 @@ function DISCTest({ assignmentId }) {
                                                     </button>
                                                     <button
                                                         onClick={() => handleDiscRadio(q.id, opt.id, 'least')}
-                                                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all min-w-[40px] ${
+                                                        className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all min-w-[44px] ${
                                                             isLeast 
                                                                 ? 'bg-red-500 border-red-600 text-white' 
                                                                 : 'bg-white border-gray-300 text-gray-400 hover:border-red-500'
@@ -275,16 +275,16 @@ function DISCTest({ assignmentId }) {
 
             {/* Confirmation Modal */}
             {showConfirmModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
-                        <h3 className="text-xl font-bold mb-4">Submit Test?</h3>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg p-6 sm:p-8 max-w-md w-full text-center">
+                        <h3 className="text-xl font-bold mb-4">Kirim Tes?</h3>
                         <p className="mb-6 text-gray-600">
-                            You have answered {Object.keys(answers).length} questions.
+                            Anda telah menjawab {Object.keys(answers).length} soal.
                         </p>
                         <div className="flex gap-4 justify-center">
-                            <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 bg-gray-200 rounded" disabled={isSubmitting}>Cancel</button>
-                            <button onClick={handleConfirmSubmit} disabled={isSubmitting} className={`px-4 py-2 text-white rounded font-bold ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}>
-                                {isSubmitting ? "Submitting..." : "Submit Now"}
+                            <button onClick={() => setShowConfirmModal(false)} className="px-6 py-3 bg-gray-200 rounded min-h-[44px]" disabled={isSubmitting}>Batal</button>
+                            <button onClick={handleConfirmSubmit} disabled={isSubmitting} className={`px-6 py-3 text-white rounded font-bold min-h-[44px] ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}>
+                                {isSubmitting ? "Mengirim..." : "Kirim Sekarang"}
                             </button>
                         </div>
                     </div>
@@ -294,10 +294,10 @@ function DISCTest({ assignmentId }) {
             {/* Fullscreen overlay - Only show if fullscreen is supported */}
             {!isFullscreen && !isLocked && isFullscreenSupported && (
                 <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
-                    <h2 className="text-2xl font-bold mb-4">Paused</h2>
-                    <p>Please return to fullscreen mode.</p>
+                    <h2 className="text-2xl font-bold mb-4">Dijeda</h2>
+                    <p>Harap kembali ke mode layar penuh.</p>
                     <button onClick={enterFullscreen} className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600">
-                        Return to Fullscreen
+                        Kembali ke Layar Penuh
                     </button>
                 </div>
             )}
@@ -305,7 +305,7 @@ function DISCTest({ assignmentId }) {
             {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
             {!isFullscreen && !isLocked && !isFullscreenSupported && (
                 <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
-                    ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
+                    ⚠️ Mode layar penuh tidak didukung di browser Anda. Harap jangan berpindah tab.
                 </div>
             )}
         </div>

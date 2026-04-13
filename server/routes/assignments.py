@@ -113,6 +113,8 @@ def start_test(
         raise HTTPException(status_code=403, detail="Not authorized")
     if assignment.status == "locked":
         raise HTTPException(status_code=403, detail="This test is locked due to a security violation. Please contact the administrator.")
+    if assignment.status == "completed":
+        raise HTTPException(status_code=403, detail="This test has already been completed and cannot be retaken.")
     if assignment.status == "pending":
         assignment.status = "in_progress"
         db.commit()

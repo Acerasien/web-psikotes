@@ -48,7 +48,7 @@ function ResultsPage() {
             link.remove();
         } catch (err) {
             console.error(err);
-            alert('Export failed. Check console for details.');
+            alert('Ekspor gagal. Periksa konsol untuk detail.');
         } finally {
             setExporting(false);
         }
@@ -57,7 +57,7 @@ function ResultsPage() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Test Results</h2>
+                <h2 className="text-2xl font-bold">Hasil Tes</h2>
                 {currentUserRole === 'superadmin' && (
                     <button
                         onClick={handleExport}
@@ -65,7 +65,7 @@ function ResultsPage() {
                         className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ${exporting ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                     >
-                        {exporting ? 'Exporting...' : 'Export CSV'}
+                        {exporting ? 'Mengekspor...' : 'Ekspor CSV'}
                     </button>
                 )}
             </div>

@@ -109,16 +109,16 @@ function TemperamentTest({ assignmentId }) {
     if (isLocked) {
         return (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
-                <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
-                <p className="mb-2">You have exited fullscreen too many times.</p>
+                <h2 className="text-3xl font-bold mb-4">Tes Terkunci</h2>
+                <p className="mb-2">Anda terlalu sering keluar dari mode layar penuh.</p>
                 <button onClick={() => navigate('/dashboard')} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
-                    Back to Dashboard
+                    Kembali ke Dashboard
                 </button>
             </div>
         );
     }
 
-    if (loading) return <div className="p-8 text-center">Loading...</div>;
+    if (loading) return <div className="p-8 text-center">Memuat...</div>;
 
     const currentQ = testData.questions[currentIndex];
     const progress = ((Object.keys(answers).length) / testData.questions.length * 100).toFixed(0);
@@ -146,8 +146,8 @@ function TemperamentTest({ assignmentId }) {
             </div>
 
             {/* Question area */}
-            <div className="flex-1 p-8 flex flex-col items-center">
-                <div className={`bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl transition-all duration-300 ${
+            <div className="flex-1 p-3 sm:p-6 flex flex-col items-center">
+                <div className={`bg-white p-4 sm:p-8 rounded-lg shadow-lg w-full max-w-2xl transition-all duration-300 ${
                     justAnswered ? 'scale-[1.02] shadow-xl' : ''
                 }`}>
                     <p className="text-sm text-gray-500 mb-2">Pertanyaan {currentIndex + 1}</p>
@@ -180,14 +180,14 @@ function TemperamentTest({ assignmentId }) {
                 {currentIndex === testData.questions.length - 1 ? (
                     <button
                         onClick={() => setShowConfirm(true)}
-                        className="px-4 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600"
+                        className="px-6 py-3 bg-green-500 text-white rounded font-bold hover:bg-green-600 min-h-[44px]"
                     >
                         Selesai
                     </button>
                 ) : (
                     <button
                         onClick={goNext}
-                        className="px-4 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600"
+                        className="px-6 py-3 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 min-h-[44px]"
                     >
                         Selanjutnya
                     </button>
@@ -196,20 +196,20 @@ function TemperamentTest({ assignmentId }) {
 
             {/* Confirmation modal */}
             {showConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg p-6 sm:p-8 max-w-md w-full text-center">
                         <h3 className="text-xl font-bold mb-4">Selesaikan Tes?</h3>
                         <p className="mb-6 text-gray-600">
                             Anda telah menjawab {Object.keys(answers).length} pertanyaan.
                         </p>
                         <div className="flex gap-4 justify-center">
-                            <button onClick={() => setShowConfirm(false)} className="px-4 py-2 bg-gray-200 rounded">
+                            <button onClick={() => setShowConfirm(false)} className="px-6 py-3 bg-gray-200 rounded min-h-[44px]">
                                 Batal
                             </button>
                             <button
                                 onClick={handleConfirmSubmit}
                                 disabled={isSubmitting}
-                                className={`px-4 py-2 text-white rounded font-bold ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+                                className={`px-6 py-3 text-white rounded font-bold min-h-[44px] ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
                                     }`}
                             >
                                 {isSubmitting ? 'Mengirim...' : 'Kirim'}
@@ -222,13 +222,13 @@ function TemperamentTest({ assignmentId }) {
             {/* Fullscreen overlay - Only show if fullscreen is supported */}
             {!isFullscreen && !isLocked && isFullscreenSupported && (
                 <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
-                    <h2 className="text-2xl font-bold mb-4">Paused</h2>
-                    <p>Please return to fullscreen mode.</p>
+                    <h2 className="text-2xl font-bold mb-4">Dijeda</h2>
+                    <p>Harap kembali ke mode layar penuh.</p>
                     <button
                         onClick={() => enterFullscreen()}
                         className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600"
                     >
-                        Return to Fullscreen
+                        Kembali ke Layar Penuh
                     </button>
                 </div>
             )}
@@ -236,7 +236,7 @@ function TemperamentTest({ assignmentId }) {
             {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
             {!isFullscreen && !isLocked && !isFullscreenSupported && (
                 <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
-                    ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
+                    ⚠️ Mode layar penuh tidak didukung di browser Anda. Harap jangan berpindah tab.
                 </div>
             )}
         </div>

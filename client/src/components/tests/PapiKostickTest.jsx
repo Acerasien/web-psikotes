@@ -220,7 +220,7 @@ export function PapiKostickTest() {
           onClick={goPrev}
           disabled={isFirstPage}
           className={`
-            flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all
+            flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-all min-h-[44px]
             ${isFirstPage
               ? 'text-gray-300 cursor-not-allowed'
               : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -236,7 +236,7 @@ export function PapiKostickTest() {
         {isLastPage ? (
           <button
             onClick={handleFinish}
-            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px]"
           >
             Selesai
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,7 +248,7 @@ export function PapiKostickTest() {
             onClick={goNext}
             disabled={!currentPageAnswered}
             className={`
-              flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all
+              flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all min-h-[44px]
               ${currentPageAnswered
                 ? 'bg-gray-900 hover:bg-gray-800 text-white'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'

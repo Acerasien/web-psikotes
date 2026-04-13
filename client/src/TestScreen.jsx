@@ -167,14 +167,14 @@ function TestScreen({ assignmentId, onFinish }) {
   if (isLocked) {
     return (
       <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
-        <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
-        <p className="mb-2">You have exited fullscreen too many times.</p>
-        <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">Back to Dashboard</button>
+        <h2 className="text-3xl font-bold mb-4">Tes Terkunci</h2>
+        <p className="mb-2">Anda terlalu sering keluar dari mode layar penuh.</p>
+        <button onClick={onFinish} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">Kembali ke Dashboard</button>
       </div>
     );
   }
 
-  if (loading) return <div className="p-8 text-center">Loading Test...</div>;
+  if (loading) return <div className="p-8 text-center">Memuat Tes...</div>;
 
   const currentQuestion = testData.questions[currentIndex];
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${seconds % 60 < 10 ? '0' : ''}${seconds % 60}`;
@@ -320,13 +320,13 @@ function TestScreen({ assignmentId, onFinish }) {
       {/* Fullscreen Overlay - Only show if fullscreen is supported */}
       {!isFullscreen && !isLocked && isFullscreenSupported && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white p-4">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Paused</h2>
-          <p className="mb-6 text-gray-200 text-center text-sm sm:text-base">Silakan kembali ke mode fullscreen.</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Dijeda</h2>
+          <p className="mb-6 text-gray-200 text-center text-sm sm:text-base">Harap kembali ke mode layar penuh.</p>
           <button
             onClick={enterFullscreen}
             className="px-6 py-3 bg-blue-500 rounded-lg font-semibold hover:bg-blue-600 transition min-h-[48px] min-w-[48px]"
           >
-            Return to Fullscreen
+            Kembali ke Layar Penuh
           </button>
         </div>
       )}
@@ -334,7 +334,7 @@ function TestScreen({ assignmentId, onFinish }) {
       {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
       {!isFullscreen && !isLocked && !isFullscreenSupported && (
         <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
-          ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
+          ⚠️ Mode layar penuh tidak didukung di browser Anda. Harap jangan berpindah tab.
         </div>
       )}
     </div>

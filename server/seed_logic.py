@@ -339,16 +339,16 @@ if not logic_test:
     logic_test = Test(
         name="Logic & Arithmetic Test",
         code="LOGIC",
-        time_limit=900,  # 15 minutes
+        time_limit=720,  # 12 minutes
         settings={"type": "logic", "randomize_options": True}
     )
     db.add(logic_test)
     db.commit()
     db.refresh(logic_test)
-    print("Created Logic & Arithmetic Test container with 15-minute timer.")
+    print("Created Logic & Arithmetic Test container with 12-minute timer.")
 else:
-    # Update timer to 15 minutes
-    logic_test.time_limit = 900
+    # Update timer to 12 minutes
+    logic_test.time_limit = 720
     
     # Clear old data - need to delete in correct order due to foreign keys
     # First delete responses that reference these questions' options
@@ -416,5 +416,5 @@ for idx, q_data in enumerate(questions_data, start=1):
         db.add(opt)
 
 db.commit()
-print("Logic & Arithmetic test seeded successfully with 50 questions and 15-minute timer!")
+print("Logic & Arithmetic test seeded successfully with 50 questions and 12-minute timer!")
 db.close()

@@ -64,7 +64,7 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
                 const newCount = exitCount + 1;
                 setExitCount(newCount);
 
-                api.logExit(assignmentId).catch(err => console.error("Failed to log exit", err));
+                api.logExit(assignmentId).catch(err => console.error("Gagal mencatat keluar", err));
 
                 if (newCount >= 3) {
                     setIsLocked(true);
@@ -73,8 +73,8 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
                     sessionStorage.removeItem(`fullscreen_exit_${assignmentId}`);
                     sessionStorage.removeItem(`test_session_${assignmentId}`);
                     Swal.fire({
-                        title: 'Test Locked',
-                        text: 'You have exited fullscreen too many times.',
+                        title: 'Tes Terkunci',
+                        text: 'Anda terlalu sering keluar dari mode layar penuh.',
                         icon: 'error',
                         allowOutsideClick: false
                     });

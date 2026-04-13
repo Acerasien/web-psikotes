@@ -5,6 +5,19 @@ import { api } from '../utils/api';
 import { Link } from 'react-router-dom';
 import { formatLocalDateTime } from '../utils/dateUtils';
 
+/** Compute primary_trait from result details (fallback for old results) */
+function computePrimaryTrait(details) {
+    if (!details) return null;
+    if (details.primary_trait) return details.primary_trait;
+    const percentages = details.percentages;
+    if (!percentages) return null;
+    const entries = Object.entries(percentages);
+    if (entries.length === 0) return null;
+    const maxPct = Math.max(...entries.map(([, v]) => v));
+    const topNorms = entries.filter(([, v]) => v === maxPct).map(([k]) => k);
+    return topNorms.length === 1 ? topNorms[0] : topNorms.join(' & ');
+}
+
 function ResultsTable({ filters, onFilterChange, tests }) {
     const { token } = useAuth();
     const [results, setResults] = useState([]);
@@ -166,8 +179,8 @@ function ResultsTable({ filters, onFilterChange, tests }) {
             const d = result.details;
             return (
                 <div className="p-2 bg-gray-50 rounded text-sm">
-                    <div><span className="font-medium">Accuracy:</span> {d.accuracy}%</div>
-                    <div><span className="font-medium">Band:</span> {d.band}</div>
+                    <div><span className="font-medium">Akurasi:</span> {d.accuracy}%</div>
+                    <div><span className="font-medium">Kategori:</span> {d.band}</div>
                     {d.flag && <div className="text-red-600">⚠️ {d.flag}</div>}
                 </div>
             );
@@ -177,10 +190,10 @@ function ResultsTable({ filters, onFilterChange, tests }) {
             if (!d) return null;
             return (
                 <div className="p-2 bg-gray-50 rounded text-sm">
-                    <div><span className="font-medium">Primary:</span> {d.primary}</div>
-                    <div><span className="font-medium">Secondary:</span> {d.secondary}</div>
+                    <div><span className="font-medium">Utama:</span> {d.primary}</div>
+                    <div><span className="font-medium">Sekunder:</span> {d.secondary}</div>
                     <div className="mt-1">
-                        <span className="font-medium">Percentages:</span>
+                        <span className="font-medium">Persentase:</span>
                         <div className="grid grid-cols-2 gap-1 mt-1">
                             {Object.entries(d.percentages || {}).map(([trait, pct]) => (
                                 <div key={trait} className="flex justify-between">
@@ -191,7 +204,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                         </div>
                     </div>
                     {d.straight_line_flag && (
-                        <div className="mt-2 text-red-600">⚠️ Straight-lining detected</div>
+                        <div className="mt-2 text-red-600">⚠️ Terdeteksi jawaban seragam</div>
                     )}
                 </div>
             );
@@ -202,11 +215,11 @@ function ResultsTable({ filters, onFilterChange, tests }) {
             return (
                 <div className="p-3 bg-gray-50 rounded text-sm">
                     <div className="grid grid-cols-2 gap-2">
-                        <div><span className="font-medium">Score:</span> {d.score} / 100</div>
-                        <div><span className="font-medium">Correct:</span> {d.correct_count} / 25</div>
-                        <div><span className="font-medium">Accuracy:</span> {d.accuracy}%</div>
+                        <div><span className="font-medium">Skor:</span> {d.score} / 100</div>
+                        <div><span className="font-medium">Benar:</span> {d.correct_count} / 25</div>
+                        <div><span className="font-medium">Akurasi:</span> {d.accuracy}%</div>
                         <div>
-                            <span className="font-medium">Band:</span>{' '}
+                            <span className="font-medium">Kategori:</span>{' '}
                             <span className={`ml-1 px-2 py-0.5 rounded ${d.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
                                 d.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
                                     d.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
@@ -225,10 +238,10 @@ function ResultsTable({ filters, onFilterChange, tests }) {
             if (!d) return null;
             return (
                 <div className="p-3 bg-gray-50 rounded text-sm">
-                    <div><span className="font-medium">Primary:</span> {d.primary}</div>
-                    <div><span className="font-medium">Secondary:</span> {d.secondary}</div>
+                    <div><span className="font-medium">Utama:</span> {d.primary}</div>
+                    <div><span className="font-medium">Sekunder:</span> {d.secondary}</div>
                     <div className="mt-2">
-                        <span className="font-medium">Percentages:</span>
+                        <span className="font-medium">Persentase:</span>
                         <div className="grid grid-cols-2 gap-1 mt-1">
                             {Object.entries(d.percentages || {}).map(([trait, pct]) => (
                                 <div key={trait} className="flex justify-between">
@@ -239,25 +252,25 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                         </div>
                     </div>
                     {d.development_areas?.length > 0 && (
-                        <div className="mt-2 text-orange-600">⚠️ Development: {d.development_areas.join(', ')}</div>
+                        <div className="mt-2 text-orange-600">⚠️ Area Pengembangan: {d.development_areas.join(', ')}</div>
                     )}
                 </div>
             );
         }
-        return <div className="text-sm text-gray-500">No additional details</div>;
+        return <div className="text-sm text-gray-500">Tidak ada detail tambahan</div>;
     };
 
     return (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Test Results</h3>
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Hasil Tes</h3>
             </div>
 
             {/* Filters - Stack on mobile */}
             <div className="p-4 bg-gray-50 border-b grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <input
                     type="text"
-                    placeholder="Search participant..."
+                    placeholder="Cari peserta..."
                     value={filters.search}
                     onChange={e => onFilterChange({ ...filters, search: e.target.value })}
                     className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -267,7 +280,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                     onChange={e => onFilterChange({ ...filters, testId: e.target.value })}
                     className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 >
-                    <option value="">All Tests</option>
+                    <option value="">Semua Tes</option>
                     {tests.map(t => (
                         <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
@@ -293,7 +306,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                 {loading && (
                     <div className="p-8 text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                        <p className="text-gray-500 mt-2 text-sm">Loading results...</p>
+                        <p className="text-gray-500 mt-2 text-sm">Memuat hasil...</p>
                     </div>
                 )}
 
@@ -302,7 +315,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                         <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <p>No results found</p>
+                        <p>Tidak ada hasil ditemukan.</p>
                     </div>
                 )}
 
@@ -322,7 +335,9 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                             </div>
                             <div className="text-right flex-shrink-0">
                                 <div className="text-lg font-bold text-green-600">
-                                    {result.details?.primary ? (
+                                    {computePrimaryTrait(result.details) ? (
+                                        <span className="text-sm">{computePrimaryTrait(result.details)}</span>
+                                    ) : result.details?.primary ? (
                                         <span>{result.details.primary}</span>
                                     ) : result.max_score ? (
                                         <span>{result.score} / {result.max_score}</span>
@@ -348,7 +363,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                                 onClick={() => toggleRow(result.id)}
                                 className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 px-2 py-1 bg-blue-50 rounded"
                             >
-                                {expandedRows.has(result.id) ? 'Hide' : 'Details'}
+                                {expandedRows.has(result.id) ? 'Sembunyikan' : 'Detail'}
                                 <svg className={`w-3.5 h-3.5 transition-transform ${expandedRows.has(result.id) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -370,10 +385,10 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                 <div className="lg:hidden p-4 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-3">
                         <span className="text-sm text-gray-700">
-                            Page {currentPage} of {totalPages}
+                            Halaman {currentPage} dari {totalPages}
                         </span>
                         <span className="text-sm text-gray-500">
-                            {startIndex + 1}-{Math.min(endIndex, sortedResults.length)} of {sortedResults.length}
+                            {startIndex + 1}-{Math.min(endIndex, sortedResults.length)} dari {sortedResults.length}
                         </span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
@@ -382,7 +397,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                             disabled={currentPage === 1}
                             className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Previous
+                            Sebelumnya
                         </button>
                         <div className="flex items-center gap-1">
                             {renderPageNumbers()}
@@ -392,7 +407,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                             disabled={currentPage === totalPages}
                             className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Next
+                            Selanjutnya
                         </button>
                     </div>
                 </div>
@@ -405,31 +420,31 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                 onClick={() => handleSort('participant')}>
-                                Participant {sortConfig.key === 'participant' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                Peserta {sortConfig.key === 'participant' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Test
+                                Tes
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                 onClick={() => handleSort('score')}>
-                                Score {sortConfig.key === 'score' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                Skor {sortConfig.key === 'score' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                 onClick={() => handleSort('time_taken')}>
-                                Time {sortConfig.key === 'time_taken' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                Waktu {sortConfig.key === 'time_taken' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                 onClick={() => handleSort('completed_at')}>
-                                Completed {sortConfig.key === 'completed_at' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                Selesai {sortConfig.key === 'completed_at' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
+                                Aksi
                             </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {paginatedResults.length === 0 && (
-                            <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-500">No results found.</td></tr>
+                            <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-500">Tidak ada hasil ditemukan.</td></tr>
                         )}
                         {paginatedResults.map(result => (
                             <>
@@ -447,7 +462,9 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                                         {result.test_name}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
-                                        {result.details?.primary ? (
+                                        {computePrimaryTrait(result.details) ? (
+                                            <span>{computePrimaryTrait(result.details)}</span>
+                                        ) : result.details?.primary ? (
                                             <span>{result.details.primary}</span>
                                         ) : result.max_score ? (
                                             <span>{result.score} / {result.max_score}</span>
@@ -466,7 +483,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                                             onClick={() => toggleRow(result.id)}
                                             className="text-blue-500 hover:text-blue-700 font-medium"
                                         >
-                                            {expandedRows.has(result.id) ? 'Hide details' : 'Show details'}
+                                            {expandedRows.has(result.id) ? 'Sembunyikan detail' : 'Tampilkan detail'}
                                         </button>
                                     </td>
                                 </tr>
@@ -487,9 +504,9 @@ function ResultsTable({ filters, onFilterChange, tests }) {
             {!loading && paginatedResults.length > 0 && (
                 <div className="hidden lg:flex items-center justify-between px-6 py-4 border-t border-gray-200">
                     <div className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                        <span className="font-medium">{Math.min(endIndex, sortedResults.length)}</span> of{' '}
-                        <span className="font-medium">{sortedResults.length}</span> results
+                        Menampilkan <span className="font-medium">{startIndex + 1}</span> hingga{' '}
+                        <span className="font-medium">{Math.min(endIndex, sortedResults.length)}</span> dari{' '}
+                        <span className="font-medium">{sortedResults.length}</span> hasil
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -497,7 +514,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                             disabled={currentPage === 1}
                             className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
                         >
-                            Previous
+                            Sebelumnya
                         </button>
                         <div className="flex items-center gap-1">
                             {renderPageNumbers()}
@@ -507,7 +524,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
                             disabled={currentPage === totalPages}
                             className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
                         >
-                            Next
+                            Selanjutnya
                         </button>
                     </div>
                 </div>

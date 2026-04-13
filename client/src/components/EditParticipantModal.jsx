@@ -60,12 +60,12 @@ function EditParticipantModal({ user, onClose, onSaved }) {
 
         try {
             await api.updateUser(user.id, payload);
-            Swal.fire('Success', 'Participant updated successfully', 'success');
+            Swal.fire('Berhasil', 'Data peserta berhasil diperbarui', 'success');
             onSaved(); // refresh parent list
             onClose(); // close modal
         } catch (err) {
             const detail = err.response?.data?.detail;
-            Swal.fire('Error', detail || 'Failed to update participant', 'error');
+            Swal.fire('Kesalahan', detail || 'Gagal memperbarui data peserta', 'error');
         } finally {
             setLoading(false);
         }
@@ -76,7 +76,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
             <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <h2 className="text-2xl font-bold mb-6">Edit Participant</h2>
+                <h2 className="text-2xl font-bold mb-6">Edit Peserta</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -91,7 +91,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Password (leave blank to keep current)</label>
+                            <label className="block text-sm font-medium text-gray-700">Kata sandi (kosongkan jika tidak ingin mengubah)</label>
                             <input
                                 type="password"
                                 name="password"
@@ -102,7 +102,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                            <label className="block text-sm font-medium text-gray-700">Nama Lengkap</label>
                             <input
                                 type="text"
                                 name="full_name"
@@ -113,7 +113,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Age</label>
+                            <label className="block text-sm font-medium text-gray-700">Usia</label>
                             <input
                                 type="number"
                                 name="age"
@@ -123,7 +123,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Education</label>
+                            <label className="block text-sm font-medium text-gray-700">Pendidikan</label>
                             <input
                                 type="text"
                                 name="education"
@@ -133,7 +133,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Department</label>
+                            <label className="block text-sm font-medium text-gray-700">Departemen</label>
                             <input
                                 type="text"
                                 name="department"
@@ -143,7 +143,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Position</label>
+                            <label className="block text-sm font-medium text-gray-700">Jabatan</label>
                             <input
                                 type="text"
                                 name="position"
@@ -176,7 +176,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                                 onChange={handleChange}
                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                             >
-                                <option value="participant">Participant</option>
+                                <option value="participant">Peserta</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
@@ -187,14 +187,14 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                             onClick={onClose}
                             className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
                         >
-                            Cancel
+                            Batal
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
                         >
-                            {loading ? 'Saving...' : 'Save Changes'}
+                            {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
                         </button>
                     </div>
                 </form>

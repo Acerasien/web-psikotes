@@ -18,8 +18,8 @@ function Login() {
     try {
       await login(username, password);
     } catch (err) {
-      setError('Invalid username or password');
-      Swal.fire('Login Failed', 'Invalid username or password', 'error');
+      setError('Username atau kata sandi salah');
+      Swal.fire('Gagal Masuk', 'Username atau kata sandi salah', 'error');
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ function Login() {
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
-                Password
+                Kata Sandi
               </label>
               <input
                 id="password"
@@ -76,7 +76,7 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm transition-all"
-                placeholder="Password"
+                placeholder="Kata Sandi"
               />
             </div>
           </div>
@@ -99,13 +99,13 @@ function Login() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               ) : (
-                'Login'
+                'Masuk'
               )}
             </button>
           </div>
 
           <div className="text-center text-xs text-gray-500 mt-4">
-            © {new Date().getFullYear()} Web Psikotes. All rights reserved.
+            © {new Date().getFullYear()} Web Psikotes. Hak cipta dilindungi.
           </div>
           {/* <div className="text-center text-xs text-gray-500 mt-5">
             by Alexander Agung

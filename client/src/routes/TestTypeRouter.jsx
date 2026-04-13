@@ -1,6 +1,6 @@
 // client/src/routes/TestTypeRouter.jsx
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
 import { SpeedTest } from '../components/tests/SpeedTest';
 import DISCTest from '../components/DISCTest';
@@ -9,6 +9,7 @@ import LogicTest from '../components/LogicTest';
 import TemperamentTest from '../components/TemperamentTest';
 import PapiKostickTest from '../components/tests/PapiKostickTest';
 import { StandardTest } from '../components/tests/StandardTest';
+import { IQTest } from '../components/tests/IQTest';
 
 /**
  * Router component that determines which test component to render
@@ -16,6 +17,7 @@ import { StandardTest } from '../components/tests/StandardTest';
  */
 export function TestTypeRouter() {
   const { assignmentId } = useParams();
+  const navigate = useNavigate();
   const [testCode, setTestCode] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,6 +27,11 @@ export function TestTypeRouter() {
         const res = await api.getMyAssignments();
         const assignment = res.data.find(a => a.id === parseInt(assignmentId));
         if (assignment) {
+          // Guard: Redirect to dashboard if test is already completed
+          if (assignment.status === 'completed') {
+            navigate('/dashboard', { replace: true });
+            return;
+          }
           setTestCode(assignment.test_code);
         }
       } catch (err) {
@@ -34,7 +41,7 @@ export function TestTypeRouter() {
       }
     };
     loadTestType();
-  }, [assignmentId]);
+  }, [assignmentId, navigate]);
 
   if (loading) {
     return (
@@ -59,8 +66,10 @@ export function TestTypeRouter() {
       return <TemperamentTest assignmentId={assignmentId} />;
     case 'LEAD':
       return <PapiKostickTest assignmentId={assignmentId} />;
+    case 'IQ':
+      return <IQTest />;
     default:
-      // IQ and other tests use StandardTest
+      // Fallback for unknown test types
       return <StandardTest />;
   }
 }

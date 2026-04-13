@@ -16,23 +16,23 @@ function AddParticipantPage() {
             {/* Page Header */}
             <div className="bg-white shadow rounded-lg">
                 <div className="px-6 py-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">
-                                {currentUserRole === 'superadmin' ? 'Add New User' : 'Add New Participant'}
+                                {currentUserRole === 'superadmin' ? 'Tambah Pengguna Baru' : 'Tambah Peserta Baru'}
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                Create a new {currentUserRole === 'superadmin' ? 'user account' : 'participant'} in the system
+                                Buat {currentUserRole === 'superadmin' ? 'akun pengguna' : 'peserta'} baru di sistem
                             </p>
                         </div>
                         <button
                             onClick={() => navigate('/participants')}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors min-h-[44px]"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
-                            Back to List
+                            Kembali ke Daftar
                         </button>
                     </div>
                 </div>
@@ -50,12 +50,12 @@ function AddParticipantPage() {
                             <div className="text-sm text-blue-800">
                                 <p className="font-semibold mb-1">Tips:</p>
                                 <ul className="list-disc list-inside space-y-1 text-blue-700">
-                                    <li>Username must be unique and at least 3 characters long</li>
-                                    <li>Password should be at least 6 characters for security</li>
-                                    <li>Full name will be displayed in reports and certificates</li>
-                                    <li>Department and position help organize participants</li>
+                                    <li>Username harus unik dan minimal 3 karakter</li>
+                                    <li>Kata sandi minimal 6 karakter untuk keamanan</li>
+                                    <li>Nama lengkap akan ditampilkan di laporan dan sertifikat</li>
+                                    <li>Departemen dan jabatan membantu pengelompokan peserta</li>
                                     {currentUserRole === 'superadmin' && (
-                                        <li>Use the Role field to grant admin access if needed</li>
+                                        <li>Gunakan kolom Peran untuk memberikan akses admin jika diperlukan</li>
                                     )}
                                 </ul>
                             </div>

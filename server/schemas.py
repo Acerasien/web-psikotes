@@ -44,6 +44,39 @@ class TestSubmission(BaseModel):
     answers: List[dict]  # Make sure this is List[dict], not dict
     time_taken: int
 
+# IQ Test Phase schemas
+class PhaseOut(BaseModel):
+    id: int
+    order_number: int
+    timer_seconds: int
+    practice_questions: Optional[list] = None
+    status: str  # locked, current, done
+    is_unlocked: bool
+    answered_count: Optional[int] = None
+    total_questions: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+class PhaseSubmitRequest(BaseModel):
+    phase_id: int
+    answers: List[dict]  # [{question_id, option_id(s)}]
+
+class IQSubmitAllResponse(BaseModel):
+    message: str
+    score: int
+    max_score: int
+    scaled_score: int
+    iq: int
+    classification: str
+    section_scores: dict  # {section_1: {correct, max}, section_2: {correct, max}}
+    phase_scores: dict
+
+class PhaseSubmitResponse(BaseModel):
+    phase_id: int
+    answered_count: int
+    correct_count: int
+
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None

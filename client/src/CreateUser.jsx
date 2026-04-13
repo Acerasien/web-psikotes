@@ -46,26 +46,26 @@ function CreateUser({ onUserCreated }) {
 
     // Username validation
     if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
+      newErrors.username = 'Username wajib diisi';
     } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+      newErrors.username = 'Username minimal 3 karakter';
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Kata sandi wajib diisi';
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = 'Kata sandi minimal 6 karakter';
     }
 
     // Full name validation
     if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Full name is required';
+      newErrors.full_name = 'Nama lengkap wajib diisi';
     }
 
     // Age validation (if provided)
     if (formData.age && (formData.age < 1 || formData.age > 120)) {
-      newErrors.age = 'Age must be between 1 and 120';
+      newErrors.age = 'Usia harus antara 1 hingga 120';
     }
 
     setErrors(newErrors);
@@ -114,8 +114,8 @@ function CreateUser({ onUserCreated }) {
       
       Swal.fire({
         icon: 'success',
-        title: 'Success!',
-        text: `${formData.role === 'participant' ? 'Participant' : 'User'} created successfully!`,
+        title: 'Berhasil!',
+        text: `${formData.role === 'participant' ? 'Peserta' : 'Pengguna'} berhasil dibuat!`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -148,7 +148,7 @@ function CreateUser({ onUserCreated }) {
 
       Swal.fire({
         icon: 'error',
-        title: 'Error!',
+        title: 'Kesalahan!',
         text: errorMessage
       });
     } finally {
@@ -167,10 +167,10 @@ function CreateUser({ onUserCreated }) {
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="mb-6">
         <h3 className="text-xl font-bold text-gray-900">
-          {currentUserRole === 'superadmin' ? 'Add New User' : 'Add New Participant'}
+          {currentUserRole === 'superadmin' ? 'Tambah Pengguna Baru' : 'Tambah Peserta Baru'}
         </h3>
         <p className="text-sm text-gray-500 mt-1">
-          Fill in the information below. Fields marked with * are required.
+          Isi informasi di bawah ini. Kolom bertanda * wajib diisi.
         </p>
       </div>
 
@@ -178,7 +178,7 @@ function CreateUser({ onUserCreated }) {
         {/* Required Fields Section */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
-            Required Information
+            Informasi Wajib
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -192,7 +192,7 @@ function CreateUser({ onUserCreated }) {
                 value={formData.username}
                 onChange={handleChange}
                 className={inputClass('username')}
-                placeholder="e.g., john.doe"
+                placeholder="contoh: john.doe"
                 autoComplete="off"
               />
               {errors.username && (
@@ -202,7 +202,7 @@ function CreateUser({ onUserCreated }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Password <span className="text-red-500">*</span>
+                Kata Sandi <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
@@ -210,7 +210,7 @@ function CreateUser({ onUserCreated }) {
                 value={formData.password}
                 onChange={handleChange}
                 className={inputClass('password')}
-                placeholder="Minimum 6 characters"
+                placeholder="Minimal 6 karakter"
                 autoComplete="new-password"
               />
               {errors.password && (
@@ -220,7 +220,7 @@ function CreateUser({ onUserCreated }) {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">
-                Full Name <span className="text-red-500">*</span>
+                Nama Lengkap <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -228,7 +228,7 @@ function CreateUser({ onUserCreated }) {
                 value={formData.full_name}
                 onChange={handleChange}
                 className={inputClass('full_name')}
-                placeholder="e.g., John Doe"
+                placeholder="contoh: John Doe"
               />
               {errors.full_name && (
                 <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>
@@ -240,21 +240,21 @@ function CreateUser({ onUserCreated }) {
         {/* Optional Fields Section */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
-            Optional Information
+            Informasi Tambahan
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Gender</label>
+              <label className="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
               <select
                 name="gender"
                 value={formData.gender || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="">Pilih jenis kelamin</option>
+                <option value="Male">Laki-laki</option>
+                <option value="Female">Perempuan</option>
               </select>
             </div>
 
@@ -267,7 +267,7 @@ function CreateUser({ onUserCreated }) {
                 onChange={handleChange}
                 min="1"
                 max="120"
-                placeholder="e.g., 25"
+                placeholder="contoh: 25"
                 className={inputClass('age')}
               />
               {errors.age && (
@@ -276,37 +276,37 @@ function CreateUser({ onUserCreated }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Education</label>
+              <label className="block text-sm font-medium text-gray-700">Pendidikan</label>
               <input
                 type="text"
                 name="education"
                 value={formData.education}
                 onChange={handleChange}
-                placeholder="e.g., Bachelor's Degree"
+                placeholder="contoh: S1"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Department</label>
+              <label className="block text-sm font-medium text-gray-700">Departemen</label>
               <input
                 type="text"
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                placeholder="e.g., Human Resources"
+                placeholder="contoh: Sumber Daya Manusia"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Position</label>
+              <label className="block text-sm font-medium text-gray-700">Jabatan</label>
               <input
                 type="text"
                 name="position"
                 value={formData.position}
                 onChange={handleChange}
-                placeholder="e.g., HR Manager"
+                placeholder="contoh: Manajer SDM"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -337,7 +337,7 @@ function CreateUser({ onUserCreated }) {
             {/* Role dropdown – only if multiple roles allowed */}
             {allowedRoles.length > 1 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
+                <label className="block text-sm font-medium text-gray-700">Peran</label>
                 <select
                   name="role"
                   value={formData.role}
@@ -346,7 +346,7 @@ function CreateUser({ onUserCreated }) {
                 >
                   {allowedRoles.map(role => (
                     <option key={role} value={role}>
-                      {role === 'participant' ? 'Participant' : 'Admin'}
+                      {role === 'participant' ? 'Peserta' : 'Admin'}
                     </option>
                   ))}
                 </select>
@@ -376,14 +376,14 @@ function CreateUser({ onUserCreated }) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Creating...
+                Membuat...
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                {currentUserRole === 'superadmin' ? 'Create User' : 'Add Participant'}
+                {currentUserRole === 'superadmin' ? 'Buat Pengguna' : 'Tambah Peserta'}
               </>
             )}
           </button>
@@ -407,7 +407,7 @@ function CreateUser({ onUserCreated }) {
             }}
             className="text-gray-600 hover:text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
           >
-            Clear Form
+            Bersihkan Form
           </button>
         </div>
       </form>

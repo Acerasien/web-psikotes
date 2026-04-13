@@ -36,15 +36,15 @@ export function TestLayout({
   if (isLocked) {
     return (
       <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white p-4">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Test Locked</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Tes Terkunci</h2>
         <p className="mb-6 text-gray-300 text-center text-sm sm:text-base">
-          You have exited fullscreen too many times.
+          Anda terlalu sering keluar dari mode layar penuh.
         </p>
         <button
           onClick={() => navigate('/dashboard')}
           className="px-6 py-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition min-h-[48px]"
         >
-          Back to Dashboard
+          Kembali ke Dashboard
         </button>
       </div>
     );
@@ -98,13 +98,13 @@ export function TestLayout({
       {/* Fullscreen Overlay - Only show if fullscreen is supported */}
       {!isFullscreen && !isLocked && fullscreenSupported && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white p-4">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Paused</h2>
-          <p className="mb-6 text-gray-200 text-center text-sm sm:text-base">Silakan kembali ke mode fullscreen.</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Dijeda</h2>
+          <p className="mb-6 text-gray-200 text-center text-sm sm:text-base">Harap kembali ke mode layar penuh.</p>
           <button
             onClick={onReturnFullscreen}
             className="px-6 py-3 bg-blue-500 rounded-lg font-semibold hover:bg-blue-600 transition min-h-[48px] min-w-[48px]"
           >
-            Return to Fullscreen
+            Kembali ke Layar Penuh
           </button>
         </div>
       )}
@@ -112,7 +112,7 @@ export function TestLayout({
       {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
       {!isFullscreen && !isLocked && !fullscreenSupported && (
         <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
-          ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
+          ⚠️ Mode layar penuh tidak didukung di browser Anda. Harap jangan berpindah tab.
         </div>
       )}
     </div>

@@ -16,6 +16,32 @@ function Tutorial({ assignmentId, testCode, testName, onComplete }) {
         return null;
     }
 
+    // Format instructions: convert "Catatan:\n• ..." into HTML
+    const renderInstructions = () => {
+        const parts = tutorial.instructions.split('\n\nCatatan:\n');
+        if (parts.length === 1) {
+            return <p className="text-gray-600 mb-6 text-justify">{parts[0]}</p>;
+        }
+        const [main, catatan] = parts;
+        const bullets = catatan.split('\n• ').filter(Boolean);
+        return (
+            <div className="mb-6">
+                <p className="text-gray-600 text-justify">{main}</p>
+                <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="font-semibold text-gray-800 mb-2">Catatan:</p>
+                    <ul className="space-y-1.5">
+                        {bullets.map((bullet, idx) => (
+                            <li key={idx} className="text-sm text-gray-700 text-justify flex items-start gap-2">
+                                <span className="text-gray-400 mt-0.5 flex-shrink-0">•</span>
+                                <span>{bullet}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        );
+    };
+
     const sample = tutorial.samples[currentSample];
 
     const handleOptionClick = (option) => {
@@ -56,7 +82,7 @@ function Tutorial({ assignmentId, testCode, testName, onComplete }) {
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
             <div className="max-w-3xl w-full bg-white rounded-xl shadow-lg p-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{tutorial.title}</h2>
-                <p className="text-gray-600 mb-6">{tutorial.instructions}</p>
+                {renderInstructions()}
 
                 <div className="border-t border-gray-200 pt-6">
                     <p className="text-sm text-gray-500 mb-4">
@@ -67,7 +93,7 @@ function Tutorial({ assignmentId, testCode, testName, onComplete }) {
                     <div className="mb-6">
                         <p className="text-lg font-medium mb-2">{sample.question}</p>
                         {sample.content && typeof sample.content === 'string' ? (
-                            <p className="text-gray-700">{sample.content}</p>
+                            <p className="text-gray-700 text-justify">{sample.content}</p>
                         ) : (
                             sample.content // JSX
                         )}

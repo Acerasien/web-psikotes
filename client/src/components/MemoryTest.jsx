@@ -182,10 +182,10 @@ function MemoryTest({ assignmentId }) {
     if (isLocked) {
         return (
             <div className="fixed inset-0 bg-gray-900 bg-opacity-95 flex flex-col items-center justify-center z-50 text-white">
-                <h2 className="text-3xl font-bold mb-4">Test Locked</h2>
-                <p className="mb-2">You have exited fullscreen too many times.</p>
+                <h2 className="text-3xl font-bold mb-4">Tes Terkunci</h2>
+                <p className="mb-2">Anda terlalu sering keluar dari mode layar penuh.</p>
                 <button onClick={() => navigate('/dashboard')} className="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
-                    Back to Dashboard
+                    Kembali ke Dashboard
                 </button>
             </div>
         );
@@ -252,7 +252,7 @@ function MemoryTest({ assignmentId }) {
                                 })}
                             </div>
                         ) : (
-                            <p className="text-center text-gray-500">No table data available.</p>
+                            <p className="text-center text-gray-500">Tidak ada data tabel tersedia.</p>
                         )}
                         <div className="mt-12 p-4 bg-white rounded-lg border border-gray-200 shadow-sm max-w-2xl mx-auto">
                             <p className="text-center text-gray-700 font-medium">
@@ -265,13 +265,13 @@ function MemoryTest({ assignmentId }) {
                 {/* Fullscreen overlay - Only show if fullscreen is supported */}
                 {!isFullscreen && !isLocked && isFullscreenSupported && (
                     <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-40 text-white">
-                        <h2 className="text-2xl font-bold mb-4">Paused</h2>
-                        <p>Please return to fullscreen mode.</p>
+                        <h2 className="text-2xl font-bold mb-4">Dijeda</h2>
+                        <p>Harap kembali ke mode layar penuh.</p>
                         <button
                             onClick={() => enterFullscreen()}
                             className="mt-4 px-4 py-2 bg-blue-500 rounded font-bold hover:bg-blue-600"
                         >
-                            Return to Fullscreen
+                            Kembali ke Layar Penuh
                         </button>
                     </div>
                 )}
@@ -279,7 +279,7 @@ function MemoryTest({ assignmentId }) {
                 {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
                 {!isFullscreen && !isLocked && !isFullscreenSupported && (
                     <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-40">
-                        ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
+                        ⚠️ Mode layar penuh tidak didukung di browser Anda. Harap jangan berpindah tab.
                     </div>
                 )}
             </div>
@@ -358,14 +358,14 @@ function MemoryTest({ assignmentId }) {
                 {currentIndex === questions.length - 1 ? (
                     <button
                         onClick={() => setShowConfirm(true)}
-                        className="px-5 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 shadow-sm transition"
+                        className="px-5 py-3 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 shadow-sm transition min-h-[44px]"
                     >
                         Selesai
                     </button>
                 ) : (
                     <button
                         onClick={goNext}
-                        className="px-5 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 shadow-sm transition"
+                        className="px-5 py-3 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 shadow-sm transition min-h-[44px]"
                     >
                         Selanjutnya →
                     </button>
@@ -374,7 +374,7 @@ function MemoryTest({ assignmentId }) {
 
             {/* Confirmation Modal */}
             {showConfirm && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
                         <h3 className="text-xl font-bold mb-3">Selesaikan Tes?</h3>
                         <p className="text-gray-600 mb-6">
@@ -383,14 +383,14 @@ function MemoryTest({ assignmentId }) {
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setShowConfirm(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                                className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition min-h-[44px]"
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleConfirmSubmit}
                                 disabled={isSubmitting}
-                                className={`px-5 py-2 text-white rounded-lg shadow transition ${isSubmitting
+                                className={`px-5 py-3 text-white rounded-lg shadow transition min-h-[44px] ${isSubmitting
                                         ? 'bg-blue-400 cursor-wait'
                                         : 'bg-green-500 hover:bg-green-600'
                                     }`}
@@ -405,13 +405,13 @@ function MemoryTest({ assignmentId }) {
             {/* Fullscreen Overlay - Only show if fullscreen is supported */}
             {!isFullscreen && !isLocked && isFullscreenSupported && (
                 <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 text-white">
-                    <h2 className="text-2xl font-bold mb-4">Paused</h2>
-                    <p className="mb-6 text-gray-200">Please return to fullscreen mode.</p>
+                    <h2 className="text-2xl font-bold mb-4">Dijeda</h2>
+                    <p className="mb-6 text-gray-200">Harap kembali ke mode layar penuh.</p>
                     <button
                         onClick={() => enterFullscreen()}
                         className="px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-semibold transition"
                     >
-                        Return to Fullscreen
+                        Kembali ke Layar Penuh
                     </button>
                 </div>
             )}
@@ -419,7 +419,7 @@ function MemoryTest({ assignmentId }) {
             {/* Info banner for unsupported browsers (e.g., iOS Safari) */}
             {!isFullscreen && !isLocked && !isFullscreenSupported && (
                 <div className="fixed bottom-0 left-0 right-0 bg-yellow-500 text-white p-3 text-center text-sm z-50">
-                    ⚠️ Fullscreen not supported on your browser. Please avoid switching tabs.
+                    ⚠️ Mode layar penuh tidak didukung di browser Anda. Harap jangan berpindah tab.
                 </div>
             )}
         </div>

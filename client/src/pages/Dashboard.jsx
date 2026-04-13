@@ -44,7 +44,7 @@ function Dashboard() {
             }
         } catch (err) {
             console.error('Failed to load dashboard stats', err);
-            setError(err.message || 'Failed to load dashboard data');
+            setError(err.message || 'Gagal memuat data dasbor');
             setSummary(null);
             setCompletionStats(null);
             setSecurityEvents([]);
@@ -65,10 +65,10 @@ function Dashboard() {
 
     // Pie chart data for completion status
     const completionData = [
-        { name: 'Completed', value: completionStats.completed, color: '#22c55e' },
-        { name: 'In Progress', value: completionStats.in_progress, color: '#eab308' },
-        { name: 'Pending', value: completionStats.pending, color: '#3b82f6' },
-        { name: 'Locked', value: completionStats.locked, color: '#ef4444' }
+        { name: 'Selesai', value: completionStats.completed, color: '#22c55e' },
+        { name: 'Sedang Berjalan', value: completionStats.in_progress, color: '#eab308' },
+        { name: 'Menunggu', value: completionStats.pending, color: '#3b82f6' },
+        { name: 'Terkunci', value: completionStats.locked, color: '#ef4444' }
     ].filter(item => item.value > 0);
 
     return (
@@ -76,27 +76,27 @@ function Dashboard() {
             loading={loading}
             error={error}
             onRetry={fetchData}
-            loadingText="Loading dashboard..."
-            errorTitle="Failed to load dashboard"
-            errorMessage="Unable to load dashboard statistics. Please try again."
+            loadingText="Memuat dasbor..."
+            errorTitle="Gagal memuat dasbor"
+            errorMessage="Tidak dapat memuat statistik dasbor. Silakan coba lagi."
         >
             <div className="space-y-6">
                 {/* Key Metrics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                        <div className="text-sm text-gray-500">Total Participants</div>
+                        <div className="text-sm text-gray-500">Total Peserta</div>
                         <div className="text-2xl font-bold">{summary.total_participants}</div>
                     </div>
                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-                        <div className="text-sm text-gray-500">Tests Completed</div>
+                        <div className="text-sm text-gray-500">Tes Selesai</div>
                         <div className="text-2xl font-bold">{summary.completed_assignments}</div>
                     </div>
                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-                        <div className="text-sm text-gray-500">Completion Rate</div>
+                        <div className="text-sm text-gray-500">Tingkat Penyelesaian</div>
                         <div className="text-2xl font-bold">{summary.completion_rate}%</div>
                     </div>
                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
-                        <div className="text-sm text-gray-500">Avg Score (raw)</div>
+                        <div className="text-sm text-gray-500">Rata-rata Skor (mentah)</div>
                         <div className="text-2xl font-bold">{summary.average_score}</div>
                     </div>
                 </div>
@@ -105,7 +105,7 @@ function Dashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Completion Status Pie Chart */}
                     <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-4">📊 Assignment Status</h3>
+                        <h3 className="text-lg font-semibold mb-4">📊 Status Penugasan</h3>
                         <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
@@ -128,26 +128,26 @@ function Dashboard() {
                         <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                <span>Completed: {completionStats.completed}</span>
+                                <span>Selesai: {completionStats.completed}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <span>In Progress: {completionStats.in_progress}</span>
+                                <span>Sedang Berjalan: {completionStats.in_progress}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                <span>Pending: {completionStats.pending}</span>
+                                <span>Menunggu: {completionStats.pending}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                <span>Locked: {completionStats.locked}</span>
+                                <span>Terkunci: {completionStats.locked}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Alerts - Incomplete & Security */}
                     <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-4">⚠️ Needs Attention</h3>
+                        <h3 className="text-lg font-semibold mb-4">⚠️ Perlu Perhatian</h3>
                         <div className="space-y-3 max-h-[250px] overflow-y-auto">
                             {/* Incomplete submissions */}
                             {completionStats.incomplete_submissions > 0 && (
@@ -156,8 +156,8 @@ function Dashboard() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
                                     <div>
-                                        <p className="font-medium text-orange-800">Incomplete Submissions</p>
-                                        <p className="text-sm text-orange-700">{completionStats.incomplete_submissions} test(s) submitted with unanswered questions</p>
+                                        <p className="font-medium text-orange-800">Pengiriman Tidak Lengkap</p>
+                                        <p className="text-sm text-orange-700">{completionStats.incomplete_submissions} tes dikirim dengan soal yang belum dijawab</p>
                                     </div>
                                 </div>
                             )}
@@ -190,7 +190,7 @@ function Dashboard() {
                                     <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <p>All tests completed successfully!</p>
+                                    <p className="text-justify">Semua tes berhasil diselesaikan!</p>
                                 </div>
                             )}
                         </div>
@@ -200,15 +200,15 @@ function Dashboard() {
                 {/* Recent Activity - Superadmin Only */}
                 {isSuperadmin && (
                     <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-4">🕒 Recent Test Completions</h3>
+                        <h3 className="text-lg font-semibold mb-4">🕒 Penyelesaian Tes Terbaru</h3>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Participant</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Test</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Peserta</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tes</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Skor</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Selesai</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">

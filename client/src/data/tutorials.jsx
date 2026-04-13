@@ -2,7 +2,7 @@
 export const tutorials = {
     DISC: {
         title: "Tutorial DISC",
-        instructions: "Pada tes DISC, Anda akan diminta memilih satu pernyataan yang PALING sesuai (P) dan satu yang PALING tidak sesuai (K) dengan diri Anda.",
+        instructions: "Pada tes ini, Anda akan melihat beberapa kelompok pernyataan yang menggambarkan karakter atau perilaku seseorang. Tugas Anda adalah memilih satu pernyataan yang PALING menggambarkan diri Anda dan satu pernyataan yang PALING TIDAK menggambarkan diri Anda. Tidak ada jawaban benar atau salah. Jawablah secara jujur sesuai dengan kondisi diri Anda sehari-hari, bukan berdasarkan harapan atau keinginan.\n\nCatatan:\n Waktu mengerjakan tes ini 10 menit. Apabila waktu habis, maka Anda akan otomatis keluar dari tes.\n• Anda tidak boleh memilih lebih dari satu pernyataan untuk tiap kategori Paling menggambarkan dan Paling Tidak Menggambarkan.\n• Pilih 2 (dua) pernyataan di setiap nomor: satu pernyataan yang paling menggambarkan diri Anda dan satu yang paling tidak menggambarkan diri Anda, dari empat pernyataan yang ada.",
         samples: [
             {
                 question: "Pilih yang PALING SESUAI dan PALING TIDAK SESUAI",
@@ -18,7 +18,7 @@ export const tutorials = {
     },
     SPEED: {
         title: "Tutorial Speed Test",
-        instructions: "Dalam tes kecepatan, Anda akan melihat dua pasang string. Tentukan apakah keduanya sama persis. Jawab secepat mungkin.",
+        instructions: "Pada tes ini, Anda diminta untuk mencari pasangan pilihan yang identik dari beberapa opsi yang tersedia. Setiap pilihan berisi kombinasi huruf, angka, simbol, atau gabungan dari ketiganya. Tugas Anda adalah memilih pasangan yang memiliki sisi kiri dan kanan yang sama persis.\n\nCatatan:\n Waktu pengerjaan untuk tes ini adalah 10 menit. Waktu akan berjalan mundur, dan setelah waktu habis, Anda tidak dapat melanjutkan pengerjaan.\n• Setiap jawaban yang Anda pilih akan secara otomatis mengarahkan Anda ke soal berikutnya, dan jawaban yang sudah dipilih tidak dapat diubah. Oleh karena itu, pastikan Anda menjawab dengan teliti dan yakin bahwa pilihan Anda sudah benar dan tepat.\n• Usahakan untuk menjawab sebanyak mungkin soal dengan akurat, sesuai dengan kemampuan Anda.",
         samples: [
             {
                 question: "Manakah pasangan yang sama persis?",
@@ -34,7 +34,7 @@ export const tutorials = {
     },
     TEMP: {
         title: "Tutorial Temperamen",
-        instructions: "Pilih seberapa setuju Anda dengan setiap pernyataan, dari 1 (Sangat Tidak Setuju) hingga 6 (Sangat Setuju).",
+        instructions: "Tes ini berisi beberapa pernyataan terkait diri Anda dalam kehidupan sehari-hari. Silakan pilih jawaban yang paling menggambarkan diri Anda. Jawablah secara jujur dan spontan. Tidak ada jawaban benar atau salah.\n\nCatatan:\n Waktu mengerjakan soal ini 5 menit. Apabila waktu habis, maka Anda otomatis akan langsung keluar dari tes.\n• Fokus pada pernyataan berdasarkan kondisi diri yang paling sering muncul pada diri Anda.\n• Pilih pernyataan secara spontan tanpa terlalu lama berpikir.",
         samples: [
             {
                 question: "Saya senang menjadi pusat perhatian.",
@@ -52,7 +52,7 @@ export const tutorials = {
     },
     MEM: {
         title: "Tutorial Memory Test",
-        instructions: "Tes ini terdiri dari dua fase: menghafal dan menjawab.",
+        instructions: "Pada tes ini, Anda akan diminta untuk mengingat sejumlah informasi berdasarkan Jenis, Nama dan Kode pada Kotak yang ditampilkan dalam waktu tiga menit. Informasi yang diberikan dapat berupa kata, angka, huruf, atau kombinasi dari beberapa unsur tersebut.\n\nCatatan:\n Fokus dan perhatikan setiap detail informasi dengan baik.\n• Gunakan strategi mengingat yang menurut Anda paling efektif.\n• Kerjakan dengan jujur tanpa bantuan alat apa pun.\n• Anda tidak diperbolehkan mencatat selama proses menghafal.\n• Waktu pengerjaan terbatas, gunakan waktu sebaik mungkin.",
         samples: [
             {
                 // Step 1: Explanation + table preview (non‑interactive)
@@ -99,7 +99,7 @@ export const tutorials = {
     },
     LOGIC: {
         title: "Tutorial Logika & Aritmatika",
-        instructions: "Baca soal cerita dengan saksama, lalu pilih jawaban yang benar. Anda dapat menandai soal yang ragu.",
+        instructions: "Ini merupakan tes untuk kemampuan memecahkan masalah. Tes ini mencakup berbagai jenis pertanyaan yang harus diselesaikan tanpa alat bantu apapun. Tes ini berisi 50 pertanyaan yang secara bertahap menjadi semakin sulit. Anda tidak mungkin dapat menyelesaikan semua pertanyaan, tetapi selesaikan seluruh Tes semampu Anda.\n\nCatatan:\n Kerjakan dengan jujur tanpa bantuan alat apa pun seperti kalkulator, handphone, ataupun AI.\n• Anda tidak mungkin dapat menyelesaikan semua pertanyaan, tetapi selesaikan seluruh Tes semampu Anda.\n• Waktu mengerjakan tes ini 12 menit, mohon jawab dengan benar sebanyak mungkin dan semampu Anda.\n• Kerjakan dengan teliti, namun jangan menghabiskan waktu lama pada setiap pertanyaan atau lewati pertanyaan itu.",
         samples: [
             {
                 question: "Budi membeli 3 buku seharga Rp15.000 per buku dan 2 pensil seharga Rp2.500 per pensil. Berapa total yang harus dibayar Budi?",
@@ -115,7 +115,7 @@ export const tutorials = {
     },
     LEAD: {
         title: "Tutorial PAPI Kostick",
-        instructions: "Pada tes ini, Anda akan melihat dua pernyataan di setiap nomor. Pilih SATU pernyataan yang paling sesuai dengan diri Anda. Tidak ada jawaban benar atau salah — pilihlah yang paling menggambarkan kepribadian Anda.",
+        instructions: "Tes ini terdiri dari sejumlah pasangan pernyataan. Setiap pasangan berisi dua pilihan perilaku. Tugas Anda adalah memilih satu pernyataan yang paling sesuai dengan diri Anda. Tidak ada jawaban benar atau salah. Pilihlah jawaban yang paling mencerminkan diri Anda dalam situasi kerja.\n\nCatatan:\n Waktu mengerjakan tes ini 20 menit.\n• Anda tidak diperbolehkan mengosongkan jawaban. Semua pernyataan wajib dipilih sesuai dengan diri Anda.\n• Jawab pasangan pernyataan secara spontan dan jangan terlalu lama berpikir.",
         samples: [
             {
                 question: "Pilih satu pernyataan yang paling sesuai dengan diri Anda:",

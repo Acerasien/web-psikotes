@@ -650,21 +650,31 @@ if not papi_test:
     papi_test = Test(
         name="PAPI Kostick Test",
         code="LEAD",
-        time_limit=1800,  # 30 minutes
+        time_limit=1200,  # 20 minutes
         settings={"type": "papi_kostick", "format": "forced_choice"}
     )
     db.add(papi_test)
     db.commit()
     db.refresh(papi_test)
-    print("Created PAPI Kostick Test container (90 items).")
+    print("Created PAPI Kostick Test container (90 items, 20 min).")
 else:
     # Clear old data and update settings
     papi_test.name = "PAPI Kostick Test"
-    papi_test.time_limit = 1800
+    papi_test.time_limit = 1200
     papi_test.settings = {"type": "papi_kostick", "format": "forced_choice"}
     old_qs = db.query(Question).filter(Question.test_id == papi_test.id).all()
-    for q in old_qs:
-        db.query(Option).filter(Option.question_id == q.id).delete()
+    old_q_ids = [q.id for q in old_qs]
+
+    if old_q_ids:
+        # Delete responses first (FK constraint)
+        from models import Response
+        db.query(Response).filter(Response.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        db.commit()
+
+        # Then delete options
+        db.query(Option).filter(Option.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        db.commit()
+
     db.query(Question).filter(Question.test_id == papi_test.id).delete()
     db.commit()
     print(f"Cleared old Leadership data. Seeding PAPI Kostick Test (90 items).")
@@ -718,6 +728,6 @@ print(f"\n✅ Successfully seeded PAPI Kostick Test!")
 print(f"   - Total questions: {total_qs} (expected: 90)")
 print(f"   - Total options: {total_opts} (expected: 180)")
 print(f"   - Test code: LEAD")
-print(f"   - Time limit: {papi_test.time_limit}s")
+print(f"   - Time limit: {papi_test.time_limit}s ({papi_test.time_limit // 60} min)")
 
 db.close()

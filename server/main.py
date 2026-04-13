@@ -14,12 +14,12 @@ from sqlalchemy.orm import Session, joinedload
 
 from auth import get_current_user, require_admin, require_superadmin
 from database import engine, Base, SessionLocal, get_db
-from models import User, Test, Assignment, Result, Question, Option, ExitLog, ClassConfig
+from models import User, Test, Assignment, Result, Question, Option, ExitLog, ClassConfig, Phase
 from models import Response as DBResponse
 from schemas import TestSubmission, Token, UserCreate, UserUpdate
 
 # Import route modules
-from routes import auth, users, tests, assignments, results, admin
+from routes import auth, users, tests, assignments, results, admin, iq
 
 # Import scoring modules (used by assignments route)
 from scoring.disc import score_disc
@@ -61,6 +61,7 @@ app.include_router(tests.router)
 app.include_router(assignments.router)
 app.include_router(results.router)
 app.include_router(admin.router)
+app.include_router(iq.router)
 
 # =============================================================================
 # Root Endpoint

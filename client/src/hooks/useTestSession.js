@@ -74,7 +74,7 @@ export function useTestSession(assignmentId, options = {}) {
         // Don't restore timeLeft from session - it will be set by loadTest effect
         // The timer will continue from where it should be based on elapsed time
       } catch (e) {
-        console.error('Failed to restore session:', e);
+        console.error('Gagal memulihkan sesi:', e);
         sessionStorage.removeItem(sessionKey);
       }
     }
@@ -106,9 +106,9 @@ export function useTestSession(assignmentId, options = {}) {
         console.error('Failed to load test:', err);
         setLoading(false);
         if (err.response?.status === 403 && err.response.data.detail.includes('locked')) {
-          Swal.fire('Test Locked', 'You have exited fullscreen too many times.', 'error');
+          Swal.fire('Tes Terkunci', 'Anda terlalu sering keluar dari mode layar penuh.', 'error');
         } else {
-          Swal.fire('Error', 'Failed to load test. Please try again.', 'error');
+          Swal.fire('Kesalahan', 'Gagal memuat tes. Harap coba lagi.', 'error');
         }
         navigate('/dashboard');
       }
@@ -283,7 +283,7 @@ export function useTestSession(assignmentId, options = {}) {
     } catch (err) {
       console.error('Failed to submit test:', err);
       setIsSubmitting(false);
-      Swal.fire('Error', 'Failed to submit test.', 'error');
+      Swal.fire('Kesalahan', 'Gagal mengirim tes.', 'error');
     }
   }, [assignmentId, formatAnswers, requireAllAnswers, onTestComplete, navigate]);
 

@@ -123,7 +123,7 @@ export function SpeedTest({ assignmentId }) {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading Speed Test...</p>
+          <p className="text-gray-600">Memuat Speed Test...</p>
         </div>
       </div>
     );
@@ -166,10 +166,10 @@ export function SpeedTest({ assignmentId }) {
           <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
             {currentIndex + 1} / {questions.length}
           </span>
-          <span className="text-sm text-gray-500">Question</span>
+          <span className="text-sm text-gray-500">Soal</span>
         </div>
         <div className="text-sm text-gray-500">
-          {answeredCount} answered
+          {answeredCount} dijawab
         </div>
       </div>
 
@@ -221,7 +221,7 @@ export function SpeedTest({ assignmentId }) {
 
           {/* Keyboard hint - desktop only */}
           <div className="hidden sm:block mt-6 text-center text-xs text-gray-400">
-            Press <kbd className="px-2 py-1 bg-gray-100 rounded border">1</kbd>-<kbd className="px-2 py-1 bg-gray-100 rounded border">9</kbd> to select, <kbd className="px-2 py-1 bg-gray-100 rounded border">Enter</kbd> to submit
+            Tekan <kbd className="px-2 py-1 bg-gray-100 rounded border">1</kbd>-<kbd className="px-2 py-1 bg-gray-100 rounded border">9</kbd> untuk memilih, <kbd className="px-2 py-1 bg-gray-100 rounded border">Enter</kbd> untuk mengirim
           </div>
         </div>
       </div>
@@ -240,7 +240,7 @@ export function SpeedTest({ assignmentId }) {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          <span className="hidden sm:inline">Previous</span>
+          <span className="hidden sm:inline">Sebelumnya</span>
         </button>
 
         {currentIndex === questions.length - 1 ? (
@@ -248,14 +248,14 @@ export function SpeedTest({ assignmentId }) {
             onClick={() => setShowConfirm(true)}
             className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-semibold shadow-sm transition min-h-[44px] min-w-[44px]"
           >
-            Finish Test
+            Selesaikan Tes
           </button>
         ) : (
           <button
             onClick={() => goToQuestion(Math.min(questions.length - 1, currentIndex + 1))}
             className="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition min-h-[44px] flex items-center gap-2"
           >
-            <span className="hidden sm:inline">Skip</span>
+            <span className="hidden sm:inline">Lewati</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>

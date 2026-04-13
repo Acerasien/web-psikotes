@@ -9,9 +9,9 @@ function PageWrapper({
   error, 
   onRetry, 
   children,
-  loadingText = 'Loading...',
-  errorTitle = 'Failed to load',
-  errorMessage = 'Please try again'
+  loadingText = 'Memuat...',
+  errorTitle = 'Gagal memuat',
+  errorMessage = 'Harap coba lagi'
 }) {
   if (loading) {
     return (
@@ -37,7 +37,7 @@ function PageWrapper({
               onClick={onRetry}
               className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition"
             >
-              Try Again
+              Coba Lagi
             </button>
           )}
         </div>

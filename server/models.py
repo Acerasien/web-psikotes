@@ -62,6 +62,21 @@ class Test(Base):
     questions = relationship("Question", back_populates="test", cascade="all, delete-orphan")
     assignments = relationship("Assignment", back_populates="test")
     results = relationship("Result", back_populates="test")
+    phases = relationship("Phase", back_populates="test", cascade="all, delete-orphan")
+
+# 1b. The Phase Model (IQ Test phases)
+class Phase(Base):
+    __tablename__ = "phases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    test_id = Column(Integer, ForeignKey("tests.id"), index=True)
+    order_number = Column(Integer, nullable=False, index=True)  # 1 through 8
+    timer_seconds = Column(Integer, nullable=False, default=180)
+    practice_questions = Column(JSON, nullable=True, default=list)  # Practice/tutorial Q data
+
+    # Relationships
+    test = relationship("Test", back_populates="phases")
+    questions = relationship("Question", back_populates="phase")
 
 # 2. The Question Model
 class Question(Base):
@@ -69,6 +84,7 @@ class Question(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     test_id = Column(Integer, ForeignKey("tests.id"), index=True)
+    phase_id = Column(Integer, ForeignKey("phases.id"), nullable=True, index=True)  # For IQ test phases
     content = Column(String)
     order_index = Column(Integer, index=True)
 
@@ -77,6 +93,7 @@ class Question(Base):
 
     # Relationships
     test = relationship("Test", back_populates="questions")
+    phase = relationship("Phase", back_populates="questions")
     options = relationship("Option", back_populates="question", cascade="all, delete-orphan")
     responses = relationship("Response", back_populates="question")
 

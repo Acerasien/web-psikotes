@@ -1,0 +1,596 @@
+{
+  "phases": [
+    {
+      "phase": 1,
+      "type": "single",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": "b"
+        },
+        {
+          "number": 2,
+          "answer": "c"
+        },
+        {
+          "number": 3,
+          "answer": "b"
+        },
+        {
+          "number": 4,
+          "answer": "b"
+        },
+        {
+          "number": 5,
+          "answer": "e"
+        },
+        {
+          "number": 6,
+          "answer": "d"
+        },
+        {
+          "number": 7,
+          "answer": "d"
+        },
+        {
+          "number": 8,
+          "answer": "b"
+        },
+        {
+          "number": 9,
+          "answer": "f"
+        },
+        {
+          "number": 10,
+          "answer": "a"
+        },
+        {
+          "number": 11,
+          "answer": "b"
+        },
+        {
+          "number": 12,
+          "answer": "b"
+        },
+        {
+          "number": 13,
+          "answer": "c"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "type": "multi_select",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 2,
+          "answer": [
+            "a",
+            "e"
+          ]
+        },
+        {
+          "number": 3,
+          "answer": [
+            "a",
+            "d"
+          ]
+        },
+        {
+          "number": 4,
+          "answer": [
+            "c",
+            "e"
+          ]
+        },
+        {
+          "number": 5,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 6,
+          "answer": [
+            "a",
+            "d"
+          ]
+        },
+        {
+          "number": 7,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 8,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 9,
+          "answer": [
+            "a",
+            "d"
+          ]
+        },
+        {
+          "number": 10,
+          "answer": [
+            "b",
+            "d"
+          ]
+        },
+        {
+          "number": 11,
+          "answer": [
+            "a",
+            "e"
+          ]
+        },
+        {
+          "number": 12,
+          "answer": [
+            "c",
+            "d"
+          ]
+        },
+        {
+          "number": 13,
+          "answer": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "number": 14,
+          "answer": [
+            "a",
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "type": "single",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": "e"
+        },
+        {
+          "number": 2,
+          "answer": "e"
+        },
+        {
+          "number": 3,
+          "answer": "e"
+        },
+        {
+          "number": 4,
+          "answer": "b"
+        },
+        {
+          "number": 5,
+          "answer": "c"
+        },
+        {
+          "number": 6,
+          "answer": "d"
+        },
+        {
+          "number": 7,
+          "answer": "e"
+        },
+        {
+          "number": 8,
+          "answer": "e"
+        },
+        {
+          "number": 9,
+          "answer": "e"
+        },
+        {
+          "number": 10,
+          "answer": "b"
+        },
+        {
+          "number": 11,
+          "answer": "c"
+        },
+        {
+          "number": 12,
+          "answer": "e"
+        },
+        {
+          "number": 13,
+          "answer": "a"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "type": "single",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": "b"
+        },
+        {
+          "number": 2,
+          "answer": "a"
+        },
+        {
+          "number": 3,
+          "answer": "d"
+        },
+        {
+          "number": 4,
+          "answer": "d"
+        },
+        {
+          "number": 5,
+          "answer": "a"
+        },
+        {
+          "number": 6,
+          "answer": "a"
+        },
+        {
+          "number": 7,
+          "answer": "c"
+        },
+        {
+          "number": 8,
+          "answer": "c"
+        },
+        {
+          "number": 9,
+          "answer": "a"
+        },
+        {
+          "number": 10,
+          "answer": "a"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "type": "single",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": "b"
+        },
+        {
+          "number": 2,
+          "answer": "c"
+        },
+        {
+          "number": 3,
+          "answer": "b"
+        },
+        {
+          "number": 4,
+          "answer": "d"
+        },
+        {
+          "number": 5,
+          "answer": "e"
+        },
+        {
+          "number": 6,
+          "answer": "b"
+        },
+        {
+          "number": 7,
+          "answer": "d"
+        },
+        {
+          "number": 8,
+          "answer": "b"
+        },
+        {
+          "number": 9,
+          "answer": "f"
+        },
+        {
+          "number": 10,
+          "answer": "c"
+        },
+        {
+          "number": 11,
+          "answer": "b"
+        },
+        {
+          "number": 12,
+          "answer": "b"
+        },
+        {
+          "number": 13,
+          "answer": "d"
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "type": "multi_select",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 2,
+          "answer": [
+            "a",
+            "e"
+          ]
+        },
+        {
+          "number": 3,
+          "answer": [
+            "a",
+            "d"
+          ]
+        },
+        {
+          "number": 4,
+          "answer": [
+            "c",
+            "e"
+          ]
+        },
+        {
+          "number": 5,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 6,
+          "answer": [
+            "a",
+            "d"
+          ]
+        },
+        {
+          "number": 7,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 8,
+          "answer": [
+            "b",
+            "e"
+          ]
+        },
+        {
+          "number": 9,
+          "answer": [
+            "a",
+            "d"
+          ]
+        },
+        {
+          "number": 10,
+          "answer": [
+            "b",
+            "d"
+          ]
+        },
+        {
+          "number": 11,
+          "answer": [
+            "a",
+            "e"
+          ]
+        },
+        {
+          "number": 12,
+          "answer": [
+            "c",
+            "d"
+          ]
+        },
+        {
+          "number": 13,
+          "answer": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "number": 14,
+          "answer": [
+            "a",
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 7,
+      "type": "single",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": "e"
+        },
+        {
+          "number": 2,
+          "answer": "e"
+        },
+        {
+          "number": 3,
+          "answer": "e"
+        },
+        {
+          "number": 4,
+          "answer": "b"
+        },
+        {
+          "number": 5,
+          "answer": "c"
+        },
+        {
+          "number": 6,
+          "answer": "d"
+        },
+        {
+          "number": 7,
+          "answer": "e"
+        },
+        {
+          "number": 8,
+          "answer": "e"
+        },
+        {
+          "number": 9,
+          "answer": "a"
+        },
+        {
+          "number": 10,
+          "answer": "a"
+        },
+        {
+          "number": 11,
+          "answer": "f"
+        },
+        {
+          "number": 12,
+          "answer": "c"
+        },
+        {
+          "number": 13,
+          "answer": "c"
+        }
+      ]
+    },
+    {
+      "phase": 8,
+      "type": "single",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
+      ],
+      "questions": [
+        {
+          "number": 1,
+          "answer": "b"
+        },
+        {
+          "number": 2,
+          "answer": "a"
+        },
+        {
+          "number": 3,
+          "answer": "d"
+        },
+        {
+          "number": 4,
+          "answer": "d"
+        },
+        {
+          "number": 5,
+          "answer": "a"
+        },
+        {
+          "number": 6,
+          "answer": "b"
+        },
+        {
+          "number": 7,
+          "answer": "c"
+        },
+        {
+          "number": 8,
+          "answer": "d"
+        },
+        {
+          "number": 9,
+          "answer": "a"
+        },
+        {
+          "number": 10,
+          "answer": "d"
+        }
+      ]
+    }
+  ]
+}

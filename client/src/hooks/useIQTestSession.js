@@ -1,0 +1,190 @@
+// client/src/hooks/useIQTestSession.js
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
+import Swal from 'sweetalert2';
+import { useFullscreenLock } from './useFullscreenLock';
+
+/**
+ * Session hook for phase-based IQ tests.
+ * Manages per-phase session persistence and phase hub state.
+ */
+export function useIQTestSession(assignmentId) {
+  const navigate = useNavigate();
+  const { token } = useAuth();
+
+  // Test state
+  const [testData, setTestData] = useState(null);
+  const [phases, setPhases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Per-phase session storage
+  const sessionKey = (phaseId) => `iq_phase_${phaseId}_answers`;
+  const hubKey = `iq_phase_hub_progress`;
+
+  // Fullscreen lock (same as other tests)
+  const { isLocked, isFullscreen, enterFullscreen, exitCount } = useFullscreenLock({
+    assignmentId,
+    token
+  });
+
+  // Load phases
+  const loadPhases = useCallback(async () => {
+    try {
+      const res = await api.get(`/assignments/${assignmentId}/phases`);
+      setPhases(res.data);
+
+      // Load test metadata once
+      if (!testData) {
+        const testRes = await api.startTest(assignmentId);
+        setTestData(testRes.data);
+        enterFullscreen();
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error('Gagal memuat fase:', err);
+      setLoading(false);
+      if (err.response?.status === 403 && err.response.data.detail.includes('locked')) {
+        Swal.fire('Tes Terkunci', 'Anda terlalu sering keluar dari mode layar penuh.', 'error');
+      } else {
+        Swal.fire('Kesalahan', 'Gagal memuat tes IQ. Harap coba lagi.', 'error');
+      }
+      navigate('/dashboard');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentId, enterFullscreen, navigate]);
+
+  // Initial load only
+  useEffect(() => {
+    loadPhases();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Prevent context menu and dev tools
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault();
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j'].includes(e.key)) ||
+          (e.ctrlKey && ['U', 'u'].includes(e.key))) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Phase session helpers
+  const getPhaseAnswers = (phaseId) => {
+    try {
+      const stored = sessionStorage.getItem(sessionKey(phaseId));
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const setPhaseAnswers = (phaseId, answers) => {
+    sessionStorage.setItem(sessionKey(phaseId), JSON.stringify(answers));
+  };
+
+  const clearPhaseSession = (phaseId) => {
+    sessionStorage.removeItem(sessionKey(phaseId));
+  };
+
+  const getHubProgress = () => {
+    try {
+      const stored = sessionStorage.getItem(hubKey);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const setHubProgress = (donePhaseIds) => {
+    sessionStorage.setItem(hubKey, JSON.stringify(donePhaseIds));
+  };
+
+  // Submit phase
+  const submitPhase = useCallback(async (phaseId, answers) => {
+    setIsSubmitting(true);
+    try {
+      await api.post(`/assignments/${assignmentId}/submit-phase`, {
+        phase_id: phaseId,
+        answers,
+      });
+      clearPhaseSession(phaseId);
+      await loadPhases(); // Refresh phase statuses
+    } catch (err) {
+      console.error('Failed to submit phase:', err);
+      Swal.fire('Kesalahan', 'Gagal mengirim fase. Harap coba lagi.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [assignmentId, loadPhases]);
+
+  // Submit all phases
+  const submitAll = useCallback(async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await api.post(`/assignments/${assignmentId}/submit-all`);
+
+      // Clear all sessions
+      phases.forEach(p => clearPhaseSession(p.id));
+      sessionStorage.removeItem(hubKey);
+
+      setShowConfirmModal(false);
+
+      Swal.fire({
+        title: 'Tes Terkirim',
+        text: 'Jawaban Anda telah berhasil dikirim.',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      console.error('Failed to submit all:', err);
+      Swal.fire('Kesalahan', err.response?.data?.detail || 'Gagal mengirim tes.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [assignmentId, phases, navigate]);
+
+  // Format time
+  const formatTime = useCallback((seconds) => {
+    if (seconds === null || seconds === undefined) return '∞';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }, []);
+
+  return {
+    testData,
+    phases,
+    loading,
+    isSubmitting,
+    showConfirmModal,
+    setShowConfirmModal,
+    isLocked,
+    isFullscreen,
+    enterFullscreen,
+    getPhaseAnswers,
+    setPhaseAnswers,
+    clearPhaseSession,
+    getHubProgress,
+    setHubProgress,
+    submitPhase,
+    submitAll,
+    loadPhases,
+    formatTime,
+  };
+}

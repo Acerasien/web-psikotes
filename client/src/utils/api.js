@@ -40,14 +40,14 @@ apiClient.interceptors.response.use(
 
     // Handle 403 Forbidden
     if (error.response?.status === 403) {
-      const message = error.response?.data?.detail || 'You do not have permission to perform this action';
+      const message = error.response?.data?.detail || 'Anda tidak memiliki izin untuk melakukan tindakan ini';
       console.error('Forbidden:', message);
       return Promise.reject(new Error(message));
     }
 
     // Handle 404 Not Found
     if (error.response?.status === 404) {
-      const message = error.response?.data?.detail || 'The requested resource was not found';
+      const message = error.response?.data?.detail || 'Sumber daya yang diminta tidak ditemukan';
       console.error('Not Found:', message);
       return Promise.reject(new Error(message));
     }
@@ -55,13 +55,13 @@ apiClient.interceptors.response.use(
     // Handle 500 Server Error
     if (error.response?.status >= 500) {
       console.error('Server Error:', error.response?.data?.detail || 'Internal server error');
-      return Promise.reject(new Error('Server error. Please try again later.'));
+      return Promise.reject(new Error('Kesalahan server. Harap coba lagi nanti.'));
     }
 
     // Handle network errors
     if (!error.response) {
       console.error('Network Error:', error.message);
-      return Promise.reject(new Error('Network error. Please check your connection.'));
+      return Promise.reject(new Error('Kesalahan jaringan. Harap periksa koneksi Anda.'));
     }
 
     return Promise.reject(error);
@@ -70,6 +70,10 @@ apiClient.interceptors.response.use(
 
 // Export convenience methods
 export const api = {
+  // Generic methods for custom endpoints
+  get: (url, config) => apiClient.get(url, config),
+  post: (url, data, config) => apiClient.post(url, data, config),
+
   // Auth
   login: (credentials) => {
     const formData = new FormData();

@@ -144,7 +144,7 @@ function ParticipantsPage() {
         e.stopPropagation();
         const testId = selectedTest[userId];
         if (!testId) {
-            Swal.fire("Error", "Select a test first", "error");
+            Swal.fire("Kesalahan", "Pilih tes terlebih dahulu", "error");
             return;
         }
         try {
@@ -152,68 +152,68 @@ function ParticipantsPage() {
             refreshAssignments();
             setSelectedTest(prev => ({ ...prev, [userId]: '' }));
         } catch (err) {
-            Swal.fire("Error", err.response?.data?.detail || "Unknown", "error");
+            Swal.fire("Kesalahan", err.response?.data?.detail || "Terjadi kesalahan", "error");
         }
     };
 
     const handleUnlock = async (assignmentId, e) => {
         e.stopPropagation();
         const result = await Swal.fire({
-            title: 'Unlock this test?',
+            title: 'Buka kunci tes ini?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, unlock'
+            confirmButtonText: 'Ya, buka kunci'
         });
         if (result.isConfirmed) {
             try {
                 await api.unlockAssignment(assignmentId);
                 refreshAssignments();
-                Swal.fire('Unlocked!', '', 'success');
+                Swal.fire('Terbuka!', '', 'success');
             } catch (err) {
-                Swal.fire('Error', 'Could not unlock', 'error');
+                Swal.fire('Kesalahan', 'Gagal membuka kunci', 'error');
             }
         }
     };
 
     const handleDelete = async (userId, userName) => {
         const result = await Swal.fire({
-            title: 'Delete Participant?',
-            text: `Are you sure you want to delete ${userName}? This will permanently remove all their data.`,
+            title: 'Hapus Peserta?',
+            text: `Apakah Anda yakin ingin menghapus ${userName}? Semua data mereka akan dihapus secara permanen.`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete'
+            confirmButtonText: 'Ya, hapus'
         });
 
         if (result.isConfirmed) {
             try {
                 await api.deleteUser(userId);
-                Swal.fire('Deleted!', 'Participant has been deleted.', 'success');
+                Swal.fire('Terhapus!', 'Peserta telah dihapus.', 'success');
                 refreshUsers();
             } catch (err) {
-                Swal.fire('Error', 'Could not delete participant.', 'error');
+                Swal.fire('Kesalahan', 'Gagal menghapus peserta.', 'error');
             }
         }
     };
 
     const handleAssignAll = async (userId) => {
         const result = await Swal.fire({
-            title: 'Assign All Tests?',
-            text: 'This will assign every available test to this participant (except those already assigned). Continue?',
+            title: 'Tugaskan Semua Tes?',
+            text: 'Semua tes yang tersedia akan ditugaskan ke peserta ini (kecuali yang sudah ditugaskan). Lanjutkan?',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Yes, assign all',
-            cancelButtonText: 'Cancel'
+            confirmButtonText: 'Ya, tugaskan semua',
+            cancelButtonText: 'Batal'
         });
 
         if (result.isConfirmed) {
             try {
                 await api.assignAllTests(userId);
-                Swal.fire('Success', 'All tests assigned successfully!', 'success');
+                Swal.fire('Berhasil', 'Semua tes berhasil ditugaskan!', 'success');
                 refreshAssignments();   // refresh assignments list
             } catch (err) {
-                Swal.fire('Error', 'Could not assign tests.', 'error');
+                Swal.fire('Kesalahan', 'Gagal menugaskan tes.', 'error');
             }
         }
     };
@@ -241,25 +241,25 @@ function ParticipantsPage() {
         if (selectedUsers.size === 0) return;
 
         const result = await Swal.fire({
-            title: 'Delete Selected Participants?',
-            html: `Are you sure you want to delete <strong>${selectedUsers.size}</strong> participant${selectedUsers.size !== 1 ? 's' : ''}?<br/><br/>
-                   <span class="text-red-600 text-sm">This will permanently remove all their data including test results and assignments.</span>`,
+            title: 'Hapus Peserta yang Dipilih?',
+            html: `Apakah Anda yakin ingin menghapus <strong>${selectedUsers.size}</strong> peserta?<br/><br/>
+                   <span class="text-red-600 text-sm">Tindakan ini akan menghapus semua data mereka secara permanen termasuk hasil tes dan penugasan.</span>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete all',
-            cancelButtonText: 'Cancel'
+            confirmButtonText: 'Ya, hapus semua',
+            cancelButtonText: 'Batal'
         });
 
         if (result.isConfirmed) {
             try {
                 const deletePromises = Array.from(selectedUsers).map(userId => api.deleteUser(userId));
                 await Promise.all(deletePromises);
-                
+
                 Swal.fire(
-                    'Deleted!',
-                    `${selectedUsers.size} participant${selectedUsers.size !== 1 ? 's have' : ' has'} been deleted.`,
+                    'Terhapus!',
+                    `${selectedUsers.size} peserta telah dihapus.`,
                     'success'
                 );
                 setSelectedUsers(new Set());
@@ -267,7 +267,7 @@ function ParticipantsPage() {
                 refreshUsers();
                 refreshAssignments();
             } catch (err) {
-                Swal.fire('Error', 'Could not delete participants.', 'error');
+                Swal.fire('Kesalahan', 'Gagal menghapus peserta.', 'error');
             }
         }
     };
@@ -290,10 +290,10 @@ function ParticipantsPage() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                 </span>
-                                Manage Participants
+                                Kelola Peserta
                             </h1>
                             <p className="mt-1 text-sm text-gray-500">
-                                {filteredUsers.length} participant{filteredUsers.length !== 1 ? 's' : ''} found
+                                {filteredUsers.length} peserta ditemukan
                             </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
@@ -303,8 +303,8 @@ function ParticipantsPage() {
                                 </svg>
                                 <input
                                     type="text"
-                                    placeholder="Search participants..."
-                                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                    placeholder="Cari peserta..."
+                                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -319,12 +319,12 @@ function ParticipantsPage() {
                                         ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
                                         : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                                 }`}
-                                title="Enable batch selection mode"
+                                title="Aktifkan mode seleksi batch"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                 </svg>
-                                {isSelectMode || selectedUsers.size > 0 ? 'Selecting...' : 'Select'}
+                                {isSelectMode || selectedUsers.size > 0 ? 'Memilih...' : 'Pilih'}
                             </button>
                             <Link
                                 to="/participants/new"
@@ -333,7 +333,7 @@ function ParticipantsPage() {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
-                                Add Participant
+                                Tambah Peserta
                             </Link>
                             <button
                                 onClick={() => setShowBulkUpload(true)}
@@ -342,7 +342,7 @@ function ParticipantsPage() {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
-                                Bulk Upload
+                                Unggah Massal
                             </button>
                         </div>
                     </div>
@@ -363,7 +363,7 @@ function ParticipantsPage() {
                                     className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                                 />
                                 <span className="text-sm font-medium text-gray-700">
-                                    <span className="font-bold text-blue-700">{selectedUsers.size}</span> participant{selectedUsers.size !== 1 ? 's' : ''} selected
+                                    <span className="font-bold text-blue-700">{selectedUsers.size}</span> peserta dipilih
                                 </span>
                             </div>
                         </div>
@@ -372,7 +372,7 @@ function ParticipantsPage() {
                                 onClick={clearSelection}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             >
-                                Cancel
+                                Batal
                             </button>
                             <button
                                 onClick={handleBatchDelete}
@@ -381,7 +381,7 @@ function ParticipantsPage() {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
-                                Delete Selected
+                                Hapus yang Dipilih
                             </button>
                         </div>
                     </div>
@@ -394,7 +394,7 @@ function ParticipantsPage() {
                             <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                             </svg>
-                            <span className="text-gray-600">Sorting by:</span>
+                            <span className="text-gray-600">Diurutkan berdasarkan:</span>
                             <span className="font-semibold text-blue-700 capitalize">
                                 {sortConfig.key.replace('_', ' ')}
                             </span>
@@ -406,7 +406,7 @@ function ParticipantsPage() {
                             onClick={() => setSortConfig({ key: 'full_name', direction: 'asc' })}
                             className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
                         >
-                            Reset to default
+                            Kembali ke awal
                         </button>
                     </div>
                 )}
@@ -418,8 +418,8 @@ function ParticipantsPage() {
                             <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
-                            <p className="text-gray-500 text-lg font-medium">No participants found</p>
-                            <p className="text-gray-400 text-sm mt-1">Try adjusting your search or add a new participant</p>
+                            <p className="text-gray-500 text-lg font-medium">Tidak ada peserta ditemukan.</p>
+                            <p className="text-gray-400 text-sm mt-1">Coba sesuaikan pencarian atau tambahkan peserta baru</p>
                         </div>
                     ) : (
                         currentUsers.map((u) => {
@@ -521,12 +521,12 @@ function ParticipantsPage() {
                                                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                                 </svg>
-                                                No tests assigned
+                                                Belum ada tes ditugaskan
                                             </span>
                                         )}
                                         {userAssignments.length > 5 && (
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
-                                                +{userAssignments.length - 5} more
+                                                +{userAssignments.length - 5} lainnya
                                             </span>
                                         )}
                                     </div>
@@ -540,7 +540,7 @@ function ParticipantsPage() {
                                                     value={selectedTest[u.id] || ''}
                                                     onChange={(e) => setSelectedTest({ ...selectedTest, [u.id]: e.target.value })}
                                                 >
-                                                    <option value="" disabled>Assign...</option>
+                                                    <option value="" disabled>Tugaskan...</option>
                                                     {availableTests.map(t => (
                                                         <option key={t.id} value={t.id}>{t.name}</option>
                                                     ))}
@@ -549,7 +549,7 @@ function ParticipantsPage() {
                                                     onClick={() => handleAssign(u.id, { stopPropagation: () => {} })}
                                                     className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                                                 >
-                                                    Add
+                                                    Tambah
                                                 </button>
                                             </div>
                                         )}
@@ -557,7 +557,7 @@ function ParticipantsPage() {
                                             onClick={() => handleAssignAll(u.id)}
                                             className="bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                                         >
-                                            All Tests
+                                            Semua Tes
                                         </button>
                                     </div>
                                 </div>
@@ -580,59 +580,59 @@ function ParticipantsPage() {
                                             onChange={toggleSelectAll}
                                             disabled={currentUsers.length === 0}
                                             className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title="Select all on this page"
+                                            title="Pilih semua di halaman ini"
                                         />
                                     </th>
                                     <th
                                         className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
                                         onClick={() => handleSort('full_name')}
-                                        title="Click to sort by name"
+                                        title="Klik untuk mengurutkan berdasarkan nama"
                                     >
                                         <div className="flex items-center gap-2">
                                             <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                             </svg>
-                                            <span>Name</span>
+                                            <span>Nama</span>
                                             <SortIcon direction={getSortDirection('full_name')} />
                                         </div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
                                         onClick={() => handleSort('department')}
-                                        title="Click to sort by department"
+                                        title="Klik untuk mengurutkan berdasarkan departemen"
                                     >
                                         <div className="flex items-center gap-2">
                                             <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                             </svg>
-                                            <span>Department</span>
+                                            <span>Departemen</span>
                                             <SortIcon direction={getSortDirection('department')} />
                                         </div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
                                         onClick={() => handleSort('tests_count')}
-                                        title="Click to sort by number of tests"
+                                        title="Klik untuk mengurutkan berdasarkan jumlah tes"
                                     >
                                         <div className="flex items-center gap-2">
                                             <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                             </svg>
-                                            <span>Tests Assigned</span>
+                                            <span>Tes Ditungaskan</span>
                                             <SortIcon direction={getSortDirection('tests_count')} />
                                         </div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
                                         onClick={() => handleSort('status')}
-                                        title="Click to sort by status (locked first)"
+                                        title="Klik untuk mengurutkan berdasarkan status (terkunci dulu)"
                                     >
                                         <div className="flex items-center gap-2">
                                             <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
-                                            <span>Actions</span>
+                                            <span>Aksi</span>
                                             <SortIcon direction={getSortDirection('status')} />
                                         </div>
                                     </th>
@@ -646,8 +646,8 @@ function ParticipantsPage() {
                                                 <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                                 </svg>
-                                                <p className="text-gray-500 text-lg font-medium">No participants found</p>
-                                                <p className="text-gray-400 text-sm mt-1">Try adjusting your search or add a new participant</p>
+                                                <p className="text-gray-500 text-lg font-medium">Tidak ada peserta ditemukan.</p>
+                                                <p className="text-gray-400 text-sm mt-1">Coba sesuaikan pencarian atau tambahkan peserta baru</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -702,7 +702,7 @@ function ParticipantsPage() {
                                                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                                         </svg>
-                                                        <span className="text-sm text-gray-700">{u.department || <span className="text-gray-400 italic">Not assigned</span>}</span>
+                                                        <span className="text-sm text-gray-700">{u.department || <span className="text-gray-400 italic">Belum ditugaskan</span>}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -724,7 +724,7 @@ function ParticipantsPage() {
                                                             })}
                                                             {userAssignments.length > 3 && (
                                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/20 whitespace-nowrap">
-                                                                    +{userAssignments.length - 3} more
+                                                                    +{userAssignments.length - 3} lainnya
                                                                 </span>
                                                             )}
                                                         </div>
@@ -733,7 +733,7 @@ function ParticipantsPage() {
                                                             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                                             </svg>
-                                                            No tests assigned
+                                                            Belum ada tes ditugaskan
                                                         </span>
                                                     )}
                                                 </td>
@@ -748,12 +748,12 @@ function ParticipantsPage() {
                                                                     handleUnlock(lockedA.id, e);
                                                                 }}
                                                                 className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors shadow-sm"
-                                                                title="Unlock test"
+                                                                title="Buka kunci tes"
                                                             >
                                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                                                                 </svg>
-                                                                Unlock
+                                                                Buka Kunci
                                                             </button>
                                                         )}
 
@@ -768,7 +768,7 @@ function ParticipantsPage() {
                                                                 }}
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
-                                                                <option value="" disabled>Assign...</option>
+                                                                <option value="" disabled>Tugaskan...</option>
                                                                 {availableTests.map(t => (
                                                                     <option key={t.id} value={t.id}>{t.name}</option>
                                                                 ))}
@@ -776,9 +776,9 @@ function ParticipantsPage() {
                                                             <button
                                                                 onClick={(e) => handleAssign(u.id, e)}
                                                                 className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors shadow-sm"
-                                                                title="Add selected test"
+                                                                title="Tambahkan tes yang dipilih"
                                                             >
-                                                                Add
+                                                                Tambah
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -786,9 +786,9 @@ function ParticipantsPage() {
                                                                     handleAssignAll(u.id);
                                                                 }}
                                                                 className="bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors shadow-sm"
-                                                                title="Assign all tests"
+                                                                title="Tugaskan semua tes"
                                                             >
-                                                                All
+                                                                Semua
                                                             </button>
                                                         </div>
 
@@ -802,7 +802,7 @@ function ParticipantsPage() {
                                                                         setShowEditModal(true);
                                                                     }}
                                                                     className="p-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
-                                                                    title="Edit participant"
+                                                                    title="Edit peserta"
                                                                 >
                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -814,7 +814,7 @@ function ParticipantsPage() {
                                                                         handleDelete(u.id, u.full_name || u.username);
                                                                     }}
                                                                     className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                                    title="Delete participant"
+                                                                    title="Hapus peserta"
                                                                 >
                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -837,10 +837,10 @@ function ParticipantsPage() {
                 <div className="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3 flex items-center justify-between">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                         <p className="text-sm text-gray-700">
-                            Showing <span className="font-semibold text-gray-900">{filteredUsers.length > 0 ? indexOfFirstUser + 1 : 0}</span> to{' '}
-                            <span className="font-semibold text-gray-900">{Math.min(indexOfLastUser, filteredUsers.length)}</span> of{' '}
+                            Menampilkan <span className="font-semibold text-gray-900">{filteredUsers.length > 0 ? indexOfFirstUser + 1 : 0}</span> hingga{' '}
+                            <span className="font-semibold text-gray-900">{Math.min(indexOfLastUser, filteredUsers.length)}</span> dari{' '}
                             <span className="font-semibold text-gray-900">{filteredUsers.length}</span>{' '}
-                            <span className="hidden sm:inline">participants</span>
+                            <span className="hidden sm:inline">peserta</span>
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -852,14 +852,14 @@ function ParticipantsPage() {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
-                            <span className="hidden sm:inline">Previous</span>
+                            <span className="hidden sm:inline">Sebelumnya</span>
                         </button>
                         <button
                             onClick={() => setCurrentPage(prev => prev + 1)}
                             disabled={indexOfLastUser >= filteredUsers.length}
                             className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <span className="hidden sm:inline">Next</span>
+                            <span className="hidden sm:inline">Selanjutnya</span>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>

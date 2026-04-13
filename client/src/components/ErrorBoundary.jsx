@@ -27,13 +27,13 @@ class ErrorBoundary extends Component {
 
     // Show user-friendly error message
     Swal.fire({
-      title: 'Oops! Something went wrong',
-      text: 'We\'re sorry, but the application encountered an error. Please try refreshing the page.',
+      title: 'Ups! Terjadi kesalahan',
+      text: 'Maaf, aplikasi mengalami kesalahan. Harap coba muat ulang halaman.',
       icon: 'error',
-      confirmButtonText: 'Refresh Page',
+      confirmButtonText: 'Muat Ulang Halaman',
       confirmButtonColor: '#3085d6',
       showCancelButton: true,
-      cancelButtonText: 'Go Back'
+      cancelButtonText: 'Kembali'
     }).then((result) => {
       if (result.isConfirmed) {
         window.location.reload();
@@ -56,21 +56,21 @@ class ErrorBoundary extends Component {
           <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
             <div className="text-6xl mb-4">😕</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Something went wrong
+              Terjadi kesalahan
             </h2>
             <p className="text-gray-600 mb-6">
-              We're sorry for the inconvenience. Please try again.
+              Mohon maaf atas ketidaknyamanan. Harap coba lagi.
             </p>
             <button
               onClick={this.handleRetry}
               className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition"
             >
-              Try Again
+              Coba Lagi
             </button>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
-                  Error Details (Development)
+                  Detail Kesalahan (Development)
                 </summary>
                 <pre className="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64 text-red-600">
                   {this.state.error.toString()}

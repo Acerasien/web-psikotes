@@ -4,7 +4,7 @@
  */
 function LoadingSpinner({ 
   size = 'md', 
-  text = 'Loading...', 
+  text = 'Memuat...', 
   fullScreen = false,
   className = ''
 }) {

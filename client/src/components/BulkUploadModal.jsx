@@ -38,7 +38,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                 skipEmptyLines: true,
                 preview: 5,
                 complete: (result) => setPreviewData(result.data),
-                error: (err) => Swal.fire('Error', 'Failed to parse CSV: ' + err.message, 'error')
+                error: (err) => Swal.fire('Kesalahan', 'Gagal memproses CSV: ' + err.message, 'error')
             });
         } else if (['xlsx', 'xls'].includes(fileExt)) {
             const reader = new FileReader();
@@ -51,7 +51,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                     // Convert sheet to array of arrays, preserving empty cells
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
                     if (jsonData.length === 0) {
-                        Swal.fire('Error', 'Excel file is empty.', 'error');
+                        Swal.fire('Kesalahan', 'File Excel kosong.', 'error');
                         return;
                     }
                     const headers = jsonData[0];
@@ -65,19 +65,19 @@ function BulkUploadModal({ onClose, onSuccess }) {
                     });
                     setPreviewData(previewRows);
                 } catch (err) {
-                    Swal.fire('Error', 'Failed to parse Excel file: ' + err.message, 'error');
+                    Swal.fire('Kesalahan', 'Gagal memproses file Excel: ' + err.message, 'error');
                 }
             };
             reader.readAsArrayBuffer(selectedFile);
         } else {
-            Swal.fire('Error', 'Unsupported file type. Please upload CSV or Excel.', 'error');
+            Swal.fire('Kesalahan', 'Jenis file tidak didukung. Harap unggah CSV atau Excel.', 'error');
             setFile(null);
         }
     };
 
     const handleUpload = async () => {
         if (!file) {
-            Swal.fire('Error', 'Please select a file.', 'error');
+            Swal.fire('Kesalahan', 'Harap pilih file.', 'error');
             return;
         }
 
@@ -92,15 +92,15 @@ function BulkUploadModal({ onClose, onSuccess }) {
             });
             setResults(res.data);
             if (res.data.failed === 0) {
-                Swal.fire('Success', `${res.data.success} participants created successfully.`, 'success');
+                Swal.fire('Berhasil', `${res.data.success} peserta berhasil dibuat.`, 'success');
             } else {
-                Swal.fire('Partial Success', `${res.data.success} created, ${res.data.failed} failed.`, 'warning');
+                Swal.fire('Sebagian Berhasil', `${res.data.success} dibuat, ${res.data.failed} gagal.`, 'warning');
             }
             onSuccess(); // Let parent know to refresh
         } catch (err) {
             console.error(err);
-            const detail = err.response?.data?.detail || 'Upload failed.';
-            Swal.fire('Error', detail, 'error');
+            const detail = err.response?.data?.detail || 'Gagal mengunggah.';
+            Swal.fire('Kesalahan', detail, 'error');
         } finally {
             setUploading(false);
         }
@@ -124,7 +124,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-fade-in-up">
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b">
-                    <h2 className="text-2xl font-bold text-gray-800">Bulk Upload Participants</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Unggah Peserta Massal</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -188,7 +188,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
-                                    Download template (Excel)
+                                    Unduh template (Excel)
                                 </button>
                             </div>
 
@@ -249,7 +249,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                     onChange={(e) => setAssignAll(e.target.checked)}
                                     className="form-checkbox h-5 w-5 text-blue-600 rounded"
                                 />
-                                <span className="text-sm text-gray-700">Assign all tests to each new participant</span>
+                                <span className="text-sm text-gray-700">Tugaskan semua tes ke setiap peserta baru</span>
                             </label>
                         </>
                     ) : (
@@ -283,7 +283,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                         onClick={onClose}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
                     >
-                        Cancel
+                        Batal
                     </button>
                     {!results ? (
                         <button
@@ -294,7 +294,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                     : 'bg-blue-500 hover:bg-blue-600'
                                 }`}
                         >
-                            {uploading ? 'Uploading...' : 'Upload'}
+                            {uploading ? 'Mengunggah...' : 'Unggah'}
                         </button>
                     ) : (
                         <button
@@ -307,7 +307,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                             }}
                             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
                         >
-                            Done
+                            Selesai
                         </button>
                     )}
                 </div>

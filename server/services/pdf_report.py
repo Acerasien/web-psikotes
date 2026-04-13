@@ -512,12 +512,19 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
             # Conclusion as a separate block
             html_content += f'<div class="conclusion-box">{concl_text}</div>'
 
-        # -------------------------- LEADERSHIP --------------------------
+        # -------------------------- PAPI KOSTICK (LEAD) --------------------------
         elif test_code == "LEAD" and details:
-            score = r.score or 0
+            primary_trait = details.get('primary_trait', '')
             html_content += f"""
             <div class="narrative">
-                Hasil Psikotes menunjukkan bahwa testee menjawab soal dengan skor keseluruhan <strong>{score} Point</strong>. Dengan demikian dapat dikatakan bahwa testee "menunjukkan motivasi yang kuat untuk menjadi pemimpin".
+                Hasil tes PAPI Kostick menunjukkan profil kepribadian testee berdasarkan 20 norma.
+            """
+            if primary_trait:
+                html_content += f"""
+                Norma dengan persentase tertinggi: <strong>{primary_trait}</strong>.
+                """
+            html_content += f"""
+                Hal ini mencerminkan kecenderungan motivasi dan peran testee dalam lingkungan kerja.
             </div>
             """
 

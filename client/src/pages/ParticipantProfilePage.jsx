@@ -5,6 +5,29 @@ import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
+/**
+ * Compute primary_trait from result details for old results
+ * that were scored before the primary_trait field was added to backend.
+ */
+function computePrimaryTrait(details) {
+    if (!details) return null;
+    if (details.primary_trait) return details.primary_trait; // already computed by backend
+
+    const percentages = details.percentages;
+    if (!percentages) return null;
+
+    const entries = Object.entries(percentages);
+    if (entries.length === 0) return null;
+
+    const maxPct = Math.max(...entries.map(([, v]) => v));
+    const topNorms = entries.filter(([, v]) => v === maxPct).map(([k]) => k);
+
+    if (topNorms.length === 1) {
+        return topNorms[0];
+    }
+    return topNorms.join(' & ');
+}
+
 function ParticipantProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -30,7 +53,7 @@ function ParticipantProfilePage() {
             link.remove();
         } catch (err) {
             console.error(err);
-            Swal.fire('Error', 'Failed to export PDF.', 'error');
+            Swal.fire('Kesalahan', 'Gagal mengekspor PDF.', 'error');
         } finally {
             setPdfExporting(false);
         }
@@ -50,7 +73,7 @@ function ParticipantProfilePage() {
             link.remove();
         } catch (err) {
             console.error(err);
-            Swal.fire('Error', 'Failed to export results.', 'error');
+            Swal.fire('Kesalahan', 'Gagal mengekspor hasil.', 'error');
         } finally {
             setExporting(false);
         }
@@ -104,23 +127,23 @@ function ParticipantProfilePage() {
     // Define handleReset AFTER loadParticipantData
     const handleReset = async (assignmentId, testName) => {
         const result = await Swal.fire({
-            title: 'Reset Test?',
-            text: `Are you sure you want to reset "${testName}"? All answers and results will be deleted, and the participant can retake it.`,
+            title: 'Reset Tes?',
+            text: `Yakin ingin mereset "${testName}"? Semua jawaban dan hasil akan dihapus, dan peserta dapat mengerjakan ulang.`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, reset'
+            confirmButtonText: 'Ya, reset'
         });
 
         if (result.isConfirmed) {
             try {
                 await api.resetAssignment(assignmentId);
-                Swal.fire('Reset!', 'Test has been reset.', 'success');
+                Swal.fire('Berhasil direset!', 'Tes telah direset.', 'success');
                 loadParticipantData(); // refresh data
             } catch (err) {
                 console.error('Reset error:', err);
-                Swal.fire('Error', 'Could not reset test.', 'error');
+                Swal.fire('Kesalahan', 'Gagal mereset tes.', 'error');
             }
         }
     };
@@ -136,7 +159,7 @@ function ParticipantProfilePage() {
     if (!user) {
         return (
             <div className="p-8 text-center text-red-600 bg-red-50 rounded-lg max-w-xl mx-auto my-8">
-                ❌ User not found
+                Peserta tidak ditemukan
             </div>
         );
     }
@@ -145,42 +168,44 @@ function ParticipantProfilePage() {
         <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto font-sans">
             {/* Page Header with Back and Actions */}
             <div className="bg-white shadow rounded-lg">
-                <div className="px-6 py-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={() => navigate(-1)}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors min-h-[44px] flex-shrink-0"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
-                                Back
+                                <span className="hidden sm:inline">Kembali</span>
                             </button>
-                            <h1 className="text-2xl font-bold text-gray-900">Participant Profile</h1>
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Profil Peserta</h1>
                         </div>
                         {/* Show export buttons only if the logged-in user is superadmin */}
                         {isSuperadmin && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                                 <button
                                     onClick={handleExportParticipant}
                                     disabled={exporting}
-                                    className={`inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
-                                    {exporting ? 'Exporting...' : 'Export CSV'}
+                                    <span className="hidden sm:inline">{exporting ? 'Mengekspor...' : 'Ekspor CSV'}</span>
+                                    <span className="sm:hidden">CSV</span>
                                 </button>
                                 <button
                                     onClick={handleExportPDF}
                                     disabled={pdfExporting}
-                                    className={`inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                     </svg>
-                                    {pdfExporting ? 'Generating...' : 'Export PDF'}
+                                    <span className="hidden sm:inline">{pdfExporting ? 'Membuat...' : 'Ekspor PDF'}</span>
+                                    <span className="sm:hidden">PDF</span>
                                 </button>
                             </div>
                         )}
@@ -203,18 +228,18 @@ function ParticipantProfilePage() {
                         <p className="text-gray-800 font-mono">{user.username}</p>
                     </div>
                     <div>
-                        <span className="font-medium text-gray-500">Gender:</span> {user.gender || '-'}
+                        <span className="font-medium text-gray-500">Jenis Kelamin:</span> {user.gender || '-'}
                     </div>
                     <div>
-                        <span className="font-medium text-gray-500">Age</span>
+                        <span className="font-medium text-gray-500">Usia</span>
                         <p className="text-gray-800">{user.age || '–'}</p>
                     </div>
                     <div>
-                        <span className="font-medium text-gray-500">Education</span>
+                        <span className="font-medium text-gray-500">Pendidikan</span>
                         <p className="text-gray-800">{user.education || '–'}</p>
                     </div>
                     <div>
-                        <span className="font-medium text-gray-500">Role</span>
+                        <span className="font-medium text-gray-500">Peran</span>
                         <p className="text-gray-800 capitalize">{user.role?.replace('_', ' ') || '–'}</p>
                     </div>
                 </div>
@@ -223,11 +248,11 @@ function ParticipantProfilePage() {
             {/* Assigned Tests - Cards */}
             <section>
                 <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    📋 Assigned Tests
+                    Tes yang Ditugaskan
                 </h2>
                 {assignments.length === 0 ? (
                     <div className="text-center py-10 bg-gray-50 rounded-xl border">
-                        <p className="text-gray-500 text-lg">No tests assigned yet.</p>
+                        <p className="text-gray-500 text-lg">Belum ada tes yang ditugaskan.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -290,13 +315,13 @@ function ParticipantProfilePage() {
                                     </div>
 
                                     {/* Score display */}
-                                    {result && a.test_name !== "Temperament Test" && !isDiscIncomplete && (
+                                    {result && a.test_name !== "Temperament Test" && a.test_code !== 'LEAD' && !isDiscIncomplete && (
                                         <div className="mt-2 text-sm text-gray-700">
                                             {a.test_code === 'DISC' ? (
-                                                <span className="text-gray-500">Personality assessment</span>
+                                                <span className="text-gray-500">Asesmen kepribadian</span>
                                             ) : (
                                                 <>
-                                                    Score: <span className="font-bold text-green-600">{result.score}</span> / {result.max_score || '?'}
+                                                    Skor: <span className="font-bold text-green-600">{result.score}</span> / {result.max_score || '?'}
                                                 </>
                                             )}
                                         </div>
@@ -305,15 +330,15 @@ function ParticipantProfilePage() {
                                     {/* Completion status - shown for ALL test types */}
                                     {result && answeredCount !== undefined && totalQuestions !== undefined && (
                                         <div className="mt-2 text-sm">
-                                            <span className="font-medium">Questions:</span>{' '}
+                                            <span className="font-medium">Soal:</span>{' '}
                                             <span className={`font-bold ${isIncomplete ? 'text-orange-600' : 'text-green-600'}`}>
                                                 {answeredCount}/{totalQuestions}
                                             </span>
                                             {isIncomplete && (
-                                                <span className="ml-2 text-xs text-orange-600 font-medium">⚠️ Incomplete</span>
+                                                <span className="ml-2 text-xs text-orange-600 font-medium">Tidak Lengkap</span>
                                             )}
                                             {!isIncomplete && !isDiscIncomplete && (
-                                                <span className="ml-2 text-xs text-green-600 font-medium">✓ Complete</span>
+                                                <span className="ml-2 text-xs text-green-600 font-medium">✓ Lengkap</span>
                                             )}
                                         </div>
                                     )}
@@ -321,20 +346,48 @@ function ParticipantProfilePage() {
                                     {/* Incomplete warning message */}
                                     {(isIncomplete || isDiscIncomplete) && (
                                         <div className="mt-2 text-sm text-orange-600 font-medium">
-                                            ⚠️ Participant did not finish this test
+                                            Peserta tidak menyelesaikan tes ini
                                         </div>
                                     )}
-                                    
+
                                     {result && isDiscIncomplete && (
                                         <div className="mt-2 text-sm text-orange-600 font-medium">
-                                            ⚠️ DISC profile incomplete (not all questions answered)
+                                            Profil DISC tidak lengkap (tidak semua soal dijawab)
                                         </div>
                                     )}
 
                                     {result && a.test_name === "Temperament Test" && (
                                         <div className="mt-2 text-sm">
-                                            <span className="font-medium">Type:</span>{' '}
-                                            <span className="font-bold text-purple-600">{result.details?.primary || 'Unknown'}</span>
+                                            <span className="font-medium">Tipe:</span>{' '}
+                                            <span className="font-bold text-purple-600">{result.details?.primary || 'Tidak Diketahui'}</span>
+                                        </div>
+                                    )}
+
+                                    {result && a.test_name === "PAPI Kostick Test" && (
+                                        <div className="mt-2 text-sm">
+                                            <span className="font-medium">Sifat Utama:</span>{' '}
+                                            <span className="font-bold text-indigo-600">{computePrimaryTrait(result.details) || '—'}</span>
+                                        </div>
+                                    )}
+
+                                    {result && a.test_name === "IQ Test (CFIT)" && (
+                                        <div className="mt-2 space-y-1 text-sm">
+                                            <div>
+                                                <span className="font-medium">IQ:</span>{' '}
+                                                <span className="font-bold text-blue-600">{result.details?.iq || '?'}</span>
+                                                {' — '}
+                                                <span className="font-medium">{result.details?.classification || '—'}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium">Skor Mentah:</span>{' '}
+                                                {result.details?.raw_score || '?'}/{result.details?.max_score || '?'}
+                                            </div>
+                                            {result.details?.section_scores && (
+                                                <div className="flex gap-4 text-xs text-gray-500">
+                                                    <span>Section 1 (P1–4): {result.details.section_scores.section_1.correct}/50</span>
+                                                    <span>Section 2 (P5–8): {result.details.section_scores.section_2.correct}/50</span>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -348,7 +401,7 @@ function ParticipantProfilePage() {
             {results.length > 0 && (
                 <section>
                     <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        📊 Test Results
+                        Hasil Tes
                     </h2>
                     <div className="space-y-5">
                         {getLatestResults().map((r) => (
@@ -366,8 +419,8 @@ function ParticipantProfilePage() {
                                             </div>
                                         )}
                                         {r.test_name === "PAPI Kostick Test" && (
-                                            <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-                                                Personality Profile
+                                            <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
+                                                {computePrimaryTrait(r.details) || "Personality Profile"}
                                             </div>
                                         )}
                                     </div>
@@ -376,13 +429,13 @@ function ParticipantProfilePage() {
                                 {/* DISC Assessment */}
                                 {r.test_name === "DISC Assessment" && r.details && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-4">DISC Profile</h4>
+                                        <h4 className="font-bold text-gray-700 mb-4">Profil DISC</h4>
 
                                         {/* Legend */}
                                         <div className="flex gap-4 mb-6 text-xs">
-                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-blue-500 mr-1"></span> Graph I (Public)</div>
-                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-green-500 mr-1"></span> Graph II (Natural)</div>
-                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-purple-500 mr-1"></span> Graph III (Integrated)</div>
+                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-blue-500 mr-1"></span> Grafik I (Publik)</div>
+                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-green-500 mr-1"></span> Grafik II (Alami)</div>
+                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-purple-500 mr-1"></span> Grafik III (Terintegrasi)</div>
                                         </div>
 
                                         {/* Tally Table */}
@@ -391,10 +444,10 @@ function ParticipantProfilePage() {
                                                 <thead>
                                                     <tr className="bg-gray-100">
                                                         <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Dimensi</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Graph I (Most)</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Graph II (Least)</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Graph III (Int.)</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Change (I–II)</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Grafik I (Tertinggi)</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Grafik II (Terendah)</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Grafik III (Int.)</th>
+                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Perubahan (I–II)</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -423,9 +476,9 @@ function ParticipantProfilePage() {
                                         {(() => {
                                             const chartData = ['D', 'I', 'S', 'C'].map(trait => ({
                                                 trait,
-                                                'Graph I (Public)': r.details.graph_i?.[trait] || 0,
-                                                'Graph II (Natural)': r.details.graph_ii?.[trait] || 0,
-                                                'Graph III (Integrated)': r.details.graph_iii?.[trait] || 0,
+                                                'Grafik I (Publik)': r.details.graph_i?.[trait] || 0,
+                                                'Grafik II (Alami)': r.details.graph_ii?.[trait] || 0,
+                                                'Grafik III (Terintegrasi)': r.details.graph_iii?.[trait] || 0,
                                             }));
 
                                             return (
@@ -436,9 +489,9 @@ function ParticipantProfilePage() {
                                                         <YAxis domain={[0, 24]} />
                                                         <Tooltip />
                                                         <Legend />
-                                                        <Line type="monotone" dataKey="Graph I (Public)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-                                                        <Line type="monotone" dataKey="Graph II (Natural)" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
-                                                        <Line type="monotone" dataKey="Graph III (Integrated)" stroke="#a855f7" strokeWidth={2} dot={{ r: 4 }} />
+                                                        <Line type="monotone" dataKey="Grafik I (Publik)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+                                                        <Line type="monotone" dataKey="Grafik II (Alami)" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
+                                                        <Line type="monotone" dataKey="Grafik III (Terintegrasi)" stroke="#a855f7" strokeWidth={2} dot={{ r: 4 }} />
                                                     </LineChart>
                                                 </ResponsiveContainer>
                                             );
@@ -453,11 +506,11 @@ function ParticipantProfilePage() {
                                                         {Math.round(r.details.stress_gap)}
                                                     </span>
                                                     <span className="ml-2 text-sm text-gray-600">
-                                                        ({r.details.stress_gap > 10 ? 'Significant masking – may indicate stress' : 'Within normal range'})
+                                                        ({r.details.stress_gap > 10 ? 'Penyembunyian signifikan - mungkin menunjukkan stres' : 'Dalam rentang normal'})
                                                     </span>
                                                 </div>
                                                 {r.details.stress_gap > 5 && (
-                                                    <div className="text-2xl ml-2 text-orange-500" title="Gap between Public and Natural">⚠️</div>
+                                                    <div className="text-2xl ml-2 text-orange-500" title="Selisih antara Publik dan Alami">⚠️</div>
                                                 )}
                                             </div>
                                         )}
@@ -467,13 +520,13 @@ function ParticipantProfilePage() {
                                 {/* Speed Test */}
                                 {r.test_name === "Speed Test" && r.details && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Speed Test Performance</h4>
+                                        <h4 className="font-bold text-gray-700 mb-3">Performa Tes Kecepatan</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div><span className="font-medium">Score:</span> {r.details.score}</div>
-                                            <div><span className="font-medium">Accuracy:</span> {r.details.accuracy}%</div>
-                                            <div><span className="font-medium">Answered:</span> {r.details.total_answered}</div>
+                                            <div><span className="font-medium">Skor:</span> {r.details.score}</div>
+                                            <div><span className="font-medium">Akurasi:</span> {r.details.accuracy}%</div>
+                                            <div><span className="font-medium">Dijawab:</span> {r.details.total_answered}</div>
                                             <div>
-                                                <span className="font-medium">Performance:</span>{' '}
+                                                <span className="font-medium">Performa:</span>{' '}
                                                 <span className={`ml-1 px-2 py-1 rounded-full text-xs ${r.details.band?.includes('Excellent')
                                                     ? 'bg-green-100 text-green-800'
                                                     : r.details.band?.includes('Good')
@@ -494,16 +547,86 @@ function ParticipantProfilePage() {
                                     </div>
                                 )}
 
+                                {/* PAPI Kostick */}
+                                {r.test_name === "PAPI Kostick Test" && r.details && (
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-3">Profil PAPI Kostick</h4>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                            {Object.entries(r.details)
+                                                .filter(([, val]) => typeof val === 'number' || typeof val === 'string')
+                                                .map(([key, val]) => (
+                                                    <div key={key} className="bg-gray-50 rounded p-2">
+                                                        <span className="font-medium capitalize">{key}:</span>{' '}
+                                                        <span className="font-bold">{val}</span>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* IQ Test */}
+                                {r.test_name === "IQ Test (CFIT)" && r.details && (
+                                    <div className="p-5">
+                                        <h4 className="font-bold text-gray-700 mb-4">Hasil Tes IQ</h4>
+
+                                        {/* Main IQ Display */}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                                                <div className="text-3xl font-bold text-blue-600">{r.details.iq || '?'}</div>
+                                                <div className="text-sm text-blue-700 mt-1">Skor IQ</div>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-lg p-4 text-center">
+                                                <div className="text-3xl font-bold text-gray-800">{r.details.raw_score || '?'}/{r.details.max_score || '?'}</div>
+                                                <div className="text-sm text-gray-600 mt-1">Skor Mentah</div>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-lg p-4 text-center">
+                                                <div className="text-xl font-bold text-gray-800">{r.details.classification || '—'}</div>
+                                                <div className="text-sm text-gray-600 mt-1">Klasifikasi</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Section Scores */}
+                                        {r.details.section_scores && (
+                                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                                <div className="bg-gray-50 rounded-lg p-4">
+                                                    <h5 className="font-semibold text-sm text-gray-600 mb-2">Bagian 1 (Fase 1-4)</h5>
+                                                    <div className="text-2xl font-bold">{r.details.section_scores.section_1.correct} / 50</div>
+                                                </div>
+                                                <div className="bg-gray-50 rounded-lg p-4">
+                                                    <h5 className="font-semibold text-sm text-gray-600 mb-2">Bagian 2 (Fase 5-8)</h5>
+                                                    <div className="text-2xl font-bold">{r.details.section_scores.section_2.correct} / 50</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Phase Scores */}
+                                        {r.details.phase_scores && (
+                                            <div>
+                                                <h4 className="font-semibold text-sm text-gray-600 mb-3">Rincian Fase</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                    {Object.entries(r.details.phase_scores).sort((a, b) => parseInt(a[0]) - parseInt(b[0])).map(([phase, data]) => (
+                                                        <div key={phase} className="bg-gray-50 rounded-lg p-3 text-center">
+                                                            <div className="font-bold text-lg">{data.correct}</div>
+                                                            <div className="text-xs text-gray-500">Fase {phase}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Temperament Test */}
                                 {r.test_name === "Temperament Test" && r.details && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Temperament Breakdown</h4>
+                                        <h4 className="font-bold text-gray-700 mb-3">Rincian Temperamen</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div><span className="font-medium">Primary:</span> {r.details.primary}</div>
-                                            <div><span className="font-medium">Secondary:</span> {r.details.secondary}</div>
+                                            <div><span className="font-medium">Utama:</span> {r.details.primary}</div>
+                                            <div><span className="font-medium">Sekunder:</span> {r.details.secondary}</div>
                                         </div>
                                         <div className="mt-4">
-                                            <h5 className="font-medium text-gray-700 mb-2">Trait Intensities</h5>
+                                            <h5 className="font-medium text-gray-700 mb-2">Intensitas Sifat</h5>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
                                                 {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
                                                     <div key={trait} className="flex justify-between">
@@ -515,12 +638,12 @@ function ParticipantProfilePage() {
                                         </div>
                                         {r.details.straight_line_flag && (
                                             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                                                ⚠️ All answers were identical – straight-lining detected
+                                                Semua jawaban identik - terdeteksi pengisian seragam
                                             </div>
                                         )}
                                         {r.details.interactions?.length > 0 && (
                                             <div className="mt-3">
-                                                <h5 className="font-medium text-gray-700">Interaction Notes</h5>
+                                                <h5 className="font-medium text-gray-700">Catatan Interaksi</h5>
                                                 <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
                                                     {r.details.interactions.map((item, i) => (
                                                         <li key={i}>{item}</li>
@@ -534,16 +657,16 @@ function ParticipantProfilePage() {
                                 {/* Memory Test */}
                                 {r.test_name === "Memory Test" && r.details && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Memory Test Summary</h4>
+                                        <h4 className="font-bold text-gray-700 mb-3">Ringkasan Tes Memori</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                             <div>
-                                                <span className="font-medium">Score:</span> {r.details.score}
+                                                <span className="font-medium">Skor:</span> {r.details.score}
                                             </div>
                                             <div>
-                                                <span className="font-medium">Accuracy:</span> {r.details.accuracy}%
+                                                <span className="font-medium">Akurasi:</span> {r.details.accuracy}%
                                             </div>
                                             <div>
-                                                <span className="font-medium">Band:</span> {r.details.band}
+                                                <span className="font-medium">Kategori:</span> {r.details.band}
                                             </div>
                                         </div>
                                     </div>
@@ -551,13 +674,13 @@ function ParticipantProfilePage() {
                                 {/* Logic & Arithmetic Test */}
                                 {r.test_name === "Logic & Arithmetic Test" && r.details && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Logic & Arithmetic Performance</h4>
+                                        <h4 className="font-bold text-gray-700 mb-3">Performa Logika & Aritmatika</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div><span className="font-medium">Score:</span> {r.details.score} / 100</div>
-                                            <div><span className="font-medium">Correct:</span> {r.details.correct_count} / 50</div>
-                                            <div><span className="font-medium">Percentage:</span> {r.details.percentage}%</div>
+                                            <div><span className="font-medium">Skor:</span> {r.details.score} / 100</div>
+                                            <div><span className="font-medium">Benar:</span> {r.details.correct_count} / 50</div>
+                                            <div><span className="font-medium">Persentase:</span> {r.details.percentage}%</div>
                                             <div>
-                                                <span className="font-medium">Band:</span>{' '}
+                                                <span className="font-medium">Kategori:</span>{' '}
                                                 <span className={`ml-1 px-2 py-1 rounded-full text-xs ${r.details.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
                                                     r.details.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
                                                         r.details.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
@@ -572,7 +695,14 @@ function ParticipantProfilePage() {
                                 {/* PAPI Kostick Test (LEAD) */}
                                 {r.test_name === "PAPI Kostick Test" && r.details && r.details.categories && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-4">PAPI Kostick Profile</h4>
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                                            <h4 className="font-bold text-gray-700">Profil PAPI Kostick</h4>
+                                            {computePrimaryTrait(r.details) && (
+                                                <span className="mt-2 sm:mt-0 inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-700">
+                                                    Sifat Utama: {computePrimaryTrait(r.details)}
+                                                </span>
+                                            )}
+                                        </div>
 
                                         {/* Radar Chart */}
                                         <div className="flex justify-center mb-6">
@@ -634,7 +764,6 @@ function ParticipantProfilePage() {
                                                         }}
                                                     />
                                                     <Legend
-                                                        formatter={() => 'Role'}
                                                         wrapperStyle={{ fontSize: '13px' }}
                                                     />
                                                 </RadarChart>
@@ -694,24 +823,24 @@ function ParticipantProfilePage() {
                                         {/* Stanine legend */}
                                         <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400">
                                             <span>Stanine:</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-400"></span> 1–2 Low</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-500"></span> 3–4 Below Avg</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-500"></span> 5 Average</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 6–7 Above Avg</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 8–9 High</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-400"></span> 1-2 Rendah</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-500"></span> 3-4 Di Bawah Rata-rata</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-500"></span> 5 Rata-rata</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 6-7 Di Atas Rata-rata</span>
+                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 8-9 Tinggi</span>
                                         </div>
                                     </div>
                                 )}
                                 {/* Legacy Leadership Test results (deprecated, kept for backward compatibility with old data) */}
                                 {r.test_name === "Leadership Test" && r.details && (
                                     <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Leadership Profile</h4>
+                                        <h4 className="font-bold text-gray-700 mb-3">Profil Kepemimpinan</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
-                                            <div><span className="font-medium">Primary Strength:</span> {r.details.primary}</div>
-                                            <div><span className="font-medium">Secondary Strength:</span> {r.details.secondary}</div>
+                                            <div><span className="font-medium">Kekuatan Utama:</span> {r.details.primary}</div>
+                                            <div><span className="font-medium">Kekuatan Sekunder:</span> {r.details.secondary}</div>
                                         </div>
                                         <div className="mt-3">
-                                            <span className="font-medium">Trait Scores:</span>
+                                            <span className="font-medium">Skor Sifat:</span>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                                                 {Object.entries(r.details.percentages || {}).map(([code, pct]) => {
                                                     const traitNames = {
@@ -733,7 +862,7 @@ function ParticipantProfilePage() {
                                         </div>
                                         {r.details.development_areas?.length > 0 && (
                                             <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-700">
-                                                ⚠️ Development areas: {r.details.development_areas.map(code => {
+                                                Area pengembangan: {r.details.development_areas.map(code => {
                                                     const traitNames = {
                                                         DEC: 'Decisiveness',
                                                         COM: 'Communication',

@@ -1,0 +1,152 @@
+{
+  "phases": [
+    {
+      "phase": 1,
+      "type": "single",
+      "questions": [
+        {
+          "number": 1,
+          "answer": "c"
+        },
+        {
+          "number": 2,
+          "answer": "e"
+        },
+        {
+          "number": 3,
+          "answer": "e"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "type": "multi_select",
+      "questions": [
+        {
+          "number": 1,
+          "answer": [
+            "b",
+            "d"
+          ]
+        },
+        {
+          "number": 2,
+          "answer": [
+            "c",
+            "e"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "type": "single",
+      "questions": [
+        {
+          "number": 1,
+          "answer": "b"
+        },
+        {
+          "number": 2,
+          "answer": "c"
+        },
+        {
+          "number": 3,
+          "answer": "b"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "type": "single",
+      "questions": [
+        {
+          "number": 1,
+          "answer": "c"
+        },
+        {
+          "number": 2,
+          "answer": "d"
+        },
+        {
+          "number": 3,
+          "answer": "a"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "type": "single",
+      "questions": [
+        {
+          "number": 1,
+          "answer": "c"
+        },
+        {
+          "number": 2,
+          "answer": "e"
+        },
+        {
+          "number": 3,
+          "answer": "e"
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "type": "multi_select",
+      "questions": [
+        {
+          "number": 1,
+          "answer": [
+            "b",
+            "d"
+          ]
+        },
+        {
+          "number": 2,
+          "answer": [
+            "c",
+            "e"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 7,
+      "type": "single",
+      "questions": [
+        {
+          "number": 1,
+          "answer": "b"
+        },
+        {
+          "number": 2,
+          "answer": "c"
+        },
+        {
+          "number": 3,
+          "answer": "f"
+        }
+      ]
+    },
+    {
+      "phase": 8,
+      "type": "single",
+      "questions": [
+        {
+          "number": 1,
+          "answer": "e"
+        },
+        {
+          "number": 2,
+          "answer": "e"
+        },
+        {
+          "number": 3,
+          "answer": "c"
+        }
+      ]
+    }
+  ]
+}
