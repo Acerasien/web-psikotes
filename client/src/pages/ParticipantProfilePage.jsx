@@ -28,6 +28,49 @@ function computePrimaryTrait(details) {
     return topNorms.join(' & ');
 }
 
+const CBI_INTERPRETATION = {
+    "Overall": {
+        "White": "Menunjukkan individu dengan risiko sangat rendah terhadap perilaku kontraproduktif. Kandidat cenderung stabil, dapat diandalkan, dan cocok untuk lingkungan kerja profesional.",
+        "Light Blue": "Menunjukkan adanya beberapa area yang perlu diperhatikan, namun masih dapat dikembangkan melalui pembinaan atau supervisi.",
+        "Dark Blue": "Menunjukkan individu dengan risiko tinggi terhadap perilaku kontraproduktif, yang berpotensi mengganggu kinerja, tim, maupun organisasi."
+    },
+    "Dependability": {
+        "White": "Menunjukkan individu yang disiplin, bertanggung jawab, dan dapat diandalkan. Memiliki komitmen terhadap pekerjaan serta mampu menjaga konsistensi kinerja.",
+        "Light Blue": "Menunjukkan adanya inkonsistensi dalam kedisiplinan dan tanggung jawab. Terkadang kurang fokus atau menunda pekerjaan, namun masih dalam batas yang dapat diperbaiki.",
+        "Dark Blue": "Menunjukkan individu yang kurang dapat diandalkan, cenderung lalai, tidak disiplin, dan berpotensi mengganggu produktivitas kerja."
+    },
+    "Aggression": {
+        "White": "Menunjukkan individu yang mampu mengontrol emosi dengan baik, tidak mudah terpancing konflik, dan cenderung menjaga hubungan kerja yang positif.",
+        "Light Blue": "Menunjukkan adanya kecenderungan emosi yang fluktuatif, mudah tersinggung dalam situasi tertentu, namun masih dapat dikendalikan.",
+        "Dark Blue": "Menunjukkan individu yang mudah marah, agresif, dan berpotensi konflik, yang dapat mengganggu lingkungan kerja."
+    },
+    "Substance Abuse": {
+        "White": "Menunjukkan individu yang tidak memiliki kecenderungan penggunaan zat berbahaya, serta menjaga kondisi kerja yang aman.",
+        "Light Blue": "Menunjukkan adanya potensi atau paparan terhadap penggunaan zat, namun belum menunjukkan dampak signifikan terhadap pekerjaan.",
+        "Dark Blue": "Menunjukkan individu dengan risiko tinggi penyalahgunaan zat, yang dapat berdampak pada keselamatan dan kinerja kerja."
+    },
+    "Honesty": {
+        "White": "Menunjukkan individu dengan integritas tinggi, jujur, dan dapat dipercaya dalam pekerjaan.",
+        "Light Blue": "Menunjukkan adanya potensi perilaku tidak jujur dalam kondisi tertentu, terutama jika ada tekanan atau kesempatan.",
+        "Dark Blue": "Menunjukkan individu dengan risiko tinggi perilaku tidak jujur, seperti manipulasi, penyalahgunaan, atau pelanggaran aturan."
+    },
+    "Computer Abuse": {
+        "White": "Menunjukkan individu yang menggunakan teknologi secara profesional dan sesuai aturan.",
+        "Light Blue": "Menunjukkan adanya penggunaan teknologi untuk kepentingan pribadi secara terbatas, namun belum mengganggu pekerjaan secara signifikan.",
+        "Dark Blue": "Menunjukkan individu dengan risiko tinggi penyalahgunaan teknologi, seperti akses tidak sah atau penggunaan tidak sesuai kebijakan."
+    },
+    "Sexual Harassment": {
+        "White": "Menunjukkan individu yang menjaga batas profesional dan menghormati orang lain.",
+        "Light Blue": "Menunjukkan adanya potensi perilaku yang dapat menimbulkan ketidaknyamanan, meskipun tidak selalu disengaja.",
+        "Dark Blue": "Menunjukkan individu dengan risiko tinggi melakukan perilaku yang tidak pantas, yang dapat berdampak serius pada lingkungan kerja."
+    },
+    "Good Impression": {
+        "White": "Menunjukkan responden menjawab secara jujur dan terbuka.",
+        "Light Blue": "Menunjukkan adanya kecenderungan memberikan jawaban yang lebih baik dari kondisi sebenarnya.",
+        "Dark Blue": "Menunjukkan kemungkinan besar distorsi/faking good, sehingga hasil tes lain perlu diinterpretasikan dengan hati-hati."
+    }
+};
+
 function ParticipantProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -213,675 +256,639 @@ function ParticipantProfilePage() {
                 </div>
             </div>
 
-            {/* Profile Header */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-blue-100">
-                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                        <span>{user.full_name || user.username}</span>
-                        <span className="text-sm text-gray-500">({user.role})</span>
-                    </h3>
-                    <p className="mt-1 text-gray-600">{user.position} • {user.department}</p>
+            {/* Profile Header - Industrial Utilitarian Aesthetic */}
+            <div className="bg-white border-2 border-neutral-900 rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+                <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-neutral-900">
+                    {/* Primary Identity Section */}
+                    <div className="flex-1 p-6 md:p-8 bg-neutral-50">
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400 mb-1 block">Profil Peserta</span>
+                                <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight leading-none group flex items-baseline gap-3">
+                                    {user.full_name || user.username}
+                                    <span className="text-sm font-mono text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200 uppercase">
+                                        ID-{user.id?.toString().padStart(4, '0')}
+                                    </span>
+                                </h2>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-6">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Jabatan</span>
+                                <span className="text-sm font-semibold text-neutral-800 uppercase">{user.position || 'N/A'}</span>
+                            </div>
+                            <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Departemen</span>
+                                <span className="text-sm font-semibold text-neutral-800 uppercase">{user.department || 'N/A'}</span>
+                            </div>
+                            <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Peran Akses</span>
+                                <span className="text-sm font-bold text-primary-600 uppercase tracking-tighter">{user.role?.replace('_', ' ') || 'Participant'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Classification Anchor Section */}
+                    <div className="w-full lg:w-72 bg-neutral-900 p-6 md:p-8 flex flex-col justify-center relative overflow-hidden group">
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.03] rotate-45 translate-x-16 -translate-y-16 group-hover:opacity-[0.06] transition-opacity"></div>
+                        
+                        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 mb-2">Klasifikasi</span>
+                        <div className="flex flex-col">
+                            <h4 className="text-2xl font-bold text-white tracking-tighter leading-tight uppercase">
+                                {user.class_name || 'Standard'}
+                            </h4>
+                            <div className="mt-4 h-1 w-12 bg-accent-gold"></div>
+                        </div>
+                    </div>
                 </div>
-                <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
-                    <div>
-                        <span className="font-medium text-gray-500">Username</span>
-                        <p className="text-gray-800 font-mono">{user.username}</p>
+
+                {/* Secondary Specs Grid */}
+                <div className="bg-white border-t-2 border-neutral-900 p-6 md:p-8 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Username</label>
+                        <p className="font-mono text-sm font-bold text-neutral-700 select-all">@{user.username}</p>
                     </div>
-                    <div>
-                        <span className="font-medium text-gray-500">Jenis Kelamin:</span> {user.gender || '-'}
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Jenis Kelamin</label>
+                        <p className="text-sm font-bold text-neutral-900 uppercase">
+                            {user.gender === 'Male' ? 'Laki-laki' : (user.gender === 'Female' ? 'Perempuan' : (user.gender || '–'))}
+                        </p>
                     </div>
-                    <div>
-                        <span className="font-medium text-gray-500">Usia</span>
-                        <p className="text-gray-800">{user.age || '–'}</p>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Usia</label>
+                        <p className="text-sm font-bold text-neutral-900">{user.age ? `${user.age} Tahun` : '–'}</p>
                     </div>
-                    <div>
-                        <span className="font-medium text-gray-500">Pendidikan</span>
-                        <p className="text-gray-800">{user.education || '–'}</p>
-                    </div>
-                    <div>
-                        <span className="font-medium text-gray-500">Peran</span>
-                        <p className="text-gray-800 capitalize">{user.role?.replace('_', ' ') || '–'}</p>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Pendidikan Terakhir</label>
+                        <p className="text-sm font-bold text-neutral-900 uppercase">{user.education || '–'}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Assigned Tests - Cards */}
-            <section>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    Tes yang Ditugaskan
-                </h2>
+            {/* Assigned Tests - Industrial Grid */}
+            <section className="animate-fade-in-up">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="h-8 w-1.5 bg-neutral-900"></div>
+                    <h2 className="text-xl font-black text-neutral-900 uppercase tracking-tight">
+                        Tes yang Ditugaskan
+                    </h2>
+                </div>
+
                 {assignments.length === 0 ? (
-                    <div className="text-center py-10 bg-gray-50 rounded-xl border">
-                        <p className="text-gray-500 text-lg">Belum ada tes yang ditugaskan.</p>
+                    <div className="text-center py-12 bg-neutral-50 border-2 border-dashed border-neutral-300 rounded-none">
+                        <p className="text-neutral-500 font-mono text-sm uppercase tracking-widest">Belum ada tes yang ditugaskan.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {assignments.map((a) => {
                             const result = getResultForTest(a.test_id);
-
-                            // Use is_complete flag from backend details
                             const isIncomplete = result?.details?.is_complete === false;
                             const answeredCount = result?.details?.answered_count;
                             const totalQuestions = result?.details?.total_questions;
 
-                            // For DISC, also check if all quadrants are filled (personality completeness)
                             const isDiscIncomplete = a.test_code === 'DISC' &&
                                 result?.details &&
                                 (Object.keys(result.details.graph_i || {}).length < 4);
-                            let statusColor, icon;
+
+                            let statusBadgeColor;
                             switch (a.status) {
                                 case 'completed':
-                                    statusColor = 'text-green-600 bg-green-50 border-green-200';
-                                    icon = '✅';
+                                    statusBadgeColor = 'bg-success text-white border-neutral-900';
                                     break;
                                 case 'in_progress':
-                                    statusColor = 'text-yellow-600 bg-yellow-50 border-yellow-200';
-                                    icon = '🔄';
+                                    statusBadgeColor = 'bg-warning text-white border-neutral-900';
                                     break;
                                 case 'locked':
-                                    statusColor = 'text-red-600 bg-red-50 border-red-200';
-                                    icon = '🔒';
+                                    statusBadgeColor = 'bg-error text-white border-neutral-900';
                                     break;
                                 default:
-                                    statusColor = 'text-gray-500 bg-gray-50 border-gray-200';
-                                    icon = '📄';
+                                    statusBadgeColor = 'bg-neutral-100 text-neutral-500 border-neutral-300';
                             }
 
                             return (
                                 <div
                                     key={a.id}
-                                    className={`border-l-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 ${statusColor} p-5`}
+                                    className="bg-white border-2 border-neutral-900 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,0.08)] flex flex-col h-full hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.12)] transition-all duration-200"
                                 >
-                                    <div className="flex justify-between items-start">
-                                        <h4 className="font-bold text-lg text-gray-800">{a.test_name}</h4>
-                                        <span className="text-lg">{icon}</span>
+                                    {/* Card Header */}
+                                    <div className="p-5 border-b-2 border-neutral-900 bg-neutral-50 flex-1">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <h4 className="font-black text-neutral-900 leading-tight uppercase tracking-tighter">
+                                                {a.test_name}
+                                            </h4>
+                                            <span className={`text-[10px] font-bold px-2 py-1 border-2 uppercase tracking-widest flex-shrink-0 ${statusBadgeColor}`}>
+                                                {a.status.replace('_', ' ')}
+                                            </span>
+                                        </div>
+
+                                        {/* Metics / Stats */}
+                                        <div className="mt-6 space-y-3">
+                                            {/* Score Metric */}
+                                            {result && a.test_name !== "Temperament Test" && a.test_code !== 'LEAD' && !isDiscIncomplete && (
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Skor Akhir</span>
+                                                    {a.test_code === 'DISC' ? (
+                                                        <span className="text-xs font-bold text-neutral-800 uppercase italic">Profil Kepribadian</span>
+                                                    ) : (
+                                                        <p className="text-lg font-black text-neutral-900">
+                                                            {result.score} <span className="text-neutral-300 text-sm font-normal">/ {result.max_score || '?'}</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Question Progress */}
+                                            {result && answeredCount !== undefined && totalQuestions !== undefined && (
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Progress Soal</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-sm font-black ${isIncomplete ? 'text-error' : 'text-success'}`}>
+                                                            {answeredCount} / {totalQuestions}
+                                                        </span>
+                                                        {isIncomplete && <span className="text-[10px] bg-error-light text-error font-black px-1 border border-error">INCOMPLETE</span>}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Test Specific Insights */}
+                                            {result && a.test_name === "Temperament Test" && (
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Dominasi Tipe</span>
+                                                    <span className="text-sm font-black text-primary-600 uppercase">{result.details?.primary || 'N/A'}</span>
+                                                </div>
+                                            )}
+
+                                            {result && a.test_name === "Test IQ ( POLA )" && result.details?.iq && (
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Potensi IQ</span>
+                                                    <span className="text-sm font-black text-primary-700 uppercase">{result.details.iq} — {result.details.classification}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="mt-2 flex items-center justify-between">
-                                        <p className="text-sm font-medium capitalize">
-                                            Status: <span className="font-semibold">{a.status.replace('_', ' ')}</span>
-                                        </p>
-                                        {a.status !== 'pending' && (
+
+                                    {/* Card Footer Actions */}
+                                    <div className="p-4 bg-white border-t-2 border-neutral-900 flex justify-end">
+                                        {a.status !== 'pending' ? (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleReset(a.id, a.test_name);
                                                 }}
-                                                className="text-xs text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition"
-                                                title="Reset this test"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-error-light hover:bg-error text-error hover:text-white text-xs font-bold rounded-lg border border-error transition-all"
                                             >
-                                                Reset
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                RESET DATA
                                             </button>
+                                        ) : (
+                                            <span className="text-[10px] font-bold text-neutral-300 uppercase tracking-[0.2em] py-1.5">Waiting Participant</span>
                                         )}
                                     </div>
-
-                                    {/* Score display */}
-                                    {result && a.test_name !== "Temperament Test" && a.test_code !== 'LEAD' && !isDiscIncomplete && (
-                                        <div className="mt-2 text-sm text-gray-700">
-                                            {a.test_code === 'DISC' ? (
-                                                <span className="text-gray-500">Asesmen kepribadian</span>
-                                            ) : (
-                                                <>
-                                                    Skor: <span className="font-bold text-green-600">{result.score}</span> / {result.max_score || '?'}
-                                                </>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Completion status - shown for ALL test types */}
-                                    {result && answeredCount !== undefined && totalQuestions !== undefined && (
-                                        <div className="mt-2 text-sm">
-                                            <span className="font-medium">Soal:</span>{' '}
-                                            <span className={`font-bold ${isIncomplete ? 'text-orange-600' : 'text-green-600'}`}>
-                                                {answeredCount}/{totalQuestions}
-                                            </span>
-                                            {isIncomplete && (
-                                                <span className="ml-2 text-xs text-orange-600 font-medium">Tidak Lengkap</span>
-                                            )}
-                                            {!isIncomplete && !isDiscIncomplete && (
-                                                <span className="ml-2 text-xs text-green-600 font-medium">✓ Lengkap</span>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Incomplete warning message */}
-                                    {(isIncomplete || isDiscIncomplete) && (
-                                        <div className="mt-2 text-sm text-orange-600 font-medium">
-                                            Peserta tidak menyelesaikan tes ini
-                                        </div>
-                                    )}
-
-                                    {result && isDiscIncomplete && (
-                                        <div className="mt-2 text-sm text-orange-600 font-medium">
-                                            Profil DISC tidak lengkap (tidak semua soal dijawab)
-                                        </div>
-                                    )}
-
-                                    {result && a.test_name === "Temperament Test" && (
-                                        <div className="mt-2 text-sm">
-                                            <span className="font-medium">Tipe:</span>{' '}
-                                            <span className="font-bold text-purple-600">{result.details?.primary || 'Tidak Diketahui'}</span>
-                                        </div>
-                                    )}
-
-                                    {result && a.test_name === "PAPI Kostick Test" && (
-                                        <div className="mt-2 text-sm">
-                                            <span className="font-medium">Sifat Utama:</span>{' '}
-                                            <span className="font-bold text-indigo-600">{computePrimaryTrait(result.details) || '—'}</span>
-                                        </div>
-                                    )}
-
-                                    {result && a.test_name === "IQ Test (CFIT)" && (
-                                        <div className="mt-2 space-y-1 text-sm">
-                                            <div>
-                                                <span className="font-medium">IQ:</span>{' '}
-                                                <span className="font-bold text-blue-600">{result.details?.iq || '?'}</span>
-                                                {' — '}
-                                                <span className="font-medium">{result.details?.classification || '—'}</span>
-                                            </div>
-                                            <div>
-                                                <span className="font-medium">Skor Mentah:</span>{' '}
-                                                {result.details?.raw_score || '?'}/{result.details?.max_score || '?'}
-                                            </div>
-                                            {result.details?.section_scores && (
-                                                <div className="flex gap-4 text-xs text-gray-500">
-                                                    <span>Section 1 (P1–4): {result.details.section_scores.section_1.correct}/50</span>
-                                                    <span>Section 2 (P5–8): {result.details.section_scores.section_2.correct}/50</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
                     </div>
                 )}
             </section>
-
-            {/* Detailed Results */}
             {results.length > 0 && (
-                <section>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        Hasil Tes
-                    </h2>
-                    <div className="space-y-5">
+                <section className="animate-fade-in-up mt-12 pb-20">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="h-8 w-1.5 bg-neutral-900"></div>
+                        <h2 className="text-xl font-black text-neutral-900 uppercase tracking-tight">
+                            Hasil Pengujian Detail
+                        </h2>
+                    </div>
+
+                    <div className="space-y-10">
                         {getLatestResults().map((r) => (
                             <div
                                 key={r.id}
-                                className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden bg-white"
+                                className="bg-white border-2 border-neutral-900 rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,0.05)] overflow-hidden"
                             >
-                                {/* Test Header */}
-                                <div className="bg-gray-50 px-5 py-4 border-b">
-                                    <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                                        <h3 className="text-xl font-semibold text-gray-800">{r.test_name}</h3>
-                                        {r.max_score && r.test_name !== "PAPI Kostick Test" && (
-                                            <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
-                                                {r.score} / {r.max_score}
+                                {/* Results Header - Technical Bar */}
+                                <div className="bg-neutral-900 px-6 py-4 border-b-2 border-neutral-900 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                                    <h3 className="text-lg font-black text-white uppercase tracking-wider">{r.test_name}</h3>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Global Score</span>
+                                        {r.max_score && r.test_name !== "Test Kepemimpinan" && (
+                                            <div className="px-3 py-1 bg-white border-2 border-white text-neutral-900 font-mono font-black text-sm">
+                                                {r.score} <span className="text-neutral-400 font-normal">/ {r.max_score}</span>
                                             </div>
                                         )}
-                                        {r.test_name === "PAPI Kostick Test" && (
-                                            <div className="mt-2 md:mt-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
+                                        {r.test_name === "Test Kepemimpinan" && (
+                                            <div className="px-3 py-1 bg-accent-gold text-neutral-900 font-bold text-xs uppercase border-2 border-accent-gold">
                                                 {computePrimaryTrait(r.details) || "Personality Profile"}
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* DISC Assessment */}
-                                {r.test_name === "DISC Assessment" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-4">Profil DISC</h4>
-
-                                        {/* Legend */}
-                                        <div className="flex gap-4 mb-6 text-xs">
-                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-blue-500 mr-1"></span> Grafik I (Publik)</div>
-                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-green-500 mr-1"></span> Grafik II (Alami)</div>
-                                            <div className="flex items-center"><span className="inline-block w-3 h-3 bg-purple-500 mr-1"></span> Grafik III (Terintegrasi)</div>
-                                        </div>
-
-                                        {/* Tally Table */}
-                                        <div className="overflow-x-auto mb-6">
-                                            <table className="min-w-full border-collapse border border-gray-300">
-                                                <thead>
-                                                    <tr className="bg-gray-100">
-                                                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Dimensi</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Grafik I (Tertinggi)</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Grafik II (Terendah)</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Grafik III (Int.)</th>
-                                                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Perubahan (I–II)</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {['D', 'I', 'S', 'C'].map(trait => {
-                                                        const i = r.details.graph_i?.[trait] || 0;
-                                                        const ii = r.details.graph_ii?.[trait] || 0;
-                                                        const iii = r.details.graph_iii?.[trait] || 0;
-                                                        const change = i - ii;
-                                                        return (
-                                                            <tr key={trait} className="hover:bg-gray-50">
-                                                                <td className="border border-gray-300 px-3 py-2 font-medium">{trait}</td>
-                                                                <td className="border border-gray-300 px-3 py-2 text-center">{i}</td>
-                                                                <td className="border border-gray-300 px-3 py-2 text-center">{ii}</td>
-                                                                <td className="border border-gray-300 px-3 py-2 text-center">{iii}</td>
-                                                                <td className={`border border-gray-300 px-3 py-2 text-center ${change < 0 ? 'text-red-600' : change > 0 ? 'text-green-600' : ''}`}>
-                                                                    {change}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {/* Line Chart */}
-                                        {(() => {
-                                            const chartData = ['D', 'I', 'S', 'C'].map(trait => ({
-                                                trait,
-                                                'Grafik I (Publik)': r.details.graph_i?.[trait] || 0,
-                                                'Grafik II (Alami)': r.details.graph_ii?.[trait] || 0,
-                                                'Grafik III (Terintegrasi)': r.details.graph_iii?.[trait] || 0,
-                                            }));
-
-                                            return (
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" />
-                                                        <XAxis dataKey="trait" />
-                                                        <YAxis domain={[0, 24]} />
-                                                        <Tooltip />
-                                                        <Legend />
-                                                        <Line type="monotone" dataKey="Grafik I (Publik)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-                                                        <Line type="monotone" dataKey="Grafik II (Alami)" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
-                                                        <Line type="monotone" dataKey="Grafik III (Terintegrasi)" stroke="#a855f7" strokeWidth={2} dot={{ r: 4 }} />
-                                                    </LineChart>
-                                                </ResponsiveContainer>
-                                            );
-                                        })()}
-
-                                        {/* Stress Gap Indicator */}
-                                        {r.details.stress_gap !== undefined && (
-                                            <div className="mt-6 p-4 bg-gray-50 rounded-lg border flex items-center">
-                                                <div className="flex-1">
-                                                    <span className="font-medium">Stress Gap:</span>
-                                                    <span className={`ml-2 font-bold ${r.details.stress_gap > 10 ? 'text-red-600' : 'text-green-600'}`}>
-                                                        {Math.round(r.details.stress_gap)}
-                                                    </span>
-                                                    <span className="ml-2 text-sm text-gray-600">
-                                                        ({r.details.stress_gap > 10 ? 'Penyembunyian signifikan - mungkin menunjukkan stres' : 'Dalam rentang normal'})
-                                                    </span>
+                                <div className="p-6 md:p-8">
+                                    {/* DISC Assessment */}
+                                    {r.test_name === "DISC Test" && r.details && (
+                                        <div className="space-y-8">
+                                            <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                                                <h4 className="text-sm font-black text-neutral-900 uppercase tracking-widest">Matriks Profil DISC</h4>
+                                                <div className="flex gap-4 text-[10px] font-bold uppercase tracking-tighter">
+                                                    <div className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-500"></span> Publik</div>
+                                                    <div className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500"></span> Alami</div>
+                                                    <div className="flex items-center gap-1"><span className="w-2 h-2 bg-purple-500"></span> Int.</div>
                                                 </div>
-                                                {r.details.stress_gap > 5 && (
-                                                    <div className="text-2xl ml-2 text-orange-500" title="Selisih antara Publik dan Alami">⚠️</div>
+                                            </div>
+
+                                            {/* Tally Table - Industrial Style */}
+                                            <div className="overflow-hidden border-2 border-neutral-900">
+                                                <table className="min-w-full divide-y-2 divide-neutral-900 bg-white">
+                                                    <thead className="bg-neutral-50">
+                                                        <tr className="divide-x-2 divide-neutral-900">
+                                                            <th className="px-4 py-3 text-left text-[10px] font-black text-neutral-500 uppercase tracking-widest">Dimensi</th>
+                                                            <th className="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest">Grafik I</th>
+                                                            <th className="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest">Grafik II</th>
+                                                            <th className="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest">Grafik III</th>
+                                                            <th className="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest">H/L Change</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-neutral-200">
+                                                        {['D', 'I', 'S', 'C'].map(trait => {
+                                                            const i = r.details.graph_i?.[trait] || 0;
+                                                            const ii = r.details.graph_ii?.[trait] || 0;
+                                                            const iii = r.details.graph_iii?.[trait] || 0;
+                                                            const change = i - ii;
+                                                            return (
+                                                                <tr key={trait} className="divide-x divide-neutral-200 hover:bg-neutral-50 transition-colors cursor-default">
+                                                                    <td className="px-4 py-3 font-black text-neutral-900 text-center bg-neutral-50 border-r-2 border-r-neutral-900">{trait}</td>
+                                                                    <td className="px-4 py-3 text-center font-mono font-bold">{i}</td>
+                                                                    <td className="px-4 py-3 text-center font-mono font-bold">{ii}</td>
+                                                                    <td className="px-4 py-3 text-center font-mono font-bold">{iii}</td>
+                                                                    <td className={`px-4 py-3 text-center font-mono font-black ${change < 0 ? 'text-error' : change > 0 ? 'text-success' : 'text-neutral-400'}`}>
+                                                                        {change > 0 ? `+${change}` : change}
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Line Chart */}
+                                            <div className="bg-neutral-50 p-6 border-2 border-neutral-900 h-[350px]">
+                                                {(() => {
+                                                    const chartData = ['D', 'I', 'S', 'C'].map(trait => ({
+                                                        trait,
+                                                        'Grafik I': r.details.graph_i?.[trait] || 0,
+                                                        'Grafik II': r.details.graph_ii?.[trait] || 0,
+                                                        'Grafik III': r.details.graph_iii?.[trait] || 0,
+                                                    }));
+
+                                                    return (
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                                                                <XAxis dataKey="trait" axisLine={{ stroke: '#171717', strokeWidth: 2 }} tick={{ fill: '#171717', fontWeight: 900 }} />
+                                                                <YAxis domain={[0, 24]} axisLine={{ stroke: '#171717', strokeWidth: 2 }} tick={{ fill: '#a3a3a3', fontSize: 10 }} />
+                                                                <Tooltip />
+                                                                <Line type="monotone" dataKey="Grafik I" stroke="#3b82f6" strokeWidth={4} dot={{ r: 6, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
+                                                                <Line type="monotone" dataKey="Grafik II" stroke="#22c55e" strokeWidth={4} dot={{ r: 6, fill: '#22c55e', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
+                                                                <Line type="monotone" dataKey="Grafik III" stroke="#a855f7" strokeWidth={4} dot={{ r: 6, fill: '#a855f7', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
+                                                            </LineChart>
+                                                        </ResponsiveContainer>
+                                                    );
+                                                })()}
+                                            </div>
+
+                                            {/* Stress Gap Indicator */}
+                                            {r.details.stress_gap !== undefined && (
+                                                <div className="bg-neutral-100 border-2 border-neutral-900 p-5 flex items-center justify-between">
+                                                    <div className="space-y-1">
+                                                        <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Stress Gap Index</span>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-2xl font-black text-neutral-900 font-mono">{Math.round(r.details.stress_gap)}</span>
+                                                            <span className={`px-2 py-0.5 text-[10px] font-black border uppercase ${r.details.stress_gap > 10 ? 'bg-error text-white border-error' : 'bg-success text-white border-success'}`}>
+                                                                {r.details.stress_gap > 10 ? 'Significant Tension' : 'Normal Range'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {r.details.stress_gap > 10 && <div className="text-3xl animate-pulse">⚠️</div>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Speed Test */}
+                                    {r.test_name === "Speed Test" && r.details && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-6">
+                                                <h4 className="text-sm font-black text-neutral-900 uppercase tracking-widest border-b border-neutral-100 pb-2">Metriks Performa</h4>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-neutral-50 p-4 border border-neutral-200">
+                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1">Skor Akurasi</span>
+                                                        <span className="text-xl font-black text-neutral-900 font-mono">{r.details.accuracy}%</span>
+                                                    </div>
+                                                    <div className="bg-neutral-50 p-4 border border-neutral-200">
+                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1">Total Dijawab</span>
+                                                        <span className="text-xl font-black text-neutral-900 font-mono">{r.details.total_answered}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 border-2 border-neutral-900 flex items-center justify-between">
+                                                    <span className="text-xs font-black uppercase text-neutral-500">Klasifikasi Performa</span>
+                                                    <span className="text-sm font-black uppercase text-primary-600 tracking-tighter">{r.details.band}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col justify-center">
+                                                {r.details.flag ? (
+                                                    <div className="bg-error-light border-2 border-error p-6 text-error">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                                            <span className="font-black text-xs uppercase tracking-widest">Peringatan Validitas</span>
+                                                        </div>
+                                                        <p className="text-sm font-bold leading-tight">{r.details.flag}</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="bg-success-light border-2 border-success p-6 text-success flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center text-white">✓</div>
+                                                        <div>
+                                                            <span className="font-black text-xs uppercase tracking-widest block">Data Valid</span>
+                                                            <span className="text-xs font-bold">Tidak ditemukan anomali pengisian.</span>
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Speed Test */}
-                                {r.test_name === "Speed Test" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Performa Tes Kecepatan</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div><span className="font-medium">Skor:</span> {r.details.score}</div>
-                                            <div><span className="font-medium">Akurasi:</span> {r.details.accuracy}%</div>
-                                            <div><span className="font-medium">Dijawab:</span> {r.details.total_answered}</div>
-                                            <div>
-                                                <span className="font-medium">Performa:</span>{' '}
-                                                <span className={`ml-1 px-2 py-1 rounded-full text-xs ${r.details.band?.includes('Excellent')
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : r.details.band?.includes('Good')
-                                                        ? 'bg-blue-100 text-blue-800'
-                                                        : r.details.band?.includes('Average')
-                                                            ? 'bg-yellow-100 text-yellow-800'
-                                                            : 'bg-red-100 text-red-800'
-                                                    }`}>
-                                                    {r.details.band}
-                                                </span>
-                                            </div>
                                         </div>
-                                        {r.details.flag && (
-                                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700 flex items-start">
-                                                ⚠️ <span className="ml-1">{r.details.flag}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                    )}
 
-                                {/* PAPI Kostick */}
-                                {r.test_name === "PAPI Kostick Test" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Profil PAPI Kostick</h4>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                                            {Object.entries(r.details)
-                                                .filter(([, val]) => typeof val === 'number' || typeof val === 'string')
-                                                .map(([key, val]) => (
-                                                    <div key={key} className="bg-gray-50 rounded p-2">
-                                                        <span className="font-medium capitalize">{key}:</span>{' '}
-                                                        <span className="font-bold">{val}</span>
+                                    {/* IQ Test (POLA) */}
+                                    {r.test_name === "Test IQ ( POLA )" && r.details && (
+                                        <div className="space-y-8">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div className="bg-neutral-900 p-6 shadow-[4px_4px_0px_0px_rgba(49,97,119,1)]">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">IQ Quotient</span>
+                                                    <span className="text-4xl font-black text-white font-mono leading-none">{r.details.iq || '?'}</span>
+                                                    <span className="text-[10px] font-black text-accent-gold uppercase tracking-tighter block mt-2">{r.details.classification}</span>
+                                                </div>
+                                                <div className="bg-neutral-50 p-6 border-2 border-neutral-900 flex flex-col justify-center">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">Raw Score Summary</span>
+                                                    <span className="text-2xl font-black text-neutral-900 font-mono">{r.details.raw_score || '?'}<span className="text-neutral-300"> / {r.details.max_score || '?'}</span></span>
+                                                </div>
+                                                <div className="bg-neutral-50 p-6 border-2 border-neutral-900 flex flex-col justify-center">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">Accuracy Matrix</span>
+                                                    <span className="text-2xl font-black text-neutral-900 font-mono">{Math.round((r.details.raw_score / r.details.max_score) * 100)}%</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Section Analytics */}
+                                            {r.details.section_scores && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="p-5 border border-neutral-200 bg-neutral-50 relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-2 text-[10px] font-black text-neutral-200 uppercase tracking-widest">Section 01</div>
+                                                        <span className="text-xs font-black text-neutral-500 uppercase tracking-tighter block mb-1">Visual Logika (P1-4)</span>
+                                                        <span className="text-xl font-bold text-neutral-900 font-mono">{r.details.section_scores.section_1.correct} / 50</span>
                                                     </div>
-                                                ))
-                                            }
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* IQ Test */}
-                                {r.test_name === "IQ Test (CFIT)" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-4">Hasil Tes IQ</h4>
-
-                                        {/* Main IQ Display */}
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                                                <div className="text-3xl font-bold text-blue-600">{r.details.iq || '?'}</div>
-                                                <div className="text-sm text-blue-700 mt-1">Skor IQ</div>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-4 text-center">
-                                                <div className="text-3xl font-bold text-gray-800">{r.details.raw_score || '?'}/{r.details.max_score || '?'}</div>
-                                                <div className="text-sm text-gray-600 mt-1">Skor Mentah</div>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-4 text-center">
-                                                <div className="text-xl font-bold text-gray-800">{r.details.classification || '—'}</div>
-                                                <div className="text-sm text-gray-600 mt-1">Klasifikasi</div>
-                                            </div>
-                                        </div>
-
-                                        {/* Section Scores */}
-                                        {r.details.section_scores && (
-                                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                                <div className="bg-gray-50 rounded-lg p-4">
-                                                    <h5 className="font-semibold text-sm text-gray-600 mb-2">Bagian 1 (Fase 1-4)</h5>
-                                                    <div className="text-2xl font-bold">{r.details.section_scores.section_1.correct} / 50</div>
+                                                    <div className="p-5 border border-neutral-200 bg-neutral-50 relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-2 text-[10px] font-black text-neutral-200 uppercase tracking-widest">Section 02</div>
+                                                        <span className="text-xs font-black text-neutral-500 uppercase tracking-tighter block mb-1">Abstraksi Pola (P5-8)</span>
+                                                        <span className="text-xl font-bold text-neutral-900 font-mono">{r.details.section_scores.section_2.correct} / 50</span>
+                                                    </div>
                                                 </div>
-                                                <div className="bg-gray-50 rounded-lg p-4">
-                                                    <h5 className="font-semibold text-sm text-gray-600 mb-2">Bagian 2 (Fase 5-8)</h5>
-                                                    <div className="text-2xl font-bold">{r.details.section_scores.section_2.correct} / 50</div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Temperament Test */}
+                                    {r.test_name === "Temperament Test" && r.details && (
+                                        <div className="space-y-8">
+                                            <div className="flex flex-col md:flex-row gap-6">
+                                                <div className="flex-1 bg-neutral-50 p-6 border-2 border-neutral-900">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-4 block">Primary Personality Profile</span>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-16 h-16 bg-neutral-900 flex items-center justify-center text-white text-3xl font-black">
+                                                            {r.details.primary?.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-2xl font-black text-neutral-900 uppercase leading-none">{r.details.primary}</h5>
+                                                            <p className="text-xs font-bold text-neutral-400 mt-1 uppercase tracking-widest">Dominant Trait</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 bg-neutral-50 p-6 border-2 border-neutral-900">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-4 block">Secondary Personality Profile</span>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-16 h-16 bg-neutral-100 border-2 border-neutral-900 flex items-center justify-center text-neutral-900 text-3xl font-black">
+                                                            {r.details.secondary?.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-2xl font-black text-neutral-900 uppercase leading-none">{r.details.secondary}</h5>
+                                                            <p className="text-xs font-bold text-neutral-400 mt-1 uppercase tracking-widest">Supporting Trait</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        {/* Phase Scores */}
-                                        {r.details.phase_scores && (
-                                            <div>
-                                                <h4 className="font-semibold text-sm text-gray-600 mb-3">Rincian Fase</h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                    {Object.entries(r.details.phase_scores).sort((a, b) => parseInt(a[0]) - parseInt(b[0])).map(([phase, data]) => (
-                                                        <div key={phase} className="bg-gray-50 rounded-lg p-3 text-center">
-                                                            <div className="font-bold text-lg">{data.correct}</div>
-                                                            <div className="text-xs text-gray-500">Fase {phase}</div>
+                                            {/* Intensity Bar Charts */}
+                                            <div className="space-y-4">
+                                                <h5 className="text-xs font-black text-neutral-500 uppercase tracking-widest">Trait Intensity Spectrum</h5>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4">
+                                                    {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
+                                                        <div key={trait} className="flex flex-col gap-1">
+                                                            <div className="flex justify-between items-baseline">
+                                                                <span className="text-[10px] font-black uppercase text-neutral-900">{trait}</span>
+                                                                <span className="font-mono text-xs font-bold">{Math.round(pct)}%</span>
+                                                            </div>
+                                                            <div className="h-1.5 w-full bg-neutral-100 border border-neutral-200">
+                                                                <div className="h-full bg-neutral-900" style={{ width: `${pct}%` }}></div>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Temperament Test */}
-                                {r.test_name === "Temperament Test" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Rincian Temperamen</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div><span className="font-medium">Utama:</span> {r.details.primary}</div>
-                                            <div><span className="font-medium">Sekunder:</span> {r.details.secondary}</div>
                                         </div>
-                                        <div className="mt-4">
-                                            <h5 className="font-medium text-gray-700 mb-2">Intensitas Sifat</h5>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                                                {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
-                                                    <div key={trait} className="flex justify-between">
-                                                        <span className="capitalize">{trait}:</span>
-                                                        <span className="font-bold">{Math.round(pct)}%</span>
+                                    )}
+
+                                    {/* PAPI Kostick - Elevated */}
+                                    {r.test_name === "Test Kepemimpinan" && r.details && r.details.categories && (
+                                        <div className="space-y-10">
+                                            <div className="flex flex-col lg:flex-row gap-8 items-center bg-neutral-50 p-8 border-2 border-neutral-900">
+                                                <div className="w-full lg:w-1/2">
+                                                    <h4 className="text-sm font-black text-neutral-900 uppercase tracking-widest mb-6 border-l-4 border-neutral-900 pl-4">Radar Kepemimpinan</h4>
+                                                    <div className="h-[400px]">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={
+                                                                (() => {
+                                                                    const chartData = [];
+                                                                    const categoryOrder = [
+                                                                        "Work Direction - Arah Kerja",
+                                                                        "Leadership - Kepemimpinan",
+                                                                        "Activity - Aktivitas Kerja",
+                                                                        "Social Nature - Relasi Sosial",
+                                                                        "Work Style - Gaya Kerja",
+                                                                        "Temperament - Sifat Temperamen",
+                                                                        "Followership - Posisi Atasan-Bawahan",
+                                                                    ];
+                                                                    categoryOrder.forEach(cat => {
+                                                                        if (r.details.categories[cat]) {
+                                                                            Object.entries(r.details.categories[cat]).forEach(([code, data]) => {
+                                                                                chartData.push({
+                                                                                    trait: code,
+                                                                                    score: data.stanine,
+                                                                                    fullName: data.description?.split('—')[0]?.trim() || code,
+                                                                                });
+                                                                            });
+                                                                        }
+                                                                    });
+                                                                    return chartData;
+                                                                })()
+                                                            }>
+                                                                <PolarGrid stroke="#d1d5db" />
+                                                                <PolarAngleAxis dataKey="trait" tick={{ fill: '#171717', fontSize: 11, fontWeight: 900 }} />
+                                                                <PolarRadiusAxis domain={[0, 10]} tick={{ display: 'none' }} axisLine={false} />
+                                                                <Radar name="Stanine" dataKey="score" stroke="#171717" strokeWidth={3} fill="#171717" fillOpacity={0.1} />
+                                                                <Tooltip />
+                                                            </RadarChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </div>
+                                                <div className="w-full lg:w-1/2 space-y-4">
+                                                    <div className="bg-white p-6 border-2 border-neutral-900">
+                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-2">Primary Leadership Trait</span>
+                                                        <span className="text-2xl font-black text-neutral-900 uppercase tracking-tighter leading-tight block">
+                                                            {computePrimaryTrait(r.details) || "General Profile"}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-neutral-500 italic leading-relaxed">
+                                                        Interpretasi data berdasarkan sebaran Stanine 0-9 pada 7 dimensi orientasi kerja PAPI Kostick.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Detailed Category Bars */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                                                {Object.entries(r.details.categories).map(([categoryName, norms]) => (
+                                                    <div key={categoryName}>
+                                                        <h5 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                            <div className="w-4 h-px bg-neutral-300"></div>
+                                                            {categoryName}
+                                                        </h5>
+                                                        <div className="space-y-4">
+                                                            {Object.entries(norms).map(([normCode, normData]) => {
+                                                                const stanine = normData.stanine;
+                                                                let barColor = 'bg-neutral-900';
+                                                                if (stanine >= 7) barColor = 'bg-success';
+                                                                else if (stanine <= 3) barColor = 'bg-error';
+
+                                                                return (
+                                                                    <div key={normCode} className="space-y-1">
+                                                                        <div className="flex justify-between items-end">
+                                                                            <div>
+                                                                                <span className="text-xs font-black text-neutral-900">{normCode}</span>
+                                                                                <span className="text-[9px] text-neutral-400 font-bold uppercase ml-2 tracking-tighter">— {normData.description?.split('—')[0]?.trim()}</span>
+                                                                            </div>
+                                                                            <span className="font-mono text-xs font-black">{stanine}</span>
+                                                                        </div>
+                                                                        <div className="flex gap-0.5">
+                                                                            {Array.from({ length: 9 }, (_, i) => (
+                                                                                <div
+                                                                                    key={i}
+                                                                                    className={`h-3 flex-1 border border-neutral-100 ${i + 1 <= stanine ? barColor : 'bg-neutral-50'}`}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
-                                        {r.details.straight_line_flag && (
-                                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                                                Semua jawaban identik - terdeteksi pengisian seragam
-                                            </div>
-                                        )}
-                                        {r.details.interactions?.length > 0 && (
-                                            <div className="mt-3">
-                                                <h5 className="font-medium text-gray-700">Catatan Interaksi</h5>
-                                                <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
-                                                    {r.details.interactions.map((item, i) => (
-                                                        <li key={i}>{item}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                    )}
 
-                                {/* Memory Test */}
-                                {r.test_name === "Memory Test" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Ringkasan Tes Memori</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                            <div>
-                                                <span className="font-medium">Skor:</span> {r.details.score}
-                                            </div>
-                                            <div>
-                                                <span className="font-medium">Akurasi:</span> {r.details.accuracy}%
-                                            </div>
-                                            <div>
-                                                <span className="font-medium">Kategori:</span> {r.details.band}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                {/* Logic & Arithmetic Test */}
-                                {r.test_name === "Logic & Arithmetic Test" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Performa Logika & Aritmatika</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div><span className="font-medium">Skor:</span> {r.details.score} / 100</div>
-                                            <div><span className="font-medium">Benar:</span> {r.details.correct_count} / 50</div>
-                                            <div><span className="font-medium">Persentase:</span> {r.details.percentage}%</div>
-                                            <div>
-                                                <span className="font-medium">Kategori:</span>{' '}
-                                                <span className={`ml-1 px-2 py-1 rounded-full text-xs ${r.details.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
-                                                    r.details.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
-                                                        r.details.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
-                                                            'bg-red-100 text-red-800'
-                                                    }`}>
-                                                    {r.details.band}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                {/* PAPI Kostick Test (LEAD) */}
-                                {r.test_name === "PAPI Kostick Test" && r.details && r.details.categories && (
-                                    <div className="p-5">
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-                                            <h4 className="font-bold text-gray-700">Profil PAPI Kostick</h4>
-                                            {computePrimaryTrait(r.details) && (
-                                                <span className="mt-2 sm:mt-0 inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-700">
-                                                    Sifat Utama: {computePrimaryTrait(r.details)}
-                                                </span>
-                                            )}
-                                        </div>
+                                    {/* Counterproductive Behavior - Industrial Edition */}
+                                    {r.test_name === "CBI Test" && r.details && (
+                                        <div className="space-y-10">
+                                            {/* Top Metrics Grid */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                {/* Global Risk Box */}
+                                                <div className="bg-neutral-50 p-8 border-2 border-neutral-900 relative">
+                                                    <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
+                                                        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-4">Overall Integrity Risk</span>
+                                                    <div className="flex items-end gap-4">
+                                                        <span className="text-5xl font-black text-neutral-900 leading-none font-mono tracking-tighter">{r.details.overall_concern?.score || 0}</span>
+                                                        <div className="flex flex-col gap-1 pb-1">
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 border-2 uppercase tracking-widest ${
+                                                                r.details.overall_concern?.level === 'White' ? 'bg-white text-neutral-400 border-neutral-300' :
+                                                                r.details.overall_concern?.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' :
+                                                                'bg-neutral-900 text-white border-neutral-900'
+                                                            }`}>
+                                                                {r.details.overall_concern?.level === 'White' ? 'Low Risk' : r.details.overall_concern?.level === 'Light Blue' ? 'Moderate' : 'High Risk'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <p className="mt-6 text-xs text-neutral-500 leading-relaxed font-bold uppercase tracking-tighter italic">
+                                                        {CBI_INTERPRETATION["Overall"]?.[r.details.overall_concern?.level]}
+                                                    </p>
+                                                </div>
 
-                                        {/* Radar Chart */}
-                                        <div className="flex justify-center mb-6">
-                                            <ResponsiveContainer width="100%" height={400}>
-                                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={
-                                                    (() => {
-                                                        // Flatten all categories into a single array for the radar
-                                                        const chartData = [];
-                                                        const categoryOrder = [
-                                                            "Work Direction - Arah Kerja",
-                                                            "Leadership - Kepemimpinan",
-                                                            "Activity - Aktivitas Kerja",
-                                                            "Social Nature - Relasi Sosial",
-                                                            "Work Style - Gaya Kerja",
-                                                            "Temperament - Sifat Temperamen",
-                                                            "Followership - Posisi Atasan-Bawahan",
-                                                        ];
-                                                        categoryOrder.forEach(cat => {
-                                                            if (r.details.categories[cat]) {
-                                                                Object.entries(r.details.categories[cat]).forEach(([code, data]) => {
-                                                                    chartData.push({
-                                                                        trait: code,
-                                                                        score: data.stanine,
-                                                                        fullName: data.description?.split('—')[0]?.trim() || code,
-                                                                    });
-                                                                });
-                                                            }
-                                                        });
-                                                        return chartData;
-                                                    })()
-                                                }>
-                                                    <PolarGrid stroke="#e5e7eb" />
-                                                    <PolarAngleAxis
-                                                        dataKey="trait"
-                                                        tick={{ fill: '#374151', fontSize: 12, fontWeight: 600 }}
-                                                    />
-                                                    <PolarRadiusAxis
-                                                        domain={[0, 10]}
-                                                        tick={{ fill: '#9ca3af', fontSize: 10 }}
-                                                        tickCount={10}
-                                                    />
-                                                    <Radar
-                                                        name="Role"
-                                                        dataKey="score"
-                                                        stroke="#3b82f6"
-                                                        strokeWidth={2}
-                                                        fill="#3b82f6"
-                                                        fillOpacity={0.25}
-                                                    />
-                                                    <Tooltip
-                                                        formatter={(value, name, props) => [
-                                                            `Stanine: ${value}`,
-                                                            props.payload.fullName
-                                                        ]}
-                                                        contentStyle={{
-                                                            borderRadius: '8px',
-                                                            border: '1px solid #e5e7eb',
-                                                            fontSize: '13px',
-                                                        }}
-                                                    />
-                                                    <Legend
-                                                        wrapperStyle={{ fontSize: '13px' }}
-                                                    />
-                                                </RadarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-
-                                        {Object.entries(r.details.categories).map(([categoryName, norms]) => (
-                                            <div key={categoryName} className="mb-6">
-                                                <h5 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 pb-1 border-b border-gray-100">
-                                                    {categoryName}
-                                                </h5>
-                                                <div className="space-y-2">
-                                                    {Object.entries(norms).map(([normCode, normData]) => {
-                                                        // Stanine color coding
-                                                        const stanine = normData.stanine;
-                                                        let barColor = 'bg-gray-300';
-                                                        let textColor = 'text-gray-500';
-                                                        if (stanine >= 7) { barColor = 'bg-emerald-500'; textColor = 'text-emerald-700'; }
-                                                        else if (stanine >= 5) { barColor = 'bg-blue-500'; textColor = 'text-blue-700'; }
-                                                        else if (stanine >= 3) { barColor = 'bg-amber-500'; textColor = 'text-amber-700'; }
-                                                        else { barColor = 'bg-red-400'; textColor = 'text-red-600'; }
-
-                                                        return (
-                                                            <div key={normCode} className="flex items-center gap-3">
-                                                                {/* Norm label */}
-                                                                <div className="w-28 flex-shrink-0">
-                                                                    <span className="text-sm font-semibold text-gray-800">{normCode}</span>
-                                                                    <p className="text-[11px] text-gray-400 truncate" title={normData.description}>
-                                                                        {normData.description?.split('—')[0]?.trim() || ''}
-                                                                    </p>
-                                                                </div>
-
-                                                                {/* Stanine bar (9 segments) */}
-                                                                <div className="flex-1 flex gap-0.5">
-                                                                    {Array.from({ length: 9 }, (_, i) => (
-                                                                        <div
-                                                                            key={i}
-                                                                            className={`
-                                                                                h-5 flex-1 rounded-sm transition-all
-                                                                                ${i + 1 <= stanine ? barColor : 'bg-gray-100'}
-                                                                            `}
-                                                                        />
-                                                                    ))}
-                                                                </div>
-
-                                                                {/* Stanine number */}
-                                                                <div className={`w-8 text-right text-sm font-bold ${textColor}`}>
-                                                                    {stanine}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                {/* Good Impression Box */}
+                                                <div className="bg-neutral-50 p-8 border-2 border-neutral-900">
+                                                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-4">Good Impression (Validity Search)</span>
+                                                    <div className="flex items-center gap-6">
+                                                        <span className="text-4xl font-black text-neutral-800 font-mono italic">{r.details.good_impression?.score || 0}</span>
+                                                        <div className="flex flex-col">
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 border uppercase tracking-widest mb-1 ${
+                                                                r.details.good_impression?.level === 'White' ? 'border-success text-success' : 
+                                                                r.details.good_impression?.level === 'Light Blue' ? 'border-warning text-warning' : 
+                                                                'border-error text-error'
+                                                            }`}>
+                                                                {r.details.good_impression?.level}
+                                                            </span>
+                                                            <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">Response Integrity Index</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-8 h-1 w-full bg-neutral-200">
+                                                        <div className={`h-full ${r.details.good_impression?.level === 'White' ? 'bg-success' : 'bg-error'}`} style={{ width: `${(r.details.good_impression?.score / 15) * 100}%` }}></div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        ))}
 
-                                        {/* Stanine legend */}
-                                        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-400">
-                                            <span>Stanine:</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-400"></span> 1-2 Rendah</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-amber-500"></span> 3-4 Di Bawah Rata-rata</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-blue-500"></span> 5 Rata-rata</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 6-7 Di Atas Rata-rata</span>
-                                            <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500"></span> 8-9 Tinggi</span>
-                                        </div>
-                                    </div>
-                                )}
-                                {/* Legacy Leadership Test results (deprecated, kept for backward compatibility with old data) */}
-                                {r.test_name === "Leadership Test" && r.details && (
-                                    <div className="p-5">
-                                        <h4 className="font-bold text-gray-700 mb-3">Profil Kepemimpinan</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
-                                            <div><span className="font-medium">Kekuatan Utama:</span> {r.details.primary}</div>
-                                            <div><span className="font-medium">Kekuatan Sekunder:</span> {r.details.secondary}</div>
-                                        </div>
-                                        <div className="mt-3">
-                                            <span className="font-medium">Skor Sifat:</span>
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                                                {Object.entries(r.details.percentages || {}).map(([code, pct]) => {
-                                                    const traitNames = {
-                                                        DEC: 'Decisiveness',
-                                                        COM: 'Communication',
-                                                        STR: 'Strategic Thinking',
-                                                        TEA: 'Team Orientation',
-                                                        ACC: 'Accountability',
-                                                        EMO: 'Emotional Control'
-                                                    };
-                                                    return (
-                                                        <div key={code} className="bg-gray-50 p-2 rounded flex justify-between">
-                                                            <span className="font-medium">{traitNames[code] || code}:</span>
-                                                            <span>{Math.round(pct)}%</span>
+                                            {/* Detailed Traits Grid */}
+                                            <div className="space-y-6">
+                                                <h5 className="text-sm font-black text-neutral-900 uppercase tracking-widest border-b-2 border-neutral-900 pb-2 inline-block">Behavioral Concerns Matrix</h5>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    {r.details.primary_concerns && Object.entries(r.details.primary_concerns).map(([trait, data]) => (
+                                                        <div key={trait} className="p-5 border-2 border-neutral-900 hover:bg-neutral-900 hover:text-white transition-all group">
+                                                            <div className="flex justify-between items-start mb-3">
+                                                                <span className="text-xs font-black uppercase tracking-tighter leading-tight max-w-[140px]">{trait}</span>
+                                                                <span className="font-mono text-lg font-black">{data.score}</span>
+                                                            </div>
+                                                            <div className={`text-[10px] font-black uppercase tracking-widest inline-block px-1.5 py-0.5 border ${
+                                                                data.level === 'White' ? 'bg-white text-neutral-900 group-hover:bg-neutral-700 group-hover:text-white' : 
+                                                                data.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' : 
+                                                                'bg-error text-white border-error'
+                                                            }`}>
+                                                                {data.level === 'White' ? 'Safe' : 'Concern'}
+                                                            </div>
+                                                            <p className="mt-4 text-[11px] font-bold leading-tight opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                {CBI_INTERPRETATION[trait]?.[data.level]}
+                                                            </p>
                                                         </div>
-                                                    );
-                                                })}
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-                                        {r.details.development_areas?.length > 0 && (
-                                            <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-700">
-                                                Area pengembangan: {r.details.development_areas.map(code => {
-                                                    const traitNames = {
-                                                        DEC: 'Decisiveness',
-                                                        COM: 'Communication',
-                                                        STR: 'Strategic Thinking',
-                                                        TEA: 'Team Orientation',
-                                                        ACC: 'Accountability',
-                                                        EMO: 'Emotional Control'
-                                                    };
-                                                    return traitNames[code] || code;
-                                                }).join(', ')}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
                 </section>
             )}
+
         </div>
     );
 }

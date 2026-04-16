@@ -105,7 +105,7 @@ function TestScreen({ assignmentId, onFinish }) {
         if (currentIndex < testData.questions.length - 1) setCurrentIndex(currentIndex + 1);
         else setShowConfirmModal(true);
       }, 200);
-    } else if (testData.settings?.type === 'temperament') {
+    } else if (testData.settings?.type === 'temperament' || testData.test_code === 'CBI') {
       setAnswers({ ...answers, [currentQuestionId]: optionId });
       setTimeout(() => {
         if (currentIndex < testData.questions.length - 1) {
@@ -180,28 +180,36 @@ function TestScreen({ assignmentId, onFinish }) {
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${seconds % 60 < 10 ? '0' : ''}${seconds % 60}`;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-neutral-50 flex flex-col font-body">
       {/* Header */}
-      <div className="bg-white shadow px-3 sm:p-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="font-bold text-base sm:text-lg truncate max-w-[150px] sm:max-w-none">{testData.test_name}</h1>
-        <div className="text-base sm:text-xl font-mono bg-red-100 text-red-700 px-2 sm:px-3 py-1 rounded text-sm sm:text-base">
-          {timeLeft !== null ? formatTime(timeLeft) : "∞"}
+      <div className="bg-white border-b border-neutral-200 px-4 sm:px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <h1 className="font-bold font-display text-lg sm:text-xl text-neutral-900 truncate max-w-[200px] sm:max-w-none">{testData.test_name}</h1>
+        <div className="text-sm sm:text-base font-mono font-bold bg-neutral-100 border border-neutral-200 text-primary-900 px-3 py-1.5 rounded-lg shadow-inner">
+          Waktu: {timeLeft !== null ? formatTime(timeLeft) : "∞"}
         </div>
+      </div>
+      
+      {/* Dynamic Midnight to Beige Progress Bar */}
+      <div className="w-full h-1.5 bg-neutral-200">
+        <div 
+          className="h-full bg-gradient-to-r from-primary-700 to-[#d3c0aa] transition-all duration-300 ease-out"
+          style={{ width: `${(Object.keys(answers).length / testData.questions.length) * 100}%` }}
+        />
       </div>
 
       {/* Question Indicator Grid - Wrapping grid for all test types */}
       {testData.settings?.type !== 'speed' && (
-        <div className="bg-gray-50 border-b px-3 sm:px-4 py-2 sm:py-3 overflow-x-auto">
-          <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-start sm:justify-center">
+        <div className="bg-neutral-50/50 border-b border-neutral-200 px-4 sm:px-6 py-3 sm:py-4 overflow-x-auto shadow-sm">
+          <div className="flex flex-wrap gap-2 justify-start sm:justify-center">
             {testData.questions.map((q, idx) => (
               <button
                 key={q.id}
                 onClick={() => setCurrentIndex(idx)}
-                className={`w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0 flex items-center justify-center text-xs font-bold rounded-full transition-all ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 ${
                   answers[q.id] 
-                    ? 'bg-green-500 text-white hover:bg-green-600' 
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                } ${idx === currentIndex ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
+                    ? 'bg-gradient-to-tr from-primary-700 to-primary-600 text-white shadow-sm ring-2 ring-primary-300 ring-offset-2' 
+                    : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+                } ${idx === currentIndex && !answers[q.id] ? 'ring-2 ring-primary-400 ring-offset-2' : ''}`}
               >
                 {idx + 1}
               </button>
@@ -211,32 +219,32 @@ function TestScreen({ assignmentId, onFinish }) {
       )}
 
       {/* QUESTION AREA */}
-      <div className="flex-1 p-3 sm:p-6 flex flex-col items-center justify-center overflow-y-auto">
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-2xl">
-          <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+      <div className="flex-1 p-4 sm:p-8 flex flex-col items-center justify-center overflow-y-auto">
+        <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-200 w-full max-w-3xl">
+          <p className="text-xs sm:text-sm font-bold tracking-widest uppercase text-primary-400 mb-3 sm:mb-4">
             Pertanyaan {currentIndex + 1} dari {testData.questions.length}
           </p>
-          <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-4 sm:mb-6 leading-relaxed">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold font-display text-neutral-900 mb-6 sm:mb-8 leading-relaxed">
             {currentQuestion.content}
           </h2>
 
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-3 sm:space-y-4">
             {currentQuestion.options.map((opt) => {
               const isSelected = answers[currentQuestion.id] === opt.id;
               return (
                 <button
                   key={opt.id}
                   onClick={() => handleSelect(opt.id)}
-                  className={`w-full text-left p-3 sm:p-4 border-2 rounded-lg transition-all min-h-[48px] sm:min-h-[52px] ${
+                  className={`w-full text-left p-4 sm:p-5 border-2 rounded-2xl transition-all duration-200 min-h-[52px] ${
                     isSelected
-                      ? 'bg-blue-500 text-white border-blue-600 shadow-md'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                      ? 'bg-gradient-to-r from-primary-700 to-primary-600 text-white border-primary-600 shadow-md ring-4 ring-primary-600/20'
+                      : 'bg-white text-neutral-700 border-neutral-200 hover:border-primary-300 hover:bg-primary-50/50'
                   }`}
                 >
-                  <span className={`font-bold mr-2 sm:mr-3 ${isSelected ? 'text-white' : 'text-gray-500'}`}>
+                  <span className={`font-bold font-display mr-3 sm:mr-4 ${isSelected ? 'text-primary-100' : 'text-primary-600'}`}>
                     {opt.label}.
                   </span>
-                  <span className="text-sm sm:text-base">{opt.content}</span>
+                  <span className="text-sm sm:text-base font-medium">{opt.content}</span>
                 </button>
               );
             })}
@@ -246,37 +254,37 @@ function TestScreen({ assignmentId, onFinish }) {
 
       {/* Footer Navigation (Hidden for Speed) */}
       {testData.settings?.type !== 'speed' && (
-        <div className="bg-white border-t px-3 sm:p-4 shadow flex justify-between items-center safe-area-pb">
+        <div className="bg-white border-t border-neutral-200 px-4 sm:px-8 py-4 sm:py-5 flex justify-between items-center safe-area-pb">
           <button
             disabled={currentIndex === 0}
             onClick={() => setCurrentIndex(currentIndex - 1)}
-            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl font-bold font-display transition duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center ${
               currentIndex === 0
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden sm:inline ml-1">Sebelumnya</span>
+            <span className="hidden sm:inline ml-1.5">Sebelumnya</span>
           </button>
 
-          <div className="text-xs sm:text-sm text-gray-600 font-medium bg-gray-100 px-3 py-1.5 rounded-lg">
+          <div className="text-sm font-bold font-display tracking-widest text-primary-700 bg-primary-100/50 border border-primary-200/50 px-4 py-2 rounded-xl">
             {Object.keys(answers).length} / {testData.questions.length}
           </div>
 
           {currentIndex === testData.questions.length - 1 ? (
             <button
               onClick={() => setShowConfirmModal(true)}
-              className="px-4 sm:px-5 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 shadow-sm transition min-h-[44px] min-w-[44px]"
+              className="px-6 py-2.5 bg-accent-gold-light hover:bg-accent-gold-dark text-neutral-900 rounded-xl font-bold font-display tracking-wide shadow-sm transition min-h-[44px]"
             >
-              Selesai
+              Kirim Jawaban
             </button>
           ) : (
             <button
               onClick={() => setCurrentIndex(currentIndex + 1)}
-              className="px-3 sm:px-5 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 shadow-sm transition min-h-[44px] min-w-[44px] flex items-center gap-1"
+              className="px-5 sm:px-6 py-2.5 btn-primary rounded-xl transition min-h-[44px] flex items-center gap-1.5"
             >
               <span className="hidden sm:inline">Selanjutnya</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

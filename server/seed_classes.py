@@ -11,66 +11,69 @@ db: Session = SessionLocal()
 
 classes_data = [
     {
-        "name": "Karyawan Tetap",
-        "description": "Karyawan tetap - standar ketat, waktu normal",
+        "name": "HO Staff",
+        "description": "Head Office Staff",
         "config": {
             "time_overrides": {
-                "LOGIC": 900,    # 15 min
-                "SPEED": 600,    # 10 min
-                "MEM": 300,      # 5 min
-                "DISC": 600,     # 10 min
-                "TEMP": 600,     # 10 min
-                "LEAD": 1800,    # 30 min (PAPI Kostick)
-                # IQ not yet seeded - placeholder
-            },
-            "passing_grades": {
-                # Will be filled when passing grade feature is activated
-            },
+                "SPEED": 600, "DISC": 420, "LOGIC": 720, "LEAD": 720, "TEMP": 300, "CBI": 900,
+                "MEM": {"encoding": 180, "recall": 600},
+                "IQ": {"phases": [180, 240, 180, 180, 180, 240, 180, 180]}
+            }
         },
     },
     {
-        "name": "Karyawan Kontrak",
-        "description": "Karyawan kontrak - sedikit lebih longgar",
+        "name": "HO Non Staff",
+        "description": "Head Office Non Staff",
         "config": {
             "time_overrides": {
-                "LOGIC": 1050,   # 17.5 min (+2.5 min)
-                "SPEED": 720,    # 12 min (+2 min)
-                "MEM": 360,      # 6 min (+1 min)
-                "DISC": 720,     # 12 min (+2 min)
-                "TEMP": 720,     # 12 min (+2 min)
-                "LEAD": 2100,    # 35 min (+5 min)
-            },
-            "passing_grades": {},
+                "SPEED": 600, "DISC": 420, "LOGIC": 720, "LEAD": 720, "TEMP": 300, "CBI": 900,
+                "MEM": {"encoding": 180, "recall": 600},
+                "IQ": {"phases": [240, 300, 240, 240, 240, 300, 240, 240]}
+            }
         },
     },
     {
-        "name": "Magang",
-        "description": "Peserta magang - waktu lebih longgar, standar disesuaikan",
+        "name": "Site Staff",
+        "description": "Site-based Staff",
         "config": {
             "time_overrides": {
-                "LOGIC": 1200,   # 20 min (+5 min)
-                "SPEED": 900,    # 15 min (+5 min)
-                "MEM": 420,      # 7 min (+2 min)
-                "DISC": 780,     # 13 min (+3 min)
-                "TEMP": 780,     # 13 min (+3 min)
-                "LEAD": 2400,    # 40 min (+10 min)
-            },
-            "passing_grades": {},
+                "SPEED": 600, "DISC": 420, "LOGIC": 720, "LEAD": 720, "TEMP": 300, "CBI": 900,
+                "MEM": {"encoding": 180, "recall": 600},
+                "IQ": {"phases": [180, 240, 180, 180, 180, 240, 180, 180]}
+            }
         },
     },
     {
-        "name": "Outsourcing",
-        "description": "Tenaga outsourcing - standar dasar",
+        "name": "Site Non Staff",
+        "description": "Site-based Non Staff",
         "config": {
             "time_overrides": {
-                "LOGIC": 1200,   # 20 min
-                "SPEED": 900,    # 15 min
-                "MEM": 420,      # 7 min
-                "DISC": 780,     # 13 min
-                "TEMP": 780,     # 13 min
-                "LEAD": 2400,    # 40 min
-            },
-            "passing_grades": {},
+                "SPEED": 780, "DISC": 600, "LOGIC": 900, "LEAD": 900, "TEMP": 360, "CBI": 1080,
+                "MEM": {"encoding": 300, "recall": 600},
+                "IQ": {"phases": [300, 360, 300, 300, 300, 360, 300, 300]}
+            }
+        },
+    },
+    {
+        "name": "Site Operator",
+        "description": "Site-based Operator",
+        "config": {
+            "time_overrides": {
+                "SPEED": 780, "DISC": 600, "LOGIC": 900, "LEAD": 900, "TEMP": 360, "CBI": 1080,
+                "MEM": {"encoding": 300, "recall": 600},
+                "IQ": {"phases": [300, 360, 300, 300, 300, 360, 300, 300]}
+            }
+        },
+    },
+    {
+        "name": "Internship",
+        "description": "Internship Program",
+        "config": {
+            "time_overrides": {
+                "SPEED": 600, "DISC": 420, "LOGIC": 720, "LEAD": 720, "TEMP": 300, "CBI": 900,
+                "MEM": {"encoding": 180, "recall": 600},
+                "IQ": {"phases": [180, 240, 180, 180, 180, 240, 180, 180]}
+            }
         },
     },
 ]
@@ -88,7 +91,7 @@ for class_data in classes_data:
         existing.description = class_data["description"]
         existing.config = class_data["config"]
         updated += 1
-        print(f"  ✏️  Updated: {class_data['name']}")
+        print(f"  [Updated] {class_data['name']}")
     else:
         # Create new
         new_class = ClassConfig(
@@ -98,12 +101,12 @@ for class_data in classes_data:
         )
         db.add(new_class)
         created += 1
-        print(f"  ✅ Created: {class_data['name']}")
+        print(f"  [Created] {class_data['name']}")
 
 db.commit()
 
 total = db.query(ClassConfig).count()
-print(f"\n✅ Successfully seeded Class Configs!")
+print(f"\nSuccessfully seeded Class Configs!")
 print(f"   - Created: {created}")
 print(f"   - Updated: {updated}")
 print(f"   - Total classes: {total}")

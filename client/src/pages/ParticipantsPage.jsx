@@ -278,21 +278,21 @@ function ParticipantsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="min-h-screen bg-neutral-50">
             {/* Page Header */}
-            <div className="bg-white shadow-sm border-b border-gray-200">
+            <div className="bg-white border-b border-neutral-200 sticky top-0 z-10 w-full">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                                <span className="p-2 bg-blue-100 rounded-lg">
-                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <h1 className="text-3xl font-bold font-display text-neutral-900 flex items-center gap-3 tracking-tight">
+                                <span className="p-2.5 bg-primary-100 rounded-xl">
+                                    <svg className="w-6 h-6 text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                 </span>
                                 Kelola Peserta
                             </h1>
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p className="mt-2 text-sm text-neutral-500 font-medium ml-14">
                                 {filteredUsers.length} peserta ditemukan
                             </p>
                         </div>
@@ -304,7 +304,7 @@ function ParticipantsPage() {
                                 <input
                                     type="text"
                                     placeholder="Cari peserta..."
-                                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                    className="pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm w-full sm:w-64 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -314,10 +314,10 @@ function ParticipantsPage() {
                                     setIsSelectMode(!isSelectMode);
                                     if (isSelectMode) setSelectedUsers(new Set());
                                 }}
-                                className={`inline-flex items-center gap-2 font-medium py-2 px-4 rounded-lg transition-colors shadow-sm border-2 ${
+                                className={`inline-flex items-center gap-2 font-bold py-2.5 px-4 rounded-xl transition-colors shadow-sm border ${
                                     isSelectMode || selectedUsers.size > 0
-                                        ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
-                                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                        ? 'bg-sky-500 border-sky-500 text-white hover:bg-sky-600 shadow-md'
+                                        : 'bg-white border-neutral-200 text-neutral-700 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-300'
                                 }`}
                                 title="Aktifkan mode seleksi batch"
                             >
@@ -328,7 +328,7 @@ function ParticipantsPage() {
                             </button>
                             <Link
                                 to="/participants/new"
-                                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm"
+                                className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-5 rounded-xl transition-colors shadow-md hover:shadow-lg hover:-translate-y-0.5"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -337,7 +337,7 @@ function ParticipantsPage() {
                             </Link>
                             <button
                                 onClick={() => setShowBulkUpload(true)}
-                                className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm"
+                                className="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 px-5 rounded-xl transition-colors shadow-md hover:shadow-lg hover:-translate-y-0.5"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -350,20 +350,20 @@ function ParticipantsPage() {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Batch Action Bar */}
                 {selectedUsers.size > 0 && (
-                    <div className="mb-4 bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3 flex items-center justify-between animate-pulse">
+                    <div className="mb-6 bg-primary-50 border-2 border-primary-200 rounded-2xl px-6 py-4 flex items-center justify-between animate-pulse">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
                                     checked={selectedUsers.size === currentUsers.length && currentUsers.length > 0}
                                     onChange={toggleSelectAll}
-                                    className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                    className="w-5 h-5 text-primary-600 rounded border-neutral-300 focus:ring-primary-500 cursor-pointer"
                                 />
-                                <span className="text-sm font-medium text-gray-700">
-                                    <span className="font-bold text-blue-700">{selectedUsers.size}</span> peserta dipilih
+                                <span className="text-sm font-medium text-neutral-700">
+                                    <span className="font-bold text-primary-700">{selectedUsers.size}</span> peserta dipilih
                                 </span>
                             </div>
                         </div>
@@ -376,7 +376,7 @@ function ParticipantsPage() {
                             </button>
                             <button
                                 onClick={handleBatchDelete}
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-red-500 border border-transparent rounded-lg hover:bg-red-600 transition-colors shadow-md"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -389,13 +389,13 @@ function ParticipantsPage() {
 
                 {/* Sort Indicator Bar */}
                 {sortConfig.key && (
-                    <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm">
-                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="mb-6 bg-neutral-100 border border-neutral-200 rounded-xl px-5 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
+                            <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                             </svg>
-                            <span className="text-gray-600">Diurutkan berdasarkan:</span>
-                            <span className="font-semibold text-blue-700 capitalize">
+                            <span>Diurutkan berdasarkan:</span>
+                            <span className="font-bold text-primary-700 capitalize">
                                 {sortConfig.key.replace('_', ' ')}
                             </span>
                             <span className="text-blue-500">
@@ -547,7 +547,7 @@ function ParticipantsPage() {
                                                 </select>
                                                 <button
                                                     onClick={() => handleAssign(u.id, { stopPropagation: () => {} })}
-                                                    className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                                                    className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
                                                 >
                                                     Tambah
                                                 </button>
@@ -555,7 +555,7 @@ function ParticipantsPage() {
                                         )}
                                         <button
                                             onClick={() => handleAssignAll(u.id)}
-                                            className="bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                                            className="bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
                                         >
                                             Semua Tes
                                         </button>
@@ -567,29 +567,29 @@ function ParticipantsPage() {
                 </div>
 
                 {/* Desktop Table View - hidden on mobile */}
-                <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="hidden lg:block bg-white rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 overflow-hidden">
                     {/* Table */}
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                        <table className="min-w-full divide-y divide-neutral-200">
+                            <thead className="bg-neutral-50/80">
                                 <tr>
-                                    <th className={`px-6 py-4 text-left ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
+                                    <th className={`px-6 py-5 text-left ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
                                         <input
                                             type="checkbox"
                                             checked={selectedUsers.size === currentUsers.length && currentUsers.length > 0}
                                             onChange={toggleSelectAll}
                                             disabled={currentUsers.length === 0}
-                                            className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-5 h-5 text-primary-600 rounded border-neutral-300 focus:ring-primary-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                             title="Pilih semua di halaman ini"
                                         />
                                     </th>
                                     <th
-                                        className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
+                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
                                         onClick={() => handleSort('full_name')}
                                         title="Klik untuk mengurutkan berdasarkan nama"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                             </svg>
                                             <span>Nama</span>
@@ -597,12 +597,12 @@ function ParticipantsPage() {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
+                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
                                         onClick={() => handleSort('department')}
                                         title="Klik untuk mengurutkan berdasarkan departemen"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                             </svg>
                                             <span>Departemen</span>
@@ -610,12 +610,12 @@ function ParticipantsPage() {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
+                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
                                         onClick={() => handleSort('tests_count')}
                                         title="Klik untuk mengurutkan berdasarkan jumlah tes"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                             </svg>
                                             <span>Tes Ditungaskan</span>
@@ -623,12 +623,12 @@ function ParticipantsPage() {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none group"
+                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
                                         onClick={() => handleSort('status')}
                                         title="Klik untuk mengurutkan berdasarkan status (terkunci dulu)"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
@@ -660,14 +660,14 @@ function ParticipantsPage() {
                                         
                                         // Determine row status color
                                         let rowBorderColor = 'border-l-transparent';
-                                        if (hasLocked) rowBorderColor = 'border-l-red-500';
-                                        else if (hasInProgress) rowBorderColor = 'border-l-yellow-500';
-                                        else if (userAssignments.length > 0) rowBorderColor = 'border-l-green-500';
+                                        if (hasLocked) rowBorderColor = 'border-l-error';
+                                        else if (hasInProgress) rowBorderColor = 'border-l-warning';
+                                        else if (userAssignments.length > 0) rowBorderColor = 'border-l-success';
 
                                         return (
                                             <tr
                                                 key={u.id}
-                                                className={`hover:bg-blue-50 cursor-pointer transition-colors border-l-4 ${rowBorderColor}`}
+                                                className={`hover:bg-neutral-50/80 cursor-pointer transition-colors border-l-4 ${rowBorderColor}`}
                                                 onClick={() => navigate(`/participants/${u.id}`)}
                                             >
                                                 <td className={`px-6 py-4 ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
@@ -684,14 +684,14 @@ function ParticipantsPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center">
-                                                        <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                                        <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-tr from-primary-700 to-[#d3c0aa] rounded-full flex items-center justify-center text-white font-bold shadow-sm">
                                                             {(u.full_name || u.username).charAt(0).toUpperCase()}
                                                         </div>
                                                         <div className="ml-4 min-w-0 flex-1">
-                                                            <div className="text-sm font-semibold text-gray-900 truncate max-w-[200px]" title={u.full_name || u.username}>
+                                                            <div className="text-sm font-bold font-display tracking-tight text-neutral-900 truncate max-w-[200px]" title={u.full_name || u.username}>
                                                                 {u.full_name || u.username}
                                                             </div>
-                                                            <div className="text-sm text-gray-500 truncate max-w-[200px]" title={`@${u.username}`}>
+                                                            <div className="text-sm text-neutral-500 truncate max-w-[200px]" title={`@${u.username}`}>
                                                                 @{u.username}
                                                             </div>
                                                         </div>
@@ -699,23 +699,23 @@ function ParticipantsPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
-                                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                                         </svg>
-                                                        <span className="text-sm text-gray-700">{u.department || <span className="text-gray-400 italic">Belum ditugaskan</span>}</span>
+                                                        <span className="text-sm font-medium text-neutral-700">{u.department || <span className="text-neutral-400 italic">Belum ditugaskan</span>}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {userAssignments.length > 0 ? (
-                                                        <div className="flex flex-wrap gap-1.5">
+                                                        <div className="flex flex-wrap gap-2">
                                                             {userAssignments.slice(0, 3).map(a => {
-                                                                let bgColor = 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-600/20';
-                                                                if (a.status === 'locked') bgColor = 'bg-red-100 text-red-700 ring-1 ring-inset ring-red-600/20';
-                                                                else if (a.status === 'in_progress') bgColor = 'bg-yellow-100 text-yellow-700 ring-1 ring-inset ring-yellow-600/20';
+                                                                let bgColor = 'bg-success-light text-success-dark ring-success/20';
+                                                                if (a.status === 'locked') bgColor = 'bg-error-light text-error-dark ring-error/20';
+                                                                else if (a.status === 'in_progress') bgColor = 'bg-warning-light text-warning-dark ring-warning/20';
                                                                 return (
                                                                     <span
                                                                         key={a.id}
-                                                                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap ${bgColor}`}
+                                                                        className={`inline-flex items-center px-2 py-1 rounded-[6px] text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ring-1 ring-inset shadow-sm ${bgColor}`}
                                                                         title={a.test_name}
                                                                     >
                                                                         {a.test_name}
@@ -723,13 +723,13 @@ function ParticipantsPage() {
                                                                 );
                                                             })}
                                                             {userAssignments.length > 3 && (
-                                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/20 whitespace-nowrap">
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-[6px] text-[10px] font-bold uppercase tracking-wider bg-neutral-100 text-neutral-600 ring-1 ring-inset ring-neutral-300/50 whitespace-nowrap">
                                                                     +{userAssignments.length - 3} lainnya
                                                                 </span>
                                                             )}
                                                         </div>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1 text-sm text-gray-400 italic">
+                                                        <span className="inline-flex items-center gap-1 text-sm text-neutral-400 italic">
                                                             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                                             </svg>
@@ -758,9 +758,9 @@ function ParticipantsPage() {
                                                         )}
 
                                                         {/* Assignment group */}
-                                                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1 ring-1 ring-gray-200">
+                                                        <div className="flex items-center gap-1.5 bg-neutral-50 rounded-xl p-1.5 border border-neutral-200">
                                                             <select
-                                                                className="border-0 bg-transparent text-xs font-medium text-gray-700 py-1.5 pl-2 pr-6 focus:ring-2 focus:ring-blue-500 rounded cursor-pointer"
+                                                                className="border-0 bg-transparent text-xs font-medium text-neutral-700 py-1.5 pl-2 pr-6 focus:ring-0 cursor-pointer"
                                                                 value={selectedTest[u.id] || ''}
                                                                 onChange={(e) => {
                                                                     e.stopPropagation();
@@ -775,7 +775,7 @@ function ParticipantsPage() {
                                                             </select>
                                                             <button
                                                                 onClick={(e) => handleAssign(u.id, e)}
-                                                                className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors shadow-sm"
+                                                                className="bg-sky-500 hover:bg-sky-600 text-white min-w-[70px] min-h-0 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors shadow-sm whitespace-nowrap"
                                                                 title="Tambahkan tes yang dipilih"
                                                             >
                                                                 Tambah
@@ -785,7 +785,7 @@ function ParticipantsPage() {
                                                                     e.stopPropagation();
                                                                     handleAssignAll(u.id);
                                                                 }}
-                                                                className="bg-purple-500 hover:bg-purple-600 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors shadow-sm"
+                                                                className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[70px] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors shadow-sm whitespace-nowrap"
                                                                 title="Tugaskan semua tes"
                                                             >
                                                                 Semua
@@ -794,7 +794,7 @@ function ParticipantsPage() {
 
                                                         {/* Edit & Delete icons, only for superadmin */}
                                                         {isSuperadmin && (
-                                                            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-gray-200">
+                                                            <div className="flex items-center gap-2 ml-2 pl-3 border-l border-neutral-200">
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -813,7 +813,7 @@ function ParticipantsPage() {
                                                                         e.stopPropagation();
                                                                         handleDelete(u.id, u.full_name || u.username);
                                                                     }}
-                                                                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                    className="p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-lg transition-colors shadow-sm"
                                                                     title="Hapus peserta"
                                                                 >
                                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

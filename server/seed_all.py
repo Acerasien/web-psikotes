@@ -11,6 +11,8 @@ scripts = [
     "seed_logic.py",
     "seed_papi.py",
     "seed_iq.py",
+    "seed_cbi.py",
+    "seed_classes.py",
 ]
 
 for script in scripts:

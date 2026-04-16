@@ -11,7 +11,7 @@ disc_test = db.query(Test).filter(Test.code == "DISC").first()
 
 if not disc_test:
     disc_test = Test(
-        name="DISC Assessment",
+        name="DISC Test",
         code="DISC",
         time_limit=600,          # 10 minutes
         settings={"type": "disc"}
@@ -23,8 +23,25 @@ else:
     # Clear old data and update timer
     disc_test.time_limit = 600
     old_qs = db.query(Question).filter(Question.test_id == disc_test.id).all()
-    for q in old_qs:
-        db.query(Option).filter(Option.question_id == q.id).delete()
+    old_q_ids = [q.id for q in old_qs]
+
+    if old_q_ids:
+        # Delete responses, results and exit logs first (FK constraint)
+        from models import Response, Result, ExitLog, Assignment
+        db.query(Response).filter(Response.test_id == disc_test.id).delete(synchronize_session=False)
+        db.query(Result).filter(Result.test_id == disc_test.id).delete(synchronize_session=False)
+        db.query(ExitLog).filter(
+            ExitLog.assignment_id.in_(
+                db.query(Assignment.id).filter(Assignment.test_id == disc_test.id)
+            )
+        ).delete(synchronize_session=False)
+        db.query(Assignment).filter(Assignment.test_id == disc_test.id).delete(synchronize_session=False)
+        db.commit()
+
+        # Then delete options
+        db.query(Option).filter(Option.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        db.commit()
+
     db.query(Question).filter(Question.test_id == disc_test.id).delete()
     db.commit()
 
@@ -73,8 +90,7 @@ for block in blocks:
 for trait_idx in range(4):
     trait_counts[traits[trait_idx]] = len(blocks)
 
-print(f"Trait distribution: {trait_counts}")
-print(f"Each trait appears {len(blocks)} times across all blocks (balanced ✓)")
+print(f"Each trait appears {len(blocks)} times across all blocks (balanced)")
 
 # Set random seed for reproducibility (optional - remove for true random)
 # random.seed(42)
@@ -120,7 +136,7 @@ db.commit()
 total_options = db.query(Option).join(Question).filter(Question.test_id == disc_test.id).count()
 total_questions = db.query(Question).filter(Question.test_id == disc_test.id).count()
 
-print(f"\n✅ Successfully seeded DISC Assessment!")
+print(f"\nSuccessfully seeded DISC Assessment!")
 print(f"   - Total questions: {total_questions} (expected: 24)")
 print(f"   - Total options: {total_options} (expected: 96)")
 print(f"   - Option positions: Randomized to prevent position bias")

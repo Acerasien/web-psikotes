@@ -16,9 +16,23 @@ function BulkUploadModal({ onClose, onSuccess }) {
     const [results, setResults] = useState(null);
     const fileInputRef = useRef();
 
+    const [classes, setClasses] = useState([]);
+
     // Prevent body scrolling while modal is open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
+        
+        // Fetch classes to show valid options in instructions
+        const fetchClasses = async () => {
+            try {
+                const res = await apiClient.get('/users/classes');
+                setClasses(res.data);
+            } catch (err) {
+                console.error('Failed to fetch classes:', err);
+            }
+        };
+        fetchClasses();
+
         return () => {
             document.body.style.overflow = 'auto';
         };
@@ -108,10 +122,12 @@ function BulkUploadModal({ onClose, onSuccess }) {
 
     const downloadTemplate = () => {
         // Create sample data
+        // Create sample data based on current classifications
+        const exampleClass = classes.length > 0 ? classes[0].name : 'HO Staff';
         const wsData = [
             ['username', 'password', 'full_name', 'age', 'gender', 'education', 'department', 'position', 'class'],
-            ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'IT', 'Manager', 'Karyawan Tetap'],
-            ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'HR', 'Staff', 'Magang']
+            ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'IT', 'Manager', exampleClass],
+            ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'HR', 'Staff', classes.length > 1 ? classes[1].name : 'Site Operator']
         ];
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -162,7 +178,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <td className="border border-gray-300 px-3 py-2">S1</td>
                                             <td className="border border-gray-300 px-3 py-2">IT</td>
                                             <td className="border border-gray-300 px-3 py-2">Manager</td>
-                                            <td className="border border-gray-300 px-3 py-2">Karyawan Tetap</td>
+                                            <td className="border border-gray-300 px-3 py-2">HO Staff</td>
                                         </tr>
                                         <tr className="bg-gray-50">
                                             <td className="border border-gray-300 px-3 py-2">janedoe</td>
@@ -173,11 +189,14 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <td className="border border-gray-300 px-3 py-2">S2</td>
                                             <td className="border border-gray-300 px-3 py-2">HR</td>
                                             <td className="border border-gray-300 px-3 py-2">Staff</td>
-                                            <td className="border border-gray-300 px-3 py-2">Magang</td>
+                                            <td className="border border-gray-300 px-3 py-2">Site Operator</td>
                                         </tr>
                                     </tbody>
                                 </table>
-                                <p className="text-xs text-gray-500 mt-1">* Kolom wajib. Kolom lain opsional. Kelas: nama kelas sesuai konfigurasi (opsional).</p>
+                                <p className="text-xs text-info-600 mt-1 font-medium bg-info-50 p-2 rounded border border-info-200">
+                                    * Kolom wajib. Kolom lain opsional. <br/>
+                                    <strong>Klasifikasi yang tersedia:</strong> {classes.length > 0 ? classes.map(c => c.name).join(', ') : 'HO Staff, Site Operator, dll.'}
+                                </p>
                             </div>
 
                             <div className="flex justify-between items-center mb-6">

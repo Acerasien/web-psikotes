@@ -13,9 +13,9 @@ db: Session = SessionLocal()
 questions_data = [
     # Item 1
     {
-        "statement_a": "Saya suka memimpin diskusi kelompok",
+        "statement_a": "Saya suka memimpin dalam diskusi kelompok",
         "norm_a": "L",
-        "statement_b": "Saya senang membantu rekan yang kesulitan",
+        "statement_b": "Saya senang membantu rekan kerja yang dalam kesulitan",
         "norm_b": "O",
     },
     # Item 2
@@ -34,21 +34,21 @@ questions_data = [
     },
     # Item 4
     {
-        "statement_a": "Saya mudah bergaul dan menikmati interaksi sosial",
+        "statement_a": "Saya mudah bergaul dan menikmati saat berinteraksi sosial",
         "norm_a": "S",
-        "statement_b": "Saya bekerja keras untuk meraih hasil terbaik",
+        "statement_b": "Saya akan bekerja keras untuk meraih hasil terbaik",
         "norm_b": "G",
     },
     # Item 5
     {
-        "statement_a": "Saya merasa nyaman mengatur pekerjaan orang lain",
+        "statement_a": "Saya merasa nyaman saat mengatur pekerjaan milik orang lain",
         "norm_a": "P",
         "statement_b": "Saya selalu mengikuti prosedur dan aturan yang ada",
         "norm_b": "W",
     },
     # Item 6
     {
-        "statement_a": "Saya ingin dikenal dan diperhatikan oleh orang di sekitar saya",
+        "statement_a": "Saya ingin dikenal dan diperhatikan oleh orang-orang di sekitar saya",
         "norm_a": "X",
         "statement_b": "Saya membutuhkan rasa memiliki dalam sebuah tim",
         "norm_b": "B",
@@ -57,19 +57,19 @@ questions_data = [
     {
         "statement_a": "Saya menjaga kerapian dan keteraturan dalam bekerja",
         "norm_a": "C",
-        "statement_b": "Saya lebih suka berpikir secara praktis daripada teoritis",
+        "statement_b": "Saya lebih suka berpikir secara praktis dibanding teoritis",
         "norm_b": "R",
     },
     # Item 8
     {
-        "statement_a": "Saya selalu bersemangat dan berenergi dalam bekerja",
+        "statement_a": "Saya selalu merasa bersemangat dan berenergi dalam bekerja",
         "norm_a": "V",
         "statement_b": "Saya mampu mengontrol emosi saya dengan baik",
         "norm_b": "E",
     },
     # Item 9
     {
-        "statement_a": "Saya senang mendorong diri sendiri untuk mencapai tujuan tinggi",
+        "statement_a": "Saya senang mendorong diri sendiri untuk mencapai tujuan yang lebih tinggi",
         "norm_a": "A",
         "statement_b": "Saya mendukung dan menghormati otoritas atasan",
         "norm_b": "F",
@@ -78,14 +78,14 @@ questions_data = [
     {
         "statement_a": "Saya bergerak cepat dalam menyelesaikan pekerjaan",
         "norm_a": "T",
-        "statement_b": "Saya memiliki dorongan kuat untuk bersaing dan menang",
+        "statement_b": "Saya memiliki dorongan yang kuat untuk bersaing dan menang",
         "norm_b": "K",
     },
     # Item 11
     {
         "statement_a": "Saya bertanggung jawab penuh terhadap pekerjaan saya",
         "norm_a": "N",
-        "statement_b": "Saya senang menjadi pusat perhatian dalam kelompok",
+        "statement_b": "Saya senang saat menjadi pusat perhatian dalam kelompok",
         "norm_b": "X",
     },
     # Item 12
@@ -97,21 +97,21 @@ questions_data = [
     },
     # Item 13
     {
-        "statement_a": "Saya mudah mengambil keputusan meski dalam tekanan",
+        "statement_a": "Saya mudah mengambil keputusan walaupun berada dalam tekanan",
         "norm_a": "I",
-        "statement_b": "Saya menjaga hubungan dekat dengan rekan kerja",
+        "statement_b": "Saya menjaga hubungan dekat dengan rekan kerja saya",
         "norm_b": "O",
     },
     # Item 14
     {
-        "statement_a": "Saya aktif terlibat dalam kegiatan fisik dan olahraga",
+        "statement_a": "Saya terlibat aktif dalam kegiatan fisik dan olahraga",
         "norm_a": "V",
-        "statement_b": "Saya senang menjadi bagian dari kelompok sosial",
+        "statement_b": "Saya senang saat menjadi bagian dari kelompok sosial",
         "norm_b": "B",
     },
     # Item 15
     {
-        "statement_a": "Saya menetapkan standar tinggi untuk diri sendiri",
+        "statement_a": "Saya menetapkan standar tinggi untuk diri saya sendiri",
         "norm_a": "A",
         "statement_b": "Saya memiliki semangat kerja keras yang tinggi",
         "norm_b": "G",
@@ -120,7 +120,7 @@ questions_data = [
     {
         "statement_a": "Saya suka memimpin dan mengarahkan tim",
         "norm_a": "L",
-        "statement_b": "Saya memastikan setiap detail pekerjaan tidak terlewat",
+        "statement_b": "Saya memastikan setiap detail pekerjaan tidak akan terlewat",
         "norm_b": "D",
     },
     # Item 17
@@ -132,21 +132,21 @@ questions_data = [
     },
     # Item 18
     {
-        "statement_a": "Saya bekerja dengan tempo yang cepat dan penuh semangat",
+        "statement_a": "Saya bekerja dengan tempo yang cepat dan penuh dengan semangat",
         "norm_a": "T",
-        "statement_b": "Saya berusaha mempertahankan hubungan harmonis di tempat kerja",
+        "statement_b": "Saya selalu berusaha mempertahankan hubungan harmonis di tempat kerja",
         "norm_b": "S",
     },
     # Item 19
     {
         "statement_a": "Saya mengutamakan keteraturan dan sistem dalam pekerjaan",
         "norm_a": "C",
-        "statement_b": "Saya mudah bersikap tegas dan asertif bila diperlukan",
+        "statement_b": "Saya mudah bersikap tegas dan asertif apabila diperlukan",
         "norm_b": "K",
     },
     # Item 20
     {
-        "statement_a": "Saya merasa nyaman bekerja tanpa pengawasan ketat",
+        "statement_a": "Saya merasa nyaman bekerja tanpa adanya pengawasan ketat",
         "norm_a": "F",
         "statement_b": "Saya membutuhkan kasih sayang dan penerimaan dari orang lain",
         "norm_b": "O",
@@ -167,16 +167,16 @@ questions_data = [
     },
     # Item 23
     {
-        "statement_a": "Saya punya ambisi besar untuk maju dalam karier",
+        "statement_a": "Saya memiliki ambisi besar untuk terus maju dalam karier saya",
         "norm_a": "A",
-        "statement_b": "Saya senang tampil di depan banyak orang",
+        "statement_b": "Saya senang saat tampil di depan banyak orang",
         "norm_b": "X",
     },
     # Item 24
     {
-        "statement_a": "Saya suka mengambil peran sebagai pemimpin dalam tim",
+        "statement_a": "Saya suka mengambil peran sebagai pemimpin dalam suatu tim",
         "norm_a": "L",
-        "statement_b": "Saya menggunakan pendekatan analitis dalam memecahkan masalah",
+        "statement_b": "Biasanya saya menggunakan pendekatan analitis dalam memecahkan suatu masalah",
         "norm_b": "R",
     },
     # Item 25
@@ -190,14 +190,14 @@ questions_data = [
     {
         "statement_a": "Saya membuat keputusan berdasarkan pertimbangan yang matang",
         "norm_a": "I",
-        "statement_b": "Saya menjaga keseimbangan emosi dalam situasi sulit",
+        "statement_b": "Saya selalu menjaga keseimbangan emosi dalam situasi-situasi sulit",
         "norm_b": "E",
     },
     # Item 27
     {
-        "statement_a": "Saya selalu bekerja dengan kecepatan tinggi",
+        "statement_a": "Saya selalu bekerja dengan kecepatan yang tinggi",
         "norm_a": "T",
-        "statement_b": "Saya memperhatikan detail kecil dalam pekerjaan saya",
+        "statement_b": "Saya selalu memperhatikan detail kecil dalam pekerjaan saya",
         "norm_b": "D",
     },
     # Item 28
@@ -211,54 +211,54 @@ questions_data = [
     {
         "statement_a": "Saya peduli pada perasaan dan kebutuhan orang lain",
         "norm_a": "O",
-        "statement_b": "Saya memiliki dorongan kuat untuk meraih prestasi",
+        "statement_b": "Saya memiliki dorongan yang kuat untuk meraih suatu prestasi",
         "norm_b": "A",
     },
     # Item 30
     {
-        "statement_a": "Saya senang membangun jaringan sosial yang luas",
+        "statement_a": "Saya senang untuk membangun jaringan sosial yang luas",
         "norm_a": "S",
         "statement_b": "Saya berkomitmen untuk menyelesaikan setiap tugas",
         "norm_b": "N",
     },
     # Item 31
     {
-        "statement_a": "Saya bekerja keras tanpa mengeluh",
+        "statement_a": "Saya tipe yang bekerja keras tanpa mengeluh",
         "norm_a": "G",
-        "statement_b": "Saya suka memimpin dan mengorganisir orang",
+        "statement_b": "Saya senang memimpin dan mengorganisir orang",
         "norm_b": "L",
     },
     # Item 32
     {
-        "statement_a": "Saya menyukai pekerjaan yang memerlukan kecermatan tinggi",
+        "statement_a": "Saya menyukai pekerjaan yang memerlukan kecermatan yang tinggi",
         "norm_a": "D",
-        "statement_b": "Saya berani mengungkapkan pendapat secara tegas",
+        "statement_b": "Saya berani untuk mengungkapkan pendapat saya secara tegas",
         "norm_b": "K",
     },
     # Item 33
     {
-        "statement_a": "Saya merasa nyaman dalam situasi yang teratur dan terprediksi",
-        "norm_a": "C",
-        "statement_b": "Saya menyukai kebebasan dalam bekerja tanpa banyak aturan",
+        "statement_a": "Saya merasa nyaman saat berada di situasi yang teratur dan terprediksi",
+        "norm_a": "W",
+        "statement_b": "Saya menyukai kebebasan dalam bekerja dan tanpa banyak aturan",
         "norm_b": "Z",
     },
     # Item 34
     {
-        "statement_a": "Saya aktif mencari cara baru dalam menyelesaikan masalah",
+        "statement_a": "Saya aktif mencari cara baru setiap menyelesaikan suatu masalah",
         "norm_a": "Z",
-        "statement_b": "Saya merasa penting untuk diterima dalam kelompok",
+        "statement_b": "Saya merasa penting untuk diterima dalam suatu kelompok",
         "norm_b": "B",
     },
     # Item 35
     {
-        "statement_a": "Saya cepat merespons situasi yang memerlukan tindakan segera",
+        "statement_a": "Saya cepat dalam merespons situasi yang memerlukan tindakan segera",
         "norm_a": "T",
-        "statement_b": "Saya memilih untuk tidak terlalu menonjolkan diri",
+        "statement_b": "Saya memilih untuk tidak terlalu menonjolkan diri sendiri secara sosial",
         "norm_b": "X",
     },
     # Item 36
     {
-        "statement_a": "Saya suka berdebat dan berdiskusi untuk mencapai solusi terbaik",
+        "statement_a": "Saya senang berdebat dan berdiskusi untuk mencapai solusi terbaik",
         "norm_a": "K",
         "statement_b": "Saya menjaga hubungan baik dengan semua orang di tempat kerja",
         "norm_b": "O",
@@ -267,7 +267,7 @@ questions_data = [
     {
         "statement_a": "Saya senang mengatur dan mengelola pekerjaan orang lain",
         "norm_a": "P",
-        "statement_b": "Saya mempertimbangkan aspek teoritis dalam pengambilan keputusan",
+        "statement_b": "Saya berusaha mempertimbangkan aspek teoritis dalam setiap pengambilan keputusan",
         "norm_b": "R",
     },
     # Item 38
@@ -279,16 +279,16 @@ questions_data = [
     },
     # Item 39
     {
-        "statement_a": "Saya energik dan bersemangat dalam setiap aktivitas",
+        "statement_a": "Saya merasa energik dan bersemangat dalam setiap aktivitas",
         "norm_a": "V",
-        "statement_b": "Saya merasa nyaman berinteraksi dengan banyak orang",
+        "statement_b": "Saya merasa nyaman saat berinteraksi dengan banyak orang",
         "norm_b": "S",
     },
     # Item 40
     {
         "statement_a": "Saya membuat pilihan dengan percaya diri",
         "norm_a": "I",
-        "statement_b": "Saya selalu menjaga area kerja agar tetap rapi dan teratur",
+        "statement_b": "Saya selalu menjaga area kerja saya tetap rapi dan teratur",
         "norm_b": "C",
     },
     # Item 41
@@ -300,9 +300,9 @@ questions_data = [
     },
     # Item 42
     {
-        "statement_a": "Saya melihat kerja keras sebagai kunci kesuksesan",
+        "statement_a": "Saya melihat bahwa kerja keras sebagai kunci kesuksesan",
         "norm_a": "G",
-        "statement_b": "Saya mudah menyesuaikan diri dengan perubahan mendadak",
+        "statement_b": "Saya mudah menyesuaikan diri dengan perubahan yang mendadak",
         "norm_b": "Z",
     },
     # Item 43
@@ -316,7 +316,7 @@ questions_data = [
     {
         "statement_a": "Saya suka memperlihatkan kemampuan kepemimpinan saya",
         "norm_a": "L",
-        "statement_b": "Saya peduli dengan detail dan akurasi dalam pekerjaan",
+        "statement_b": "Saya peduli dengan detail dan akurasi dalam pekerjaan saya",
         "norm_b": "D",
     },
     # Item 45
@@ -335,7 +335,7 @@ questions_data = [
     },
     # Item 47
     {
-        "statement_a": "Saya sering berinisiatif dalam mengusulkan perubahan",
+        "statement_a": "Saya sering berinisiatif dalam mengusulkan suatu perubahan",
         "norm_a": "Z",
         "statement_b": "Saya membutuhkan rasa aman dan keakraban dari rekan kerja",
         "norm_b": "O",
@@ -405,7 +405,7 @@ questions_data = [
     },
     # Item 57
     {
-        "statement_a": "Saya menikmati menjadi tokoh sentral dalam suatu acara",
+        "statement_a": "Saya menikmati menjadi tokoh sentral atau utama dalam suatu acara",
         "norm_a": "X",
         "statement_b": "Saya senang bergerak aktif dan terlibat secara fisik",
         "norm_b": "V",
@@ -414,7 +414,7 @@ questions_data = [
     {
         "statement_a": "Saya selalu menempatkan kebutuhan pimpinan di atas kepentingan pribadi",
         "norm_a": "F",
-        "statement_b": "Saya senang memberikan solusi inovatif dalam pekerjaan",
+        "statement_b": "Saya senang dapat memberikan solusi inovatif dalam pekerjaan",
         "norm_b": "Z",
     },
     # Item 59
@@ -447,14 +447,14 @@ questions_data = [
     },
     # Item 63
     {
-        "statement_a": "Saya suka mengelola tim dan mendistribusikan tugas",
+        "statement_a": "Saya suka mengelola tim dan mendistribusikan tugas-tugas ke anggota tim",
         "norm_a": "P",
         "statement_b": "Saya mudah terhubung secara emosional dengan orang lain",
         "norm_b": "O",
     },
     # Item 64
     {
-        "statement_a": "Saya berpikir abstrak dan konseptual dalam menghadapi masalah",
+        "statement_a": "Saya berpikir abstrak dan konseptual setiap menghadapi masalah",
         "norm_a": "R",
         "statement_b": "Saya aktif dalam kegiatan yang melibatkan banyak orang",
         "norm_b": "S",
@@ -463,12 +463,12 @@ questions_data = [
     {
         "statement_a": "Saya selalu bersemangat menghadapi tantangan baru",
         "norm_a": "Z",
-        "statement_b": "Saya memastikan pekerjaan saya bebas dari kesalahan",
+        "statement_b": "Saya selalu memastikan bahwa pekerjaan saya bebas dari kesalahan",
         "norm_b": "D",
     },
     # Item 66
     {
-        "statement_a": "Saya memperlihatkan semangat tinggi dalam setiap kegiatan",
+        "statement_a": "Saya selalu memperlihatkan semangat tinggi dalam setiap kegiatan",
         "norm_a": "V",
         "statement_b": "Saya tidak terlalu bergantung pada persetujuan orang lain",
         "norm_b": "C",
@@ -477,12 +477,12 @@ questions_data = [
     {
         "statement_a": "Saya berani menghadapi konflik demi hasil yang lebih baik",
         "norm_a": "K",
-        "statement_b": "Saya membutuhkan bimbingan dari atasan dalam situasi baru",
+        "statement_b": "Saya membutuhkan bimbingan dari atasan dalam situasi yang baru untuk saya",
         "norm_b": "W",
     },
     # Item 68
     {
-        "statement_a": "Saya berkomitmen kuat terhadap pekerjaan yang saya emban",
+        "statement_a": "Saya berkomitment kuat terhadap pekerjaan yang saya emban",
         "norm_a": "N",
         "statement_b": "Saya senang bersosialisasi di luar konteks pekerjaan",
         "norm_b": "B",
@@ -519,7 +519,7 @@ questions_data = [
     {
         "statement_a": "Saya selalu mengikuti aturan yang berlaku di tempat kerja",
         "norm_a": "W",
-        "statement_b": "Saya percaya diri dalam situasi sosial yang baru",
+        "statement_b": "Saya percaya diri dalam situasi sosial yang baru untuk saya",
         "norm_b": "S",
     },
     # Item 74
@@ -527,7 +527,7 @@ questions_data = [
         "statement_a": "Saya ambisius dan selalu ingin berkembang lebih jauh",
         "norm_a": "A",
         "statement_b": "Saya nyaman bekerja secara mandiri tanpa banyak arahan",
-        "norm_b": "K",
+        "norm_b": "F",
     },
     # Item 75
     {
@@ -568,14 +568,14 @@ questions_data = [
     {
         "statement_a": "Saya bersikap asertif dan tegas dalam menyampaikan pendapat",
         "norm_a": "K",
-        "statement_b": "Saya merasa perlu diterima secara sosial oleh kelompok",
+        "statement_b": "Saya merasa perlu diterima secara sosial dalam kelompok",
         "norm_b": "B",
     },
     # Item 81
     {
         "statement_a": "Saya tidak suka meninggalkan pekerjaan setengah jalan",
         "norm_a": "N",
-        "statement_b": "Saya lebih suka bekerja dalam tim yang solid",
+        "statement_b": "Saya lebih menyukai bekerja dalam tim yang solid",
         "norm_b": "S",
     },
     # Item 82
@@ -610,14 +610,14 @@ questions_data = [
     {
         "statement_a": "Saya memiliki cara kerja yang metodis dan sistematis",
         "norm_a": "C",
-        "statement_b": "Saya merasa nyaman tampil di depan umum",
+        "statement_b": "Saya merasa nyaman saat tampil di depan umum",
         "norm_b": "X",
     },
     # Item 87
     {
         "statement_a": "Saya memperhatikan setiap instruksi dengan seksama",
         "norm_a": "D",
-        "statement_b": "Saya bersemangat memulai proyek-proyek baru",
+        "statement_b": "Saya merasa bersemangat saat memulai proyek-proyek baru",
         "norm_b": "Z",
     },
     # Item 88
@@ -648,9 +648,9 @@ papi_test = db.query(Test).filter(Test.code == "LEAD").first()
 
 if not papi_test:
     papi_test = Test(
-        name="PAPI Kostick Test",
+        name="Test Kepemimpinan",
         code="LEAD",
-        time_limit=1200,  # 20 minutes
+        time_limit=300,  # 20 minutes
         settings={"type": "papi_kostick", "format": "forced_choice"}
     )
     db.add(papi_test)
@@ -659,16 +659,23 @@ if not papi_test:
     print("Created PAPI Kostick Test container (90 items, 20 min).")
 else:
     # Clear old data and update settings
-    papi_test.name = "PAPI Kostick Test"
-    papi_test.time_limit = 1200
+    papi_test.name = "Test Kepemimpinan"
+    papi_test.time_limit = 300
     papi_test.settings = {"type": "papi_kostick", "format": "forced_choice"}
     old_qs = db.query(Question).filter(Question.test_id == papi_test.id).all()
     old_q_ids = [q.id for q in old_qs]
 
     if old_q_ids:
-        # Delete responses first (FK constraint)
-        from models import Response
-        db.query(Response).filter(Response.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        # Delete responses, results and exit logs first (FK constraint)
+        from models import Response, Result, ExitLog, Assignment
+        db.query(Response).filter(Response.test_id == papi_test.id).delete(synchronize_session=False)
+        db.query(Result).filter(Result.test_id == papi_test.id).delete(synchronize_session=False)
+        db.query(ExitLog).filter(
+            ExitLog.assignment_id.in_(
+                db.query(Assignment.id).filter(Assignment.test_id == papi_test.id)
+            )
+        ).delete(synchronize_session=False)
+        db.query(Assignment).filter(Assignment.test_id == papi_test.id).delete(synchronize_session=False)
         db.commit()
 
         # Then delete options
@@ -724,7 +731,7 @@ db.commit()
 total_qs = db.query(Question).filter(Question.test_id == papi_test.id).count()
 total_opts = db.query(Option).join(Question).filter(Question.test_id == papi_test.id).count()
 
-print(f"\n✅ Successfully seeded PAPI Kostick Test!")
+print(f"\nSuccessfully seeded PAPI Kostick Test!")
 print(f"   - Total questions: {total_qs} (expected: 90)")
 print(f"   - Total options: {total_opts} (expected: 180)")
 print(f"   - Test code: LEAD")

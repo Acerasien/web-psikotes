@@ -26,23 +26,23 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-10 rounded-2xl shadow-2xl border border-white/20">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-700 to-[#d3c0aa] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-sm border border-neutral-200">
         {/* Logo / Title */}
         <div>
-          {/* <div className="flex justify-center mb-6">
+          {<div className="flex justify-center mb-6">
             <img
-              src="/Logo_Login.png"
+              src="/Logo_Login_2.png"
               alt="Web Psikotes Logo"
               className="h-20 w-auto"  // adjust height as needed
             />
-          </div> */}
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          </div>}
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-neutral-900 font-display">
             Web Psikotes
           </h2>
-          {/* <p className="mt-2 text-center text-sm text-gray-600">
+          {/* {<p className="mt-2 text-center text-sm text-gray-600">
             Andamas Group
-          </p> */}
+          </p>} */}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -59,7 +59,7 @@ function Login() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm transition-all"
+                className="input-field appearance-none relative block w-full px-4 py-3 sm:text-sm"
                 placeholder="Username"
               />
             </div>
@@ -75,14 +75,14 @@ function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm transition-all"
+                className="input-field appearance-none relative block w-full px-4 py-3 sm:text-sm"
                 placeholder="Kata Sandi"
               />
             </div>
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 text-center bg-red-50 p-2 rounded-lg">
+            <div className="text-sm text-error text-center bg-error-light p-2 rounded-lg">
               {error}
             </div>
           )}
@@ -91,7 +91,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transform transition-all duration-200 ease-in-out hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary group relative w-full flex justify-center py-3 px-4 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ function Login() {
             </button>
           </div>
 
-          <div className="text-center text-xs text-gray-500 mt-4">
+          <div className="text-center text-xs text-neutral-400 mt-4">
             © {new Date().getFullYear()} Web Psikotes. Hak cipta dilindungi.
           </div>
           {/* <div className="text-center text-xs text-gray-500 mt-5">

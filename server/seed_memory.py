@@ -136,13 +136,27 @@ else:
         "total_questions": 50,
         "table_data": categories
     }
-    # Delete old questions and options
+    # Delete old questions and options with FK handling
     old_qs = db.query(Question).filter(Question.test_id == mem_test.id).all()
-    for q in old_qs:
-        db.query(Option).filter(Option.question_id == q.id).delete()
+    old_q_ids = [q.id for q in old_qs]
+
+    if old_q_ids:
+        from models import Response, Result, ExitLog, Assignment
+        db.query(Response).filter(Response.test_id == mem_test.id).delete(synchronize_session=False)
+        db.query(Result).filter(Result.test_id == mem_test.id).delete(synchronize_session=False)
+        db.query(ExitLog).filter(
+            ExitLog.assignment_id.in_(
+                db.query(Assignment.id).filter(Assignment.test_id == mem_test.id)
+            )
+        ).delete(synchronize_session=False)
+        db.query(Assignment).filter(Assignment.test_id == mem_test.id).delete(synchronize_session=False)
+        db.commit()
+        db.query(Option).filter(Option.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        db.commit()
+
     db.query(Question).filter(Question.test_id == mem_test.id).delete()
     db.commit()
-    print("Updated existing Memory Test and cleared old data.")
+    print("Updated existing Memory Test and cleared old data (including responses).")
 
 # 2. Insert questions (order preserved; frontend can shuffle)
 print("Seeding 50 memory questions from provided list...")

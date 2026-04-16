@@ -337,7 +337,7 @@ logic_test = db.query(Test).filter(Test.code == "LOGIC").first()
 
 if not logic_test:
     logic_test = Test(
-        name="Logic & Arithmetic Test",
+        name="Test IQ ( Aritmatika & Logika )",
         code="LOGIC",
         time_limit=720,  # 12 minutes
         settings={"type": "logic", "randomize_options": True}
@@ -351,14 +351,21 @@ else:
     logic_test.time_limit = 720
     
     # Clear old data - need to delete in correct order due to foreign keys
-    # First delete responses that reference these questions' options
+    # First delete responses that reference ini test items
     old_qs = db.query(Question).filter(Question.test_id == logic_test.id).all()
     old_q_ids = [q.id for q in old_qs]
     
     if old_q_ids:
-        # Delete responses linked to old questions
-        from models import Response
-        db.query(Response).filter(Response.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        # Delete responses, results and exit logs first (FK constraint)
+        from models import Response, Result, ExitLog, Assignment
+        db.query(Response).filter(Response.test_id == logic_test.id).delete(synchronize_session=False)
+        db.query(Result).filter(Result.test_id == logic_test.id).delete(synchronize_session=False)
+        db.query(ExitLog).filter(
+            ExitLog.assignment_id.in_(
+                db.query(Assignment.id).filter(Assignment.test_id == logic_test.id)
+            )
+        ).delete(synchronize_session=False)
+        db.query(Assignment).filter(Assignment.test_id == logic_test.id).delete(synchronize_session=False)
         db.commit()
         
         # Delete options for old questions
@@ -368,7 +375,7 @@ else:
     # Now safe to delete old questions
     db.query(Question).filter(Question.test_id == logic_test.id).delete()
     db.commit()
-    print("Cleared old Logic test data and updated timer to 15 minutes.")
+    print("Cleared old Logic test data (including responses) and updated timer.")
 
 # 2. Insert questions and options (shuffle options)
 print("Seeding 50 Logic & Arithmetic questions...")

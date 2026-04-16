@@ -23,12 +23,28 @@ else:
     # Clear old data
     temp_test.time_limit = 300
     old_qs = db.query(Question).filter(Question.test_id == temp_test.id).all()
-    for q in old_qs:
-        db.query(Option).filter(Option.question_id == q.id).delete()
+    old_q_ids = [q.id for q in old_qs]
+
+    if old_q_ids:
+        # Delete responses, results and exit logs first (FK constraint)
+        from models import Response, Result, ExitLog, Assignment
+        db.query(Response).filter(Response.test_id == temp_test.id).delete(synchronize_session=False)
+        db.query(Result).filter(Result.test_id == temp_test.id).delete(synchronize_session=False)
+        db.query(ExitLog).filter(
+            ExitLog.assignment_id.in_(
+                db.query(Assignment.id).filter(Assignment.test_id == temp_test.id)
+            )
+        ).delete(synchronize_session=False)
+        db.query(Assignment).filter(Assignment.test_id == temp_test.id).delete(synchronize_session=False)
+        db.commit()
+
+        # Delete options
+        db.query(Option).filter(Option.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        db.commit()
+
     db.query(Question).filter(Question.test_id == temp_test.id).delete()
     db.commit()
-    print("Updated timer for existing Temperament Test.")
-    print("Cleared old Temperament data.")
+    print("Updated timer for existing Temperament Test and cleared old data (including responses).")
 
 # 2. Define questions (7 per trait)
 # Trait codes: S = Sanguine, C = Choleric, M = Melancholic, P = Phlegmatic
@@ -74,9 +90,9 @@ for _, trait in questions_data:
 
 print(f"Temperament trait distribution: {trait_counts}")
 if len(set(trait_counts.values())) == 1:
-    print(f"✓ Balanced: Each trait appears {list(trait_counts.values())[0]} times")
+    print(f"(OK) Balanced: Each trait appears {list(trait_counts.values())[0]} times")
 else:
-    print("⚠ Warning: Trait distribution is unbalanced!")
+    print("(WARNING) Warning: Trait distribution is unbalanced!")
 
 # 3. Likert scale labels (will be the same for all questions)
 likert_labels = [
@@ -121,7 +137,7 @@ db.commit()
 total_questions = db.query(Question).filter(Question.test_id == temp_test.id).count()
 total_options = db.query(Option).join(Question).filter(Question.test_id == temp_test.id).count()
 
-print(f"\n✅ Temperament test seeded successfully!")
+print(f"\nTemperament test seeded successfully!")
 print(f"   - Total questions: {total_questions} (expected: 28)")
 print(f"   - Total options: {total_options} (expected: 168)")
 print(f"   - Trait balance: Each trait appears exactly 7 times")

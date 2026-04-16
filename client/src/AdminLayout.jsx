@@ -42,7 +42,7 @@ function AdminLayout({ onLogout }) {
     };
 
     return (
-        <div className="min-h-screen flex bg-gray-100">
+        <div className="min-h-screen flex bg-neutral-50 font-body">
             {/* Mobile overlay */}
             {sidebarOpen && (
                 <div 
@@ -54,24 +54,24 @@ function AdminLayout({ onLogout }) {
             {/* SIDEBAR */}
             <div className={`
                 fixed lg:static inset-y-0 left-0 z-50
-                w-64 bg-gray-900 text-white flex flex-col
+                w-64 bg-primary-900 text-white flex flex-col shadow-2xl lg:shadow-none
                 transform transition-transform duration-300 ease-in-out
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             `}>
                 {/* User info at the top */}
-                <div className="p-4 border-b border-gray-800">
+                <div className="p-4 border-b border-primary-800/50">
                     <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary-700 to-[#d3c0aa] flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-inner">
                             {user.username.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{user.full_name || user.username}</p>
-                            <p className="text-xs text-gray-400 truncate">{user.role}</p>
+                            <p className="text-sm font-semibold truncate font-display">{user.full_name || user.username}</p>
+                            <p className="text-xs text-primary-200/60 truncate font-display tracking-wider uppercase">{user.role}</p>
                         </div>
                     </div>
                     <button
                         onClick={onLogout}
-                        className="mt-3 w-full text-left text-sm text-red-400 hover:text-red-300 bg-gray-800 px-3 py-2 rounded transition-colors"
+                        className="mt-4 w-full text-left text-sm text-error hover:text-error-dark bg-primary-800/30 hover:bg-primary-800/70 px-3 py-2 rounded-xl transition-colors flex items-center gap-2"
                     >
                         Keluar
                     </button>
@@ -84,11 +84,11 @@ function AdminLayout({ onLogout }) {
                             key={link.to}
                             to={link.to}
                             onClick={() => setSidebarOpen(false)}
-                            className={`block py-2.5 px-4 rounded transition flex items-center gap-3 ${
+                            className={`block py-3 px-4 rounded-xl transition-all duration-200 flex items-center gap-3 font-medium ${
                                 location.pathname === link.to || 
                                 (link.to !== '/' && location.pathname.startsWith(link.to))
-                                    ? 'bg-blue-600' 
-                                    : 'hover:bg-gray-800'
+                                    ? 'bg-primary-700/80 shadow-inner text-white' 
+                                    : 'text-primary-100 hover:text-white hover:bg-primary-800/50'
                             }`}
                         >
                             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,29 +103,29 @@ function AdminLayout({ onLogout }) {
             {/* MAIN CONTENT */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Mobile Header */}
-                <header className="h-16 bg-white shadow flex items-center justify-between px-4 lg:px-6">
+                <header className="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10 w-full">
                     <div className="flex items-center gap-3">
                         {/* Hamburger button - mobile only */}
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-600"
                             aria-label="Open menu"
                         >
                             <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
-                        <h2 className="text-lg font-semibold text-gray-800">
+                        <h2 className="text-xl font-bold text-neutral-900 font-display">
                             {getPageTitle(location.pathname)}
                         </h2>
                     </div>
                     
                     {/* User badge - desktop */}
-                    <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">
+                    <div className="hidden sm:flex items-center gap-2.5 text-sm text-neutral-600 bg-neutral-100/50 py-1.5 px-2.5 rounded-full border border-neutral-200/60">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-700 to-[#d3c0aa] flex items-center justify-center text-white font-bold text-xs shadow-sm">
                             {user.username.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium">{user.username}</span>
+                        <span className="font-semibold px-1">{user.username}</span>
                     </div>
                 </header>
 

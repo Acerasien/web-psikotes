@@ -1,6 +1,87 @@
+/* ============================================
+   Import Google Fonts
+   Urbanist - Global Font
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* ==============================
+   Pale Space Moon & Beige Slate
+   Primary: Sea Blue
+   Neutral: Beige Honey & Slate
+   ============================== */
+
+:root {
+  /* Primary - Sōchū no mūn (Pale Space Moon) */
+  --color-primary-50: #F0F4F6;
+  --color-primary-100: #D6E1E6;
+  --color-primary-200: #AEC5D0;
+  --color-primary-300: #85A8BA;
+  --color-primary-400: #5C8CA3;
+  --color-primary-500: #316177;
+  --color-primary-600: #18546F;
+  --color-primary-700: #004865;
+  --color-primary-800: #00344A;
+  --color-primary-900: #002130;
+
+  /* Neutral - Beige & Slate */
+  --color-neutral-50: #F8FBFC;
+  --color-neutral-100: #F0F4F8;
+  --color-neutral-200: #E2E8F0;
+  --color-neutral-300: #CBD5E1;
+  --color-neutral-400: #94A3B8;
+  --color-neutral-500: #64748B;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1E293B;
+  --color-neutral-900: #0F172A;
+
+  /* Status Colors */
+  --color-success: #5F8D84;
+  --color-success-light: #EBF2F0;
+  --color-success-dark: #3A5B55;
+
+  --color-warning: #C99B6A;
+  --color-warning-light: #F9F5F0;
+  --color-warning-dark: #8A643E;
+
+  --color-error: #A06A73;
+  --color-error-light: #F5EDEE;
+  --color-error-dark: #6E444B;
+
+  --color-info: #606776;
+  --color-info-light: #EFF0F2;
+  --color-info-dark: #424855;
+
+  /* Accent Colors */
+  --color-accent-gold: #C5A87C;
+  --color-accent-gold-light: #F8F3EA;
+  
+  --color-accent-silver: #8E9CA8;
+  --color-accent-silver-light: #EFF2F5;
+  
+  --color-accent-rose: #B38E94;
+  --color-accent-rose-light: #F6F0F1;
+  
+  --color-accent-teal: #7A9C9B;
+  --color-accent-teal-light: #EDF4F4;
+
+  /* Semantic mappings */
+  --bg-page: var(--color-neutral-50);
+  --bg-card: #ffffff;
+  --text-primary: var(--color-neutral-900);
+}
+
+
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Urbanist', system-ui, sans-serif;
+}
 
 @keyframes fade-in-up {
   from {
@@ -18,71 +99,91 @@
   animation: fade-in-up 0.3s ease-out;
 }
 
-/* :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* ============================================
+   Utility Classes for Gold & Slate Style
+   ============================================ */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@layer components {
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+  /* Primary button styles – Sea Blue with Beige Honey text */
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-[#d3c0aa] font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] shadow-sm hover:shadow-md;
   }
-  a:hover {
-    color: #747bff;
+
+  /* Secondary button styles (neutral) */
+  .btn-secondary {
+    @apply bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium rounded-lg transition-colors duration-200;
   }
-  button {
-    background-color: #f9f9f9;
+
+  /* Card styles with hover animation */
+  .card {
+    @apply bg-white rounded-xl border border-neutral-200 transition-all duration-200;
   }
-} */
+
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(212, 160, 23, 0.15);
+    /* Gold shadow */
+    transform: translateY(-2px);
+    border-color: var(--color-primary-600);
+    /* Indigo border */
+  }
+
+  /* Page background */
+  .page-bg {
+    @apply bg-neutral-50;
+  }
+
+  /* Text utilities */
+  .text-heading {
+    @apply text-neutral-900 font-semibold font-display;
+  }
+
+  .text-body {
+    @apply text-neutral-700;
+  }
+
+  .text-muted {
+    @apply text-neutral-500;
+  }
+
+  /* Badge styles */
+  .badge-primary {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  .badge-success {
+    @apply bg-success-light text-success-dark;
+  }
+
+  .badge-warning {
+    @apply bg-warning-light text-warning-dark;
+  }
+
+  .badge-error {
+    @apply bg-error-light text-error-dark;
+  }
+
+  .badge-info {
+    @apply bg-info-light text-info-dark;
+  }
+
+  /* Input styles */
+  .input-field {
+    @apply border border-neutral-300 placeholder-neutral-400 text-neutral-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all;
+  }
+
+  /* Link styles with arrow animation */
+  .link-arrow {
+    @apply text-primary-400 hover:text-primary-500 transition-colors duration-150;
+  }
+
+  .link-arrow::after {
+    content: ' →';
+    transition: transform 0.15s ease;
+    display: inline-block;
+  }
+
+  .link-arrow:hover::after {
+    transform: translateX(4px);
+  }
+}

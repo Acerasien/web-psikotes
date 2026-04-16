@@ -103,10 +103,20 @@ def get_phases(
                 .count()
             )
 
+        # Apply phase timer override if available in class config
+        timer_seconds = p.timer_seconds
+        if current_user.class_config:
+            time_overrides = current_user.class_config.config.get("time_overrides", {})
+            iq_overrides = time_overrides.get("IQ", {})
+            if isinstance(iq_overrides, dict) and "phases" in iq_overrides:
+                phase_timers = iq_overrides["phases"]
+                if len(phase_timers) >= p.order_number:
+                    timer_seconds = phase_timers[p.order_number - 1]
+
         result.append({
             "id": p.id,
             "order_number": p.order_number,
-            "timer_seconds": p.timer_seconds,
+            "timer_seconds": timer_seconds,
             "practice_questions": p.practice_questions if not is_done else None,
             "status": "done" if is_done else ("current" if p.order_number == current_phase_order else "locked"),
             "is_unlocked": not is_locked,
@@ -163,10 +173,20 @@ def get_phase_questions(
             "phase_id": q.phase_id,
         })
 
+    # Apply phase timer override if available in class config
+    timer_seconds = phase.timer_seconds
+    if current_user.class_config:
+        time_overrides = current_user.class_config.config.get("time_overrides", {})
+        iq_overrides = time_overrides.get("IQ", {})
+        if isinstance(iq_overrides, dict) and "phases" in iq_overrides:
+            phase_timers = iq_overrides["phases"]
+            if len(phase_timers) >= phase.order_number:
+                timer_seconds = phase_timers[phase.order_number - 1]
+
     return {
         "phase_id": phase.id,
         "order_number": phase.order_number,
-        "timer_seconds": phase.timer_seconds,
+        "timer_seconds": timer_seconds,
         "questions": output,
     }
 

@@ -136,7 +136,7 @@ iq_test = db.query(Test).filter(Test.code == "IQ").first()
 
 if not iq_test:
     iq_test = Test(
-        name="IQ Test (CFIT)",
+        name="Test IQ ( POLA )",
         code="IQ",
         time_limit=0,  # No global timer — per-phase timers
         settings={"type": "iq", "passing_score": None},
@@ -151,8 +151,16 @@ else:
     old_qs = db.query(Question).filter(Question.test_id == iq_test.id).all()
     old_q_ids = [q.id for q in old_qs]
     if old_q_ids:
-        db.query(Response).filter(Response.question_id.in_(old_q_ids)).delete(synchronize_session=False)
+        from models import Response, Result, ExitLog, Assignment
+        db.query(Response).filter(Response.test_id == iq_test.id).delete(synchronize_session=False)
         db.query(Result).filter(Result.test_id == iq_test.id).delete(synchronize_session=False)
+        db.query(ExitLog).filter(
+            ExitLog.assignment_id.in_(
+                db.query(Assignment.id).filter(Assignment.test_id == iq_test.id)
+            )
+        ).delete(synchronize_session=False)
+        db.query(Assignment).filter(Assignment.test_id == iq_test.id).delete(synchronize_session=False)
+        db.commit()
         db.query(Option).filter(Option.question_id.in_(old_q_ids)).delete(synchronize_session=False)
         db.commit()
     db.query(Question).filter(Question.test_id == iq_test.id).delete()

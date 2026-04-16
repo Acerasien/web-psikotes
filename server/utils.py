@@ -14,5 +14,7 @@ def get_max_score(test_code: str) -> Optional[int]:
         "SPEED": 100,
         "TEMP": 168,
         "MEM": 100,
-        "LOGIC": 100,  # 50 questions × 2 points each
-    }.get(test_code, 100)
+        "LOGIC": 100,
+        "IQ": 100,
+        "CBI": 140,
+    }.get(test_code, None)

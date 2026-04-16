@@ -177,16 +177,19 @@ export function QuestionCard({
   onSelect,
   onFlag,
   isFlagged,
-  showFlag = true
+  showFlag = true,
+  hideNumbering = false
 }) {
   return (
     <div className="flex-1 p-3 sm:p-6 flex flex-col items-center justify-center overflow-y-auto">
       <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-lg w-full max-w-2xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
-          <p className="text-xs sm:text-sm text-gray-500">
-            Pertanyaan {questionNumber} dari {totalQuestions}
-          </p>
+          {!hideNumbering && (
+            <p className="text-xs sm:text-sm text-gray-500">
+              Pertanyaan {questionNumber} dari {totalQuestions}
+            </p>
+          )}
           {showFlag && (
             <button
               onClick={onFlag}

@@ -5,7 +5,80 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        // Primary colors 
+        primary: {
+          50: 'var(--color-primary-50)',
+          100: 'var(--color-primary-100)',
+          200: 'var(--color-primary-200)',
+          300: 'var(--color-primary-300)',
+          400: 'var(--color-primary-400)',
+          500: 'var(--color-primary-500)',
+          600: 'var(--color-primary-600)',
+          700: 'var(--color-primary-700)',
+          800: 'var(--color-primary-800)',
+          900: 'var(--color-primary-900)',
+        },
+        // Neutral colors
+        neutral: {
+          50: 'var(--color-neutral-50)',
+          100: 'var(--color-neutral-100)',
+          200: 'var(--color-neutral-200)',
+          300: 'var(--color-neutral-300)',
+          400: 'var(--color-neutral-400)',
+          500: 'var(--color-neutral-500)',
+          600: 'var(--color-neutral-600)',
+          700: 'var(--color-neutral-700)',
+          800: 'var(--color-neutral-800)',
+          900: 'var(--color-neutral-900)',
+        },
+        // Status colors (semantic)
+        success: {
+          DEFAULT: 'var(--color-success)',
+          light: 'var(--color-success-light)',
+          dark: 'var(--color-success-dark)',
+        },
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          light: 'var(--color-warning-light)',
+          dark: 'var(--color-warning-dark)',
+        },
+        error: {
+          DEFAULT: 'var(--color-error)',
+          light: 'var(--color-error-light)',
+          dark: 'var(--color-error-dark)',
+        },
+        info: {
+          DEFAULT: 'var(--color-info)',
+          light: 'var(--color-info-light)',
+          dark: 'var(--color-info-dark)',
+        },
+        // Accent colors
+        accent: {
+          gold: {
+            DEFAULT: 'var(--color-accent-gold)',
+            light: 'var(--color-accent-gold-light)',
+          },
+          silver: {
+            DEFAULT: 'var(--color-accent-silver)',
+            light: 'var(--color-accent-silver-light)',
+          },
+          rose: {
+            DEFAULT: 'var(--color-accent-rose)',
+            light: 'var(--color-accent-rose-light)',
+          },
+          teal: {
+            DEFAULT: 'var(--color-accent-teal)',
+            light: 'var(--color-accent-teal-light)',
+          },
+        },
+      },
+      fontFamily: {
+        sans: ['Urbanist', 'system-ui', 'sans-serif'],
+        display: ['Urbanist', 'system-ui', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }

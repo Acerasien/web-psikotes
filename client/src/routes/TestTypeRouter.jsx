@@ -10,6 +10,7 @@ import TemperamentTest from '../components/TemperamentTest';
 import PapiKostickTest from '../components/tests/PapiKostickTest';
 import { StandardTest } from '../components/tests/StandardTest';
 import { IQTest } from '../components/tests/IQTest';
+import { CBITest } from '../components/tests/CBITest';
 
 /**
  * Router component that determines which test component to render
@@ -68,6 +69,8 @@ export function TestTypeRouter() {
       return <PapiKostickTest assignmentId={assignmentId} />;
     case 'IQ':
       return <IQTest />;
+    case 'CBI':
+      return <CBITest />;
     default:
       // Fallback for unknown test types
       return <StandardTest />;

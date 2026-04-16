@@ -60,8 +60,16 @@ if not speed_test:
     print("Created Speed Test container.")
 else:
     print("Clearing old data for Speed Test...")
-    db.query(Result).filter(Result.test_id == speed_test.id).delete()
-    db.query(Response).filter(Response.test_id == speed_test.id).delete()
+    from models import ExitLog, Assignment
+    db.query(Response).filter(Response.test_id == speed_test.id).delete(synchronize_session=False)
+    db.query(Result).filter(Result.test_id == speed_test.id).delete(synchronize_session=False)
+    db.query(ExitLog).filter(
+        ExitLog.assignment_id.in_(
+            db.query(Assignment.id).filter(Assignment.test_id == speed_test.id)
+        )
+    ).delete(synchronize_session=False)
+    db.query(Assignment).filter(Assignment.test_id == speed_test.id).delete(synchronize_session=False)
+    
     old_questions = db.query(Question).filter(Question.test_id == speed_test.id).all()
     if old_questions:
         db.query(Option).filter(Option.question_id.in_([q.id for q in old_questions])).delete(synchronize_session=False)

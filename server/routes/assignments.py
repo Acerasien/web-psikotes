@@ -21,6 +21,7 @@ from scoring.temperament import score_temperament
 from scoring.memory import score_memory
 from scoring.logic import score_logic
 from scoring.papi_kostick import score_papi_kostick
+from scoring.cbi import score_cbi_test
 
 # Import helper
 from utils import get_max_score
@@ -85,8 +86,22 @@ def create_assignment(
 def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get current user's assignments"""
     assignments = db.query(Assignment).filter(Assignment.user_id == current_user.id).all()
+    
+    # Load class config once if the user has one
+    time_overrides = {}
+    if current_user.class_id:
+        class_config = db.query(ClassConfig).filter(ClassConfig.id == current_user.class_id).first()
+        if class_config:
+            time_overrides = class_config.config.get("time_overrides", {})
+
     result = []
     for a in assignments:
+        time_limit = a.test.time_limit
+        if a.test.code in time_overrides:
+            time_limit = time_overrides[a.test.code]
+            
+        time_in_minutes = (time_limit // 60) if time_limit else 0
+        
         result.append({
             "id": a.id,
             "test_id": a.test_id,
@@ -94,7 +109,8 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
             "test_code": a.test.code,
             "status": a.status,
             "pretest_completed": a.pretest_completed,
-            "assigned_at": a.assigned_at
+            "assigned_at": a.assigned_at,
+            "duration": time_in_minutes
         })
     return result
 
@@ -146,11 +162,22 @@ def start_test(
             "options": options_data,
             "settings": q_settings
         })
+    test_settings = assignment.test.settings or {}
+    # Apply special overrides for Memory Test (MEM) if defined in class config
+    if assignment.test.code == "MEM" and current_user.class_config:
+        time_overrides = current_user.class_config.config.get("time_overrides", {})
+        mem_overrides = time_overrides.get("MEM", {})
+        if isinstance(mem_overrides, dict):
+            if "encoding" in mem_overrides:
+                test_settings["encoding_time"] = mem_overrides["encoding"]
+            if "recall" in mem_overrides:
+                test_settings["recall_time"] = mem_overrides["recall"]
+
     return {
         "test_name": assignment.test.name,
         "test_code": assignment.test.code,
         "time_limit": time_limit,
-        "settings": assignment.test.settings,
+        "settings": test_settings,
         "questions": output
     }
 
@@ -288,6 +315,19 @@ def submit_test(
         details = score_papi_kostick(submission.answers, questions)
         # Score = total number of answers (PAPI is personality, no "correct")
         score = len(submission.answers)
+        answered_count = len(submission.answers)
+
+    elif test_code == "CBI":
+        questions = (
+            db.query(Question)
+            .options(joinedload(Question.options))
+            .filter(Question.test_id == assignment.test_id)
+            .all()
+        )
+        total_questions = len(questions)
+        details = score_cbi_test(submission.answers, questions)
+        # Score = overall concern score
+        score = details["score"]
         answered_count = len(submission.answers)
 
     else:

@@ -263,7 +263,7 @@ def bulk_create_users(
                 row_dict[headers[col_idx]] = str(val) if val else ''
             rows.append(row_dict)
 
-    required_fields = ['username', 'password', 'full_name']
+    required_fields = ['username', 'password', 'full_name', 'class']
     results = {
         "total": len(rows),
         "success": 0,
@@ -273,51 +273,53 @@ def bulk_create_users(
     created_users = []
 
     for row_num, row in enumerate(rows, start=2):
-        missing = [f for f in required_fields if not row.get(f)]
+        # Allow 'kelas' as an alias for 'class' in the CSV
+        if 'kelas' in row and not row.get('class'):
+            row['class'] = row['kelas']
+            
+        missing = [f for f in required_fields if not str(row.get(f, '')).strip()]
         if missing:
             results["failed"] += 1
-            results["errors"].append(f"Row {row_num}: Missing fields: {', '.join(missing)}")
+            results["errors"].append(f"Baris {row_num}: Kolom wajib tidak ada/kosong: {', '.join(missing)}")
             continue
 
-        username = row['username'].strip()
-        password = row['password'].strip()
-        full_name = row['full_name'].strip()
+        username = str(row['username']).strip()
+        password = str(row['password']).strip()
+        full_name = str(row['full_name']).strip()
+        class_name = str(row['class']).strip()
 
         if db.query(User).filter(User.username == username).first():
             results["failed"] += 1
-            results["errors"].append(f"Row {row_num}: Username '{username}' already exists")
+            results["errors"].append(f"Baris {row_num}: Username '{username}' sudah terdaftar")
+            continue
+
+        # Resolve class_id from class name
+        class_config = db.query(ClassConfig).filter(
+            ClassConfig.name.ilike(class_name)
+        ).first()
+
+        if not class_config:
+            results["failed"] += 1
+            results["errors"].append(f"Baris {row_num}: Klasifikasi '{class_name}' tidak ditemukan")
             continue
 
         user_data = {
             'username': username,
             'full_name': full_name,
-            'age': row.get('age') if row.get('age') else None,
-            'gender': row.get('gender'),
-            'education': row.get('education'),
-            'department': row.get('department'),
-            'position': row.get('position'),
-            'class_name': row.get('class', '').strip() or row.get('kelas', '').strip() or None,
+            'age': row.get('age') if str(row.get('age', '')).strip() else None,
+            'gender': str(row.get('gender', '')).strip() or None,
+            'education': str(row.get('education', '')).strip() or None,
+            'department': str(row.get('department', '')).strip() or None,
+            'position': str(row.get('position', '')).strip() or None,
             'role': 'participant'
         }
+
         if user_data['age']:
             try:
-                user_data['age'] = int(user_data['age'])
-            except ValueError:
+                user_data['age'] = int(float(str(user_data['age']))) # Handle float-like strings from Excel
+            except (ValueError, TypeError):
                 results["failed"] += 1
-                results["errors"].append(f"Row {row_num}: Age must be a number")
-                continue
-
-        # Resolve class_id from class name
-        class_id = None
-        if user_data['class_name']:
-            class_config = db.query(ClassConfig).filter(
-                ClassConfig.name.ilike(user_data['class_name'])
-            ).first()
-            if class_config:
-                class_id = class_config.id
-            else:
-                results["failed"] += 1
-                results["errors"].append(f"Row {row_num}: Class '{user_data['class_name']}' not found")
+                results["errors"].append(f"Baris {row_num}: Usia harus berupa angka (menemukan: '{user_data['age']}')")
                 continue
 
         new_user = User(
@@ -330,7 +332,7 @@ def bulk_create_users(
             education=user_data['education'],
             department=user_data['department'],
             position=user_data['position'],
-            class_id=class_id
+            class_id=class_config.id
         )
         db.add(new_user)
         db.flush()
