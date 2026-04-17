@@ -550,26 +550,44 @@ def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
             </div>
             """
 
-        # ----------------------- LOGIC & ARITHMETIC --------------------
+        # ----------------------- LOGIC & ARITHMETIC (WPT) --------------------
         elif test_code == "LOGIC" and details:
             correct = details.get('correct_count', 0)
-            total = 50  # Updated to 50 questions
-            rating = get_rating(correct, total, test_name)
-            pct = int((correct / total) * 100)
+            total = 50
+            iq = details.get('est_iq', '-')
+            percentile = details.get('percentile', '-')
+            classification = details.get('classification', '-')
+            recommendation = details.get('recommendation', '-')
+            description = details.get('description', '-')
+
             html_content += f"""
-            <div class="score-row">
-                <span class="score-label">Logika & Aritmatika</span>
-                <div class="score-bar-wrap">
-                    <div class="score-bar" style="width:{pct}%; background:var(--{rating['class']});"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div style="background: #f1f5f9; padding: 10px; border-radius: 4px;">
+                        <div style="font-size: 8pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Estimated IQ</div>
+                        <div style="font-size: 14pt; font-weight: 700; color: #1e3a8a;">{iq}</div>
+                    </div>
+                    <div style="background: #f1f5f9; padding: 10px; border-radius: 4px;">
+                        <div style="font-size: 8pt; font-weight: 600; color: #64748b; text-transform: uppercase;">Persentil</div>
+                        <div style="font-size: 14pt; font-weight: 700; color: #1e3a8a;">{percentile}</div>
+                    </div>
                 </div>
-                <span class="score-value">{correct}/{total}</span>
-            </div>
-            <div class="narrative">
-                Testee menjawab <strong>{correct}</strong> soal benar dari {total} soal.
-                Kemampuan logika dan pemecahan masalah dinilai
-                <span class="rating-badge rating-{rating['class']}">{rating['label']}</span>.
-                <br>{rating['desc']}
-            </div>
+                <table>
+                    <tr class="primary-row">
+                        <td style="width: 30%;">Klasifikasi</td>
+                        <td>{classification}</td>
+                    </tr>
+                    <tr>
+                        <td>Deskripsi Kemampuan</td>
+                        <td style="font-style: italic; font-size: 9.5pt;">{description}</td>
+                    </tr>
+                    <tr>
+                        <td>Rekomendasi Posisi</td>
+                        <td style="font-weight: 600; color: #1e3a8a;">{recommendation}</td>
+                    </tr>
+                </table>
+                <div style="font-size: 8.5pt; color: #64748b; margin-top: 5px;">
+                    Skor Mentah: <strong>{correct}</strong> dari {total} soal.
+                </div>
             """
 
         # --------------------------- SPEED -----------------------------

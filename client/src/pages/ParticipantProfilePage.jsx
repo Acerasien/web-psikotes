@@ -844,35 +844,56 @@ function ParticipantProfilePage() {
                                         </div>
                                     )}
 
-                                    {/* Logic & Arithmetic Visualization */}
+                                    {/* Logic & Arithmetic Visualization - WPT Standard Edition */}
                                     {r.test_code === "LOGIC" && r.details && (
                                         <div className="space-y-8">
-                                            <div className="flex flex-col lg:flex-row gap-8">
-                                                <div className="w-full lg:w-1/3 bg-neutral-900 p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-4 block">Reasoning Quality</span>
-                                                    <h5 className="text-3xl font-black text-white uppercase leading-tight mb-2">{r.details.band}</h5>
-                                                    <div className="h-1.5 w-full bg-neutral-800 mt-6">
-                                                        <div className="h-full bg-accent-gold" style={{ width: `${r.details.percentage}%` }}></div>
-                                                    </div>
-                                                    <span className="text-[9px] font-black text-neutral-500 uppercase mt-2 block">Weighted Proficiency: {r.details.percentage}%</span>
+                                            {/* Primary WPT Metrics Header */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div className="bg-neutral-900 text-white p-6 border-b-4 border-accent-gold">
+                                                    <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block mb-2">Estimated IQ</span>
+                                                    <span className="text-4xl font-black font-mono">{r.details.est_iq}</span>
                                                 </div>
-                                                
-                                                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                                    <div className="bg-neutral-50 p-6 border-2 border-neutral-900">
-                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 block">Problem Solving Rate</span>
-                                                        <div className="flex items-baseline gap-2">
-                                                            <span className="text-3xl font-black text-neutral-900 font-mono">{r.details.correct_count}</span>
-                                                            <span className="text-sm font-bold text-neutral-400 uppercase">Correct</span>
-                                                        </div>
-                                                        <p className="text-[9px] font-bold text-neutral-400 mt-4 uppercase italic">Outcome from {r.details.total_answered} attempted items</p>
+                                                <div className="bg-neutral-50 p-6 border-2 border-neutral-900">
+                                                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">Percentile Rank</span>
+                                                    <span className="text-4xl font-black font-mono text-neutral-900">{r.details.percentile}</span>
+                                                </div>
+                                                <div className="bg-neutral-50 p-6 border-2 border-neutral-900 flex flex-col justify-between">
+                                                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-2">Ability Range</span>
+                                                    <span className="text-2xl font-black text-neutral-900 uppercase">{r.details.band}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Detailed Interpretation Dashboard */}
+                                            <div className="border-2 border-neutral-900 overflow-hidden">
+                                                <div className="bg-neutral-900 text-white px-6 py-3 flex justify-between items-center">
+                                                    <h4 className="text-xs font-black uppercase tracking-widest">Cognitive Classification Analysis</h4>
+                                                    <span className="text-[10px] font-bold bg-accent-gold text-neutral-900 px-2 py-0.5 rounded-full">WPT Standard</span>
+                                                </div>
+                                                <div className="p-8 bg-white space-y-8">
+                                                    <div>
+                                                        <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-3">Classification Index</span>
+                                                        <h5 className="text-2xl font-black text-neutral-900 uppercase leading-tight mb-4">{r.details.classification}</h5>
+                                                        <p className="text-sm font-bold text-neutral-600 leading-relaxed border-l-4 border-neutral-200 pl-4 py-1 italic">
+                                                            {r.details.description}
+                                                        </p>
                                                     </div>
-                                                    <div className="bg-neutral-50 p-6 border-2 border-neutral-900 flex flex-col justify-between">
-                                                        <div>
-                                                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 block">Logical Accuracy</span>
-                                                            <span className="text-3xl font-black text-neutral-900 font-mono">{Math.round(r.details.percentage)}%</span>
+
+                                                    <div className="pt-8 border-t-2 border-dashed border-neutral-100 flex flex-col md:flex-row md:items-center gap-8">
+                                                        <div className="flex-1">
+                                                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-3">Professional Recommendation</span>
+                                                            <div className="inline-flex items-center gap-3 bg-neutral-900 text-white px-5 py-3 rounded-sm">
+                                                                <svg className="w-5 h-5 text-accent-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                                </svg>
+                                                                <span className="text-sm font-black uppercase tracking-wide">{r.details.recommendation}</span>
+                                                            </div>
                                                         </div>
-                                                        <div className={`mt-4 text-[10px] font-black px-2 py-1 uppercase tracking-widest inline-block w-fit ${r.details.percentage >= 70 ? 'bg-success text-white' : 'bg-neutral-200 text-neutral-500'}`}>
-                                                            {r.details.percentage >= 70 ? 'High Proficiency' : 'Standard Range'}
+                                                        <div className="bg-neutral-50 px-6 py-4 border border-neutral-200 rounded-sm">
+                                                            <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Raw Precision</span>
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className="text-2xl font-black text-neutral-900 font-mono">{r.details.correct_count}</span>
+                                                                <span className="text-xs font-bold text-neutral-400 uppercase">/ 50 Items</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
