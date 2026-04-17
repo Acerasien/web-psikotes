@@ -38,6 +38,7 @@ class UserCreate(BaseModel):
     education: Optional[str] = None
     department: Optional[str] = None
     position: Optional[str] = None
+    business_unit: Optional[str] = None
     class_id: Optional[int] = None
 
 class TestSubmission(BaseModel):
@@ -87,4 +88,5 @@ class UserUpdate(BaseModel):
     education: Optional[str] = None
     department: Optional[str] = None
     position: Optional[str] = None
+    business_unit: Optional[str] = None
     class_id: Optional[int] = None

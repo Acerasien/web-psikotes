@@ -287,6 +287,11 @@ function ParticipantProfilePage() {
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Peran Akses</span>
                                 <span className="text-sm font-bold text-primary-600 uppercase tracking-tighter">{user.role?.replace('_', ' ') || 'Participant'}</span>
                             </div>
+                            <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Unit Bisnis</span>
+                                <span className="text-sm font-semibold text-neutral-800 uppercase">{user.business_unit || 'N/A'}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -806,6 +811,75 @@ function ParticipantProfilePage() {
                                         </div>
                                     )}
 
+                                    {/* Memory Test Visualization */}
+                                    {r.test_code === "MEM" && r.details && (
+                                        <div className="space-y-8">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="bg-neutral-50 p-8 border-2 border-neutral-900 flex flex-col justify-center">
+                                                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-4">Memory Performance Band</span>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-16 h-16 bg-neutral-900 flex items-center justify-center text-white text-3xl font-black">
+                                                            {r.details.band?.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-2xl font-black text-neutral-900 uppercase leading-none">{r.details.band}</h5>
+                                                            <p className="text-[10px] font-bold text-neutral-400 mt-2 uppercase tracking-widest">Classification Index</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-neutral-50 p-6 border border-neutral-200 flex flex-col justify-center">
+                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">Accuracy</span>
+                                                        <span className="text-2xl font-black text-neutral-900 font-mono">{r.details.accuracy}%</span>
+                                                    </div>
+                                                    <div className="bg-neutral-50 p-6 border border-neutral-200 flex flex-col justify-center">
+                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">Correct Items</span>
+                                                        <span className="text-2xl font-black text-neutral-900 font-mono">{r.details.correct_count} <span className="text-neutral-300 text-sm">/ {r.details.total_answered}</span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-4 border-2 border-dashed border-neutral-200 text-center">
+                                                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Data verified via standard recall scoring protocol</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Logic & Arithmetic Visualization */}
+                                    {r.test_code === "LOGIC" && r.details && (
+                                        <div className="space-y-8">
+                                            <div className="flex flex-col lg:flex-row gap-8">
+                                                <div className="w-full lg:w-1/3 bg-neutral-900 p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-4 block">Reasoning Quality</span>
+                                                    <h5 className="text-3xl font-black text-white uppercase leading-tight mb-2">{r.details.band}</h5>
+                                                    <div className="h-1.5 w-full bg-neutral-800 mt-6">
+                                                        <div className="h-full bg-accent-gold" style={{ width: `${r.details.percentage}%` }}></div>
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-neutral-500 uppercase mt-2 block">Weighted Proficiency: {r.details.percentage}%</span>
+                                                </div>
+                                                
+                                                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                    <div className="bg-neutral-50 p-6 border-2 border-neutral-900">
+                                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 block">Problem Solving Rate</span>
+                                                        <div className="flex items-baseline gap-2">
+                                                            <span className="text-3xl font-black text-neutral-900 font-mono">{r.details.correct_count}</span>
+                                                            <span className="text-sm font-bold text-neutral-400 uppercase">Correct</span>
+                                                        </div>
+                                                        <p className="text-[9px] font-bold text-neutral-400 mt-4 uppercase italic">Outcome from {r.details.total_answered} attempted items</p>
+                                                    </div>
+                                                    <div className="bg-neutral-50 p-6 border-2 border-neutral-900 flex flex-col justify-between">
+                                                        <div>
+                                                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 block">Logical Accuracy</span>
+                                                            <span className="text-3xl font-black text-neutral-900 font-mono">{Math.round(r.details.percentage)}%</span>
+                                                        </div>
+                                                        <div className={`mt-4 text-[10px] font-black px-2 py-1 uppercase tracking-widest inline-block w-fit ${r.details.percentage >= 70 ? 'bg-success text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                                                            {r.details.percentage >= 70 ? 'High Proficiency' : 'Standard Range'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Counterproductive Behavior - Industrial Edition */}
                                     {r.test_name === "CBI Test" && r.details && (
                                         <div className="space-y-10">
@@ -861,19 +935,19 @@ function ParticipantProfilePage() {
                                                 <h5 className="text-sm font-black text-neutral-900 uppercase tracking-widest border-b-2 border-neutral-900 pb-2 inline-block">Behavioral Concerns Matrix</h5>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                                     {r.details.primary_concerns && Object.entries(r.details.primary_concerns).map(([trait, data]) => (
-                                                        <div key={trait} className="p-5 border-2 border-neutral-900 hover:bg-neutral-900 hover:text-white transition-all group">
+                                                        <div key={trait} className="p-5 border-2 border-neutral-900 bg-neutral-50 flex flex-col h-full">
                                                             <div className="flex justify-between items-start mb-3">
                                                                 <span className="text-xs font-black uppercase tracking-tighter leading-tight max-w-[140px]">{trait}</span>
                                                                 <span className="font-mono text-lg font-black">{data.score}</span>
                                                             </div>
                                                             <div className={`text-[10px] font-black uppercase tracking-widest inline-block px-1.5 py-0.5 border ${
-                                                                data.level === 'White' ? 'bg-white text-neutral-900 group-hover:bg-neutral-700 group-hover:text-white' : 
+                                                                data.level === 'White' ? 'bg-white text-neutral-900' : 
                                                                 data.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' : 
                                                                 'bg-error text-white border-error'
                                                             }`}>
                                                                 {data.level === 'White' ? 'Safe' : 'Concern'}
                                                             </div>
-                                                            <p className="mt-4 text-[11px] font-bold leading-tight opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <p className="mt-4 text-[11px] font-bold leading-tight text-neutral-600">
                                                                 {CBI_INTERPRETATION[trait]?.[data.level]}
                                                             </p>
                                                         </div>

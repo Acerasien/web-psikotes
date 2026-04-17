@@ -39,6 +39,7 @@ class User(Base):
     education = Column(String, nullable=True)
     department = Column(String, nullable=True, index=True)
     position = Column(String, nullable=True)
+    business_unit = Column(String, nullable=True)
     class_id = Column(Integer, ForeignKey("class_configs.id"), nullable=True, index=True)
 
     # Relationships with cascade delete

@@ -277,6 +277,9 @@ def bulk_create_users(
         if 'kelas' in row and not row.get('class'):
             row['class'] = row['kelas']
             
+        # Allow 'unit_bisnis' or 'unit' as aliases for 'business_unit'
+        business_unit_val = row.get('unit_bisnis') or row.get('unit') or row.get('business_unit')
+            
         missing = [f for f in required_fields if not str(row.get(f, '')).strip()]
         if missing:
             results["failed"] += 1
@@ -311,6 +314,7 @@ def bulk_create_users(
             'education': str(row.get('education', '')).strip() or None,
             'department': str(row.get('department', '')).strip() or None,
             'position': str(row.get('position', '')).strip() or None,
+            'business_unit': str(business_unit_val).strip() if business_unit_val else None,
             'role': 'participant'
         }
 
@@ -332,6 +336,7 @@ def bulk_create_users(
             education=user_data['education'],
             department=user_data['department'],
             position=user_data['position'],
+            business_unit=user_data['business_unit'],
             class_id=class_config.id
         )
         db.add(new_user)

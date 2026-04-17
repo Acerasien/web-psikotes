@@ -111,9 +111,31 @@ function ParticipantDashboard({ onLogout }) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
         {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-primary-700 to-[#d3c0aa] rounded-2xl p-8 mb-8 text-white shadow-lg">
-          <h2 className="text-3xl font-bold font-display mb-2">Assessment Saya</h2>
-          <p className="text-white/90">Kerjakan tes yang tersedia di bawah ini</p>
+        <div className="bg-gradient-to-r from-primary-700 to-[#d3c0aa] rounded-2xl p-8 mb-8 text-white shadow-lg overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-700"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold font-display mb-2 flex items-baseline gap-3">
+              Assessment Saya
+              <span className="text-sm font-normal text-white/70 bg-white/10 px-3 py-1 rounded-full border border-white/10">
+                {user.full_name || user.username}
+              </span>
+            </h2>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/80 text-sm font-medium">
+              <span className="flex items-center gap-1.5 grayscale opacity-80">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                {user.department || 'No Department'}
+              </span>
+              <span className="w-1 h-1 bg-white/30 rounded-full hidden sm:block"></span>
+              <span className="flex items-center gap-1.5 grayscale opacity-80">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {user.business_unit || 'No Business Unit'}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

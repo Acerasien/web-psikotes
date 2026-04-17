@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import ParticipantsPage from './pages/ParticipantsPage';
 import ResultsPage from './pages/ResultsPage';
 import AddParticipantPage from './pages/AddParticipantPage';
+import AddAdminPage from './pages/AddAdminPage';
 import ParticipantProfilePage from './pages/ParticipantProfilePage';
 import SecurityDashboard from './pages/SecurityDashboard';
 import ManageAdmins from './pages/ManageAdmins';
@@ -136,6 +137,7 @@ function AdminLayout({ onLogout }) {
                         <Route path="/participants/new" element={<AddParticipantPage />} />
                         <Route path="/participants/:id" element={<ParticipantProfilePage />} />
                         <Route path="/admins" element={<ManageAdmins />} />
+                        <Route path="/admins/new" element={<AddAdminPage />} />
                         <Route path="/results" element={<ResultsPage />} />
                         <Route path="/security" element={<SecurityDashboard />} />
                     </Routes>

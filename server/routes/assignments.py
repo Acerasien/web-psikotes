@@ -98,9 +98,21 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
     for a in assignments:
         time_limit = a.test.time_limit
         if a.test.code in time_overrides:
-            time_limit = time_overrides[a.test.code]
+            override = time_overrides[a.test.code]
+            if isinstance(override, dict):
+                # Handle special complex overrides (MEM and IQ)
+                if "encoding" in override and "recall" in override:
+                    time_limit = override["encoding"] + override["recall"]
+                elif "phases" in override and isinstance(override["phases"], list):
+                    time_limit = sum(override["phases"])
+                else:
+                    # Fallback to test default or 0 if dict structure unknown
+                    time_limit = a.test.time_limit
+            else:
+                time_limit = override
             
-        time_in_minutes = (time_limit // 60) if time_limit else 0
+        # Ensure time_limit is a number before division
+        time_in_minutes = (time_limit // 60) if isinstance(time_limit, (int, float)) and time_limit > 0 else 0
         
         result.append({
             "id": a.id,
@@ -142,7 +154,18 @@ def start_test(
         if class_config:
             time_overrides = class_config.config.get("time_overrides", {})
             if assignment.test.code in time_overrides:
-                time_limit = time_overrides[assignment.test.code]
+                override = time_overrides[assignment.test.code]
+                if isinstance(override, dict):
+                    # For MEM/IQ, we use the specific sub-times in the component, 
+                    # but for the main timer we need a scalar.
+                    if "encoding" in override and "recall" in override:
+                        time_limit = override["encoding"] + override["recall"]
+                    elif "phases" in override and isinstance(override["phases"], list):
+                        time_limit = sum(override["phases"])
+                    else:
+                        time_limit = override # Might still be a dict if unknown
+                else:
+                    time_limit = override
 
     questions = db.query(Question).filter(Question.test_id == assignment.test_id).order_by(Question.order_index).all()
     output = []

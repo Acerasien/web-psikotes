@@ -125,9 +125,9 @@ function BulkUploadModal({ onClose, onSuccess }) {
         // Create sample data based on current classifications
         const exampleClass = classes.length > 0 ? classes[0].name : 'HO Staff';
         const wsData = [
-            ['username', 'password', 'full_name', 'age', 'gender', 'education', 'department', 'position', 'class'],
-            ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'IT', 'Manager', exampleClass],
-            ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'HR', 'Staff', classes.length > 1 ? classes[1].name : 'Site Operator']
+            ['username', 'password', 'full_name', 'age', 'gender', 'education', 'department', 'position', 'unit_bisnis', 'class'],
+            ['johndoe', 'pass123', 'John Doe', '30', 'Male', 'S1', 'HRGA', 'Manager', 'PT. Long Daliq Primacoal BP', exampleClass],
+            ['janedoe', 'pass456', 'Jane Doe', '28', 'Female', 'S2', 'Production', 'Staff', 'PT. Muncul Kilau Persada', classes.length > 1 ? classes[1].name : 'Site Operator']
         ];
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -165,6 +165,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <th className="border border-gray-300 px-3 py-2">education</th>
                                             <th className="border border-gray-300 px-3 py-2">department</th>
                                             <th className="border border-gray-300 px-3 py-2">position</th>
+                                            <th className="border border-gray-300 px-3 py-2">unit_bisnis</th>
                                             <th className="border border-gray-300 px-3 py-2">class</th>
                                         </tr>
                                     </thead>
@@ -176,8 +177,9 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <td className="border border-gray-300 px-3 py-2">30</td>
                                             <td className="border border-gray-300 px-3 py-2">Male</td>
                                             <td className="border border-gray-300 px-3 py-2">S1</td>
-                                            <td className="border border-gray-300 px-3 py-2">IT</td>
+                                            <td className="border border-gray-300 px-3 py-2">HRGA</td>
                                             <td className="border border-gray-300 px-3 py-2">Manager</td>
+                                            <td className="border border-gray-300 px-3 py-2">PT. Long Daliq Primacoal BP</td>
                                             <td className="border border-gray-300 px-3 py-2">HO Staff</td>
                                         </tr>
                                         <tr className="bg-gray-50">
@@ -187,8 +189,9 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                             <td className="border border-gray-300 px-3 py-2">28</td>
                                             <td className="border border-gray-300 px-3 py-2">Female</td>
                                             <td className="border border-gray-300 px-3 py-2">S2</td>
-                                            <td className="border border-gray-300 px-3 py-2">HR</td>
+                                            <td className="border border-gray-300 px-3 py-2">Production</td>
                                             <td className="border border-gray-300 px-3 py-2">Staff</td>
+                                            <td className="border border-gray-300 px-3 py-2">PT. Muncul Kilau Persada</td>
                                             <td className="border border-gray-300 px-3 py-2">Site Operator</td>
                                         </tr>
                                     </tbody>

@@ -57,6 +57,7 @@ def get_results(
             "username": r.user.username,
             "full_name": r.user.full_name,
             "test_name": r.test.name,
+            "test_code": r.test.code,
             "test_id": r.test_id,
             "score": r.score,
             "total_questions": total_questions,

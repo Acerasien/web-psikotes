@@ -87,8 +87,8 @@ function ManageAdmins() {
                 <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">Kelola Admin</h3>
                     <Link
-                        to="/participants/new"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm text-center min-h-[44px] inline-flex items-center justify-center"
+                        to="/admins/new"
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm text-center min-h-[44px] inline-flex items-center justify-center transition-all shadow-md hover:shadow-lg active:scale-95"
                     >
                         + Tambah Admin
                     </Link>

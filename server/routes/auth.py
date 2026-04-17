@@ -36,6 +36,13 @@ def read_users_me(current_user: User = Depends(get_current_user)):
     """Get current authenticated user info"""
     return {
         "username": current_user.username,
+        "full_name": current_user.full_name,
         "role": current_user.role,
-        "id": current_user.id
+        "id": current_user.id,
+        "gender": current_user.gender,
+        "age": current_user.age,
+        "education": current_user.education,
+        "department": current_user.department,
+        "position": current_user.position,
+        "business_unit": current_user.business_unit
     }

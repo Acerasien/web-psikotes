@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
 import Swal from 'sweetalert2';
@@ -30,6 +30,41 @@ function ParticipantsPage() {
     const [editingUser, setEditingUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showBulkUpload, setShowBulkUpload] = useState(false);
+    
+    // Advanced Filters & URL Sync
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [classes, setClasses] = useState([]);
+    
+    const [filters, setFilters] = useState({
+        search: searchParams.get('q') || '',
+        dept: searchParams.get('dept') || '',
+        unit: searchParams.get('unit') || '',
+        classId: searchParams.get('class') || ''
+    });
+
+    // Update URL when filters change
+    useEffect(() => {
+        const params = {};
+        if (filters.search) params.q = filters.search;
+        if (filters.dept) params.dept = filters.dept;
+        if (filters.unit) params.unit = filters.unit;
+        if (filters.classId) params.class = filters.classId;
+        setSearchParams(params, { replace: true });
+        
+        // Also sync old searchTerm state for backwards compatibility in existing code
+        setSearchTerm(filters.search);
+        setCurrentPage(1); // Reset to page 1 on filter change
+    }, [filters, setSearchParams]);
+
+    // Fetch classes and other initial data
+    const fetchClasses = async () => {
+        try {
+            const r = await api.getClasses();
+            setClasses(r.data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
     
     // Sorting state
     const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
@@ -73,16 +108,31 @@ function ParticipantsPage() {
         refreshUsers();
         fetchTests();
         refreshAssignments();
+        fetchClasses();
     }, []);
 
-    // Filtering
+    // Derive unique filter options from user data
+    const departments = [...new Set(usersList.map(u => u.department).filter(Boolean))].sort();
+    const businessUnits = [...new Set(usersList.map(u => u.business_unit).filter(Boolean))].sort();
+
+    // Filtering logic
     const filteredUsers = usersList
         .filter(u => u.role === 'participant')
         .filter(u => {
-            if (!searchTerm) return true;
-            const name = (u.full_name || u.username).toLowerCase();
-            const dept = (u.department || "").toLowerCase();
-            return name.includes(searchTerm.toLowerCase()) || dept.includes(searchTerm.toLowerCase());
+            // Search filter
+            const searchTermLower = filters.search.toLowerCase();
+            const nameMatch = !filters.search || (u.full_name || u.username).toLowerCase().includes(searchTermLower);
+            
+            // Department filter
+            const deptMatch = !filters.dept || u.department === filters.dept;
+            
+            // Unit filter
+            const unitMatch = !filters.unit || u.business_unit === filters.unit;
+            
+            // Class filter
+            const classMatch = !filters.classId || String(u.class_id) === String(filters.classId);
+            
+            return nameMatch && deptMatch && unitMatch && classMatch;
         });
 
     // Sorting
@@ -297,18 +347,20 @@ function ParticipantsPage() {
                             </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
+                            {/* Global Search */}
                             <div className="relative">
                                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                                 <input
                                     type="text"
-                                    placeholder="Cari peserta..."
-                                    className="pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm w-full sm:w-64 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Cari nama..."
+                                    className="pl-10 pr-4 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-sm w-64 focus:ring-2 focus:ring-primary-500 transition-all shadow-sm"
+                                    value={filters.search}
+                                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                                 />
                             </div>
+
                             <button
                                 onClick={() => {
                                     setIsSelectMode(!isSelectMode);
@@ -326,6 +378,7 @@ function ParticipantsPage() {
                                 </svg>
                                 {isSelectMode || selectedUsers.size > 0 ? 'Memilih...' : 'Pilih'}
                             </button>
+
                             <Link
                                 to="/participants/new"
                                 className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-5 rounded-xl transition-colors shadow-md hover:shadow-lg hover:-translate-y-0.5"
@@ -335,6 +388,7 @@ function ParticipantsPage() {
                                 </svg>
                                 Tambah Peserta
                             </Link>
+
                             <button
                                 onClick={() => setShowBulkUpload(true)}
                                 className="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 px-5 rounded-xl transition-colors shadow-md hover:shadow-lg hover:-translate-y-0.5"
@@ -345,6 +399,62 @@ function ParticipantsPage() {
                                 Unggah Massal
                             </button>
                         </div>
+                    </div>
+
+                    {/* Advanced Filter Bar */}
+                    <div className="py-4 border-t border-neutral-100 flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2 text-xs font-bold text-neutral-400 uppercase tracking-widest mr-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 8.293A1 1 0 013 7.586V4z" />
+                            </svg>
+                            Filter:
+                        </div>
+
+                        <select
+                            className="bg-neutral-50 border-neutral-200 rounded-lg text-xs font-semibold text-neutral-600 px-3 py-1.5 focus:ring-primary-500 cursor-pointer transition-all hover:bg-neutral-100"
+                            value={filters.dept}
+                            onChange={(e) => setFilters(prev => ({ ...prev, dept: e.target.value }))}
+                        >
+                            <option value="">Semua Departemen</option>
+                            {departments.map(d => (
+                                <option key={d} value={d}>{d}</option>
+                            ))}
+                        </select>
+
+                        <select
+                            className="bg-neutral-50 border-neutral-200 rounded-lg text-xs font-semibold text-neutral-600 px-3 py-1.5 focus:ring-primary-500 cursor-pointer transition-all hover:bg-neutral-100"
+                            value={filters.unit}
+                            onChange={(e) => setFilters(prev => ({ ...prev, unit: e.target.value }))}
+                        >
+                            <option value="">Semua Unit Bisnis</option>
+                            {businessUnits.map(u => (
+                                <option key={u} value={u}>{u}</option>
+                            ))}
+                        </select>
+
+                        <select
+                            className="bg-neutral-50 border-neutral-200 rounded-lg text-xs font-semibold text-neutral-600 px-3 py-1.5 focus:ring-primary-500 cursor-pointer transition-all hover:bg-neutral-100"
+                            value={filters.classId}
+                            onChange={(e) => setFilters(prev => ({ ...prev, classId: e.target.value }))}
+                        >
+                            <option value="">Semua Kelas</option>
+                            {classes.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+
+                        {/* Reset Button */}
+                        {(filters.search || filters.dept || filters.unit || filters.classId) && (
+                            <button
+                                onClick={() => setFilters({ search: '', dept: '', unit: '', classId: '' })}
+                                className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1.5 transition-colors group"
+                            >
+                                <svg className="w-3.5 h-3.5 transform group-hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Atur Ulang
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -455,6 +565,7 @@ function ParticipantsPage() {
                                             <div className="flex-1 min-w-0">
                                                 <h3 className="font-semibold text-gray-900 truncate">{u.full_name || u.username}</h3>
                                                 <p className="text-sm text-gray-500 truncate">@{u.username} • {u.department || 'N/A'}</p>
+                                                <p className="text-[10px] text-gray-400 truncate uppercase mt-0.5">{u.business_unit || 'No Unit'}</p>
                                             </div>
                                         </div>
                                         {isSuperadmin && (
@@ -605,7 +716,7 @@ function ParticipantsPage() {
                                             <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                             </svg>
-                                            <span>Departemen</span>
+                                            <span>Dept / Unit</span>
                                             <SortIcon direction={getSortDirection('department')} />
                                         </div>
                                     </th>
@@ -698,11 +809,16 @@ function ParticipantsPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                        </svg>
-                                                        <span className="text-sm font-medium text-neutral-700">{u.department || <span className="text-neutral-400 italic">Belum ditugaskan</span>}</span>
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                            </svg>
+                                                            <span className="text-sm font-bold text-neutral-700">{u.department || 'N/A'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 pl-6">
+                                                            <span className="text-[11px] font-medium text-neutral-400 uppercase tracking-tight">{u.business_unit || 'No Unit'}</span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">

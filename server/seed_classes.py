@@ -59,7 +59,7 @@ classes_data = [
         "description": "Site-based Operator",
         "config": {
             "time_overrides": {
-                "SPEED": 780, "DISC": 600, "LOGIC": 900, "LEAD": 900, "TEMP": 360, "CBI": 1080,
+                "SPEED": 780, "DISC": 600, "LOGIC": 720, "LEAD": 900, "TEMP": 360, "CBI": 900,
                 "MEM": {"encoding": 300, "recall": 600},
                 "IQ": {"phases": [300, 360, 300, 300, 300, 360, 300, 300]}
             }

@@ -4,7 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import { api } from './utils/api';
 import Swal from 'sweetalert2';
 
-function CreateUser({ onUserCreated }) {
+function CreateUser({ onUserCreated, initialRole = 'participant' }) {
   const { token, isSuperadmin: currentUserRole } = useAuth();
   const [classes, setClasses] = useState([]);
   const [formData, setFormData] = useState({
@@ -16,7 +16,8 @@ function CreateUser({ onUserCreated }) {
     education: '',
     department: '',
     position: '',
-    role: 'participant', // default role
+    business_unit: '',
+    role: initialRole, // use prop-driven initial role
     class_id: ''
   });
   const [loading, setLoading] = useState(false);
@@ -103,8 +104,9 @@ function CreateUser({ onUserCreated }) {
       gender: formData.gender || null,
       age: formData.age === '' ? null : Number(formData.age),
       education: formData.education.trim() || null,
-      department: formData.department.trim() || null,
+      department: formData.department || null,
       position: formData.position.trim() || null,
+      business_unit: formData.business_unit || null,
       role: formData.role,
       class_id: formData.class_id || null
     };
@@ -115,7 +117,7 @@ function CreateUser({ onUserCreated }) {
       Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
-        text: `${formData.role === 'participant' ? 'Peserta' : 'Pengguna'} berhasil dibuat!`,
+        text: `${formData.role === 'admin' ? 'Admin' : 'Peserta'} berhasil dibuat!`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -130,6 +132,7 @@ function CreateUser({ onUserCreated }) {
         education: '',
         department: '',
         position: '',
+        business_unit: '',
         role: 'participant',
         class_id: ''
       });
@@ -167,7 +170,7 @@ function CreateUser({ onUserCreated }) {
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="mb-6">
         <h3 className="text-xl font-bold text-gray-900">
-          {currentUserRole === 'superadmin' ? 'Tambah Pengguna Baru' : 'Tambah Peserta Baru'}
+          {formData.role === 'admin' ? 'Tambah Admin Baru' : 'Tambah Peserta Baru'}
         </h3>
         <p className="text-sm text-gray-500 mt-1">
           Isi informasi di bawah ini. Kolom bertanda * wajib diisi.
@@ -289,30 +292,61 @@ function CreateUser({ onUserCreated }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Departemen</label>
-              <input
-                type="text"
+              <select
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                placeholder="contoh: Sumber Daya Manusia"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              >
+                <option value="">Pilih Departemen</option>
+                <option value="HRGA">HRGA</option>
+                <option value="Production">Production</option>
+                <option value="Engineering">Engineering</option>
+                <option value="HSE">HSE</option>
+                <option value="Legal">Legal</option>
+                <option value="FAT">FAT</option>
+                <option value="CSR">CSR</option>
+                <option value="Plant">Plant</option>
+                <option value="SCM">SCM</option>
+              </select>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Jabatan</label>
-              <input
-                type="text"
-                name="position"
-                value={formData.position}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Unit Bisnis</label>
+              <select
+                name="business_unit"
+                value={formData.business_unit}
                 onChange={handleChange}
-                placeholder="contoh: Manajer SDM"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              >
+                <option value="">Pilih Unit Bisnis</option>
+                <option value="PT. Long Daliq Primacoal BP">PT. Long Daliq Primacoal BP</option>
+                <option value="PT. Long Daliq Primacoal SPGA">PT. Long Daliq Primacoal SPGA</option>
+                <option value="PT. Muncul Kilau Persada">PT. Muncul Kilau Persada</option>
+                <option value="PT. Batubara Lahat">PT. Batubara Lahat</option>
+                <option value="PT. Andamas Global Energi">PT. Andamas Global Energi</option>
+                <option value="PT. Long Daliq Logistik">PT. Long Daliq Logistik</option>
+                <option value="PT. Andamas Properti Indo">PT. Andamas Properti Indo</option>
+                <option value="PT. Bukit Artha Persada Site Arsy Nusantara">PT. Bukit Artha Persada Site Arsy Nusantara</option>
+              </select>
             </div>
 
-            {/* Class dropdown */}
-            {classes.length > 0 && (
+            {formData.role === 'participant' && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">Jabatan</label>
+                <input
+                  type="text"
+                  name="position"
+                  value={formData.position}
+                  onChange={handleChange}
+                  placeholder="contoh: Manajer SDM"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            )}
+
+            {/* Class dropdown - Only for participants */}
+            {formData.role === 'participant' && classes.length > 0 && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Kelas <span className="text-red-500">*</span>
@@ -383,7 +417,7 @@ function CreateUser({ onUserCreated }) {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                {currentUserRole === 'superadmin' ? 'Buat Pengguna' : 'Tambah Peserta'}
+                {formData.role === 'admin' ? 'Buat Admin' : 'Tambah Peserta'}
               </>
             )}
           </button>
@@ -400,6 +434,7 @@ function CreateUser({ onUserCreated }) {
                 education: '',
                 department: '',
                 position: '',
+                business_unit: '',
                 role: 'participant',
                 class_id: ''
               });
