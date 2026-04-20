@@ -2,7 +2,7 @@
 .qwen/
 
 # Documentation (project root notes)
-*.md
+# *.md (Commented out to allow README.md for Hugging Face)
 
 # Python
 __pycache__/
