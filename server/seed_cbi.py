@@ -46,7 +46,7 @@ QUESTIONS_TEXT = """
 35 (T) [Honesty] Saya pernah meminjam uang perusahaan tanpa izin.
 36 (T) [Honesty] Saya pernah membagikan informasi rahasia perusahaan.
 37 (T) [Computer] Saya pernah mengirim lelucon tidak pantas digroup kantor.
-38 (T) [Computer] Saya pernah mengirim leluconyang berbau rasial.
+38 (T) [Computer] Saya pernah mengirim lelucon yang berbau rasial.
 39 (T) [Sexual] Menurut saya komentar seksual itu wajar.
 40 (T) [Sexual] Sosialisasi setelah kerja itu hal biasa menurut saya.
 41 (T) [Substance] Saya pernah minum alkohol secara berlebihan sebelum kerja.
