@@ -140,9 +140,9 @@ QUESTIONS_TEXT = """
 129 (T) [Aggression] Orang menjauhi saya saat marah.
 130 (T) [Aggression] Menurut saya terkadang orang lain terlalu sensitif.
 131 (T) [Substance] Saya pernah memakai ganja sebelum kerja.
-132 (T) [Substance] Saya bekerja saya pernah tidak dalam kondisi sadar secara penuh.
+132 (T) [Substance] Saat bekerja saya pernah tidak dalam kondisi sadar secara penuh.
 133 (T) [Honesty] Saya pernah mengambil barang milik orang lain.
-134 (T) [Honesty] Saya pernah manfaatkan celah aturan perusahaan.
+134 (T) [Honesty] Saya pernah memanfaatkan celah aturan perusahaan.
 135 (F) [Computer] Saya patuh aturan perusahaan.
 136 (T) [Computer] Saya pernah mengakses data perusahaan tanpa izin.
 137 (T) [Sexual] Saya pernah menatap rekan kerja secara tidak pantas.
