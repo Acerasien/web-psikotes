@@ -121,11 +121,11 @@ function SecurityDashboard() {
     };
 
     // Apply filters and sorts
-    const filteredLocked = lockedAssignments
+    const filteredLocked = (Array.isArray(lockedAssignments) ? lockedAssignments : [])
         .filter(a => filterBySearch(a, lockedSearch))
         .sort(sortLocked);
 
-    const filteredLogs = exitLogs
+    const filteredLogs = (Array.isArray(exitLogs) ? exitLogs : [])
         .filter(log => filterBySearch(log, logsSearch))
         .sort(sortLogs);
 
