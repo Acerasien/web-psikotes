@@ -130,4 +130,4 @@ The "Industrial Utilitarian" aesthetic prioritizes clarity and professional weig
 ```
 
 ---
-*Developed by the Google Deepmind Agentic Coding Team for PT. Digdoyo Bowo Leksono & Andamas Group.*
+
