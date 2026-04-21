@@ -240,6 +240,21 @@ def submit_phase(
     question_map = {q.id: q for q in questions}
 
     # Save responses
+    if not request.answers:
+        # If no answers (e.g. time ran out), add a marker response for the first question
+        # This ensures the phase is marked as 'done' in get_phases
+        first_q = questions[0] if questions else None
+        if first_q:
+            marker_resp = Response(
+                user_id=current_user.id,
+                test_id=assignment.test_id,
+                assignment_id=assignment_id,
+                question_id=first_q.id,
+                selected_option_id=None,
+                selection_type="single",
+            )
+            db.add(marker_resp)
+    
     correct_count = 0
     for ans in request.answers:
         q_id = ans["question_id"]
@@ -326,23 +341,21 @@ def submit_all(
         .all()
     )
 
-    # Verify all phases have been answered
+    # Verify all phases have been 'attempted' (have at least one response row)
     for p in phases:
-        response_count = (
+        response_exists = (
             db.query(Response)
             .join(Question, Response.question_id == Question.id)
             .filter(
                 Response.assignment_id == assignment_id,
                 Question.phase_id == p.id
             )
-            .distinct(Response.question_id)
-            .count()
+            .first()
         )
-        question_count = db.query(Question).filter(Question.phase_id == p.id).count()
-        if response_count < question_count:
+        if not response_exists:
             raise HTTPException(
                 status_code=400,
-                detail=f"Phase {p.order_number} is incomplete ({response_count}/{question_count} answered)"
+                detail=f"Fase {p.order_number} belum diselesaikan. Harap selesaikan semua fase sebelum mengirim."
             )
 
     # Get all questions with options and phase info

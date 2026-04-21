@@ -45,7 +45,7 @@ QUESTIONS_TEXT = """
 34 (T) [Substance] Saya menggunakan ganja.
 35 (T) [Honesty] Saya pernah meminjam uang perusahaan tanpa izin.
 36 (T) [Honesty] Saya pernah membagikan informasi rahasia perusahaan.
-37 (T) [Computer] Saya pernah mengirim lelucon tidak pantas digroup kantor.
+37 (T) [Computer] Saya pernah mengirim lelucon tidak pantas di grup kantor.
 38 (T) [Computer] Saya pernah mengirim lelucon yang berbau rasial.
 39 (T) [Sexual] Menurut saya komentar seksual itu wajar.
 40 (T) [Sexual] Sosialisasi setelah kerja itu hal biasa menurut saya.
@@ -72,7 +72,7 @@ QUESTIONS_TEXT = """
 61 (F) [Substance] Pengguna narkoba harus dihukum.
 62 (F) [Substance] Pengguna narkoba tidak dapat diandalkan.
 63 (T) [Honesty] Saya pernah tergoda untuk mencuri sesuatu milik Perusahaan.
-64 (T) [Honesty] Saya pernah membawa alat kantor kerumah.
+64 (T) [Honesty] Saya pernah membawa alat kantor ke rumah.
 65 (T) [Computer] Saya pakai komputer untuk urusan pribadi.
 66 (F) [Computer] Saya tipe karyawan akan melaporkan pelanggaran.
 67 (T) [Sexual] Saya pernah membuat komentar seksual.
@@ -130,7 +130,7 @@ QUESTIONS_TEXT = """
 119 (T) [Honesty] Saya pernah menarik atau menggunakan uang perusahaan hingga saldonya menjadi minus.
 120 (T) [Honesty] Menurut saya semua orang pernah berbohong sedikit.
 121 (T) [Good Impression] Saya selalu dapat mengontrol emosi.
-122 (T) [Good Impression] Saya tidak pernah membuaat konflik.
+122 (T) [Good Impression] Saya tidak pernah membuat konflik.
 123 (T) [Sexual] Saya pernah menggoda rekan kerja terkait hal yang tidak pantas.
 124 (T) [Sexual] Saya pernah membuat komentar tidak nyaman ke orang lain.
 125 (T) [Dependability] Terkadang saya meninggalkan pekerjaan untuk keperluan pribadi.
