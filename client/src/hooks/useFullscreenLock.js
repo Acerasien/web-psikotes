@@ -55,51 +55,79 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
     }, [fullscreenSupported]);
 
     useEffect(() => {
-        if (!fullscreenSupported) return; // Skip fullscreen tracking if not supported
+        const handleViolation = () => {
+            if (isLocked || !isInitialized) return;
+
+            const newCount = exitCount + 1;
+            setExitCount(newCount);
+
+            api.logExit(assignmentId).catch(err => console.error("Gagal mencatat keluar", err));
+
+            if (newCount >= 3) {
+                setIsLocked(true);
+                api.lockAssignment(assignmentId).catch(err => console.error(err));
+                // Clear session storage on lock
+                sessionStorage.removeItem(`fullscreen_exit_${assignmentId}`);
+                sessionStorage.removeItem(`test_session_${assignmentId}`);
+                Swal.fire({
+                    title: 'Tes Terkunci',
+                    text: 'Anda terlalu sering keluar dari area tes.',
+                    icon: 'error',
+                    allowOutsideClick: false
+                });
+                if (onLock) onLock();
+            } else {
+                setIsFullscreen(false);
+                Swal.fire({
+                    title: `Peringatan ${newCount}/3`,
+                    text: 'Harap kembali ke area tes segera! Percobaan keluar akan dicatat.',
+                    icon: 'warning',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            }
+        };
 
         const handleFullscreenChange = () => {
+            if (!fullscreenSupported) return;
             const isCurrentlyFullscreen = document.fullscreenElement !== null;
-
-            if (!isCurrentlyFullscreen && !isLocked && isInitialized) {
-                const newCount = exitCount + 1;
-                setExitCount(newCount);
-
-                api.logExit(assignmentId).catch(err => console.error("Gagal mencatat keluar", err));
-
-                if (newCount >= 3) {
-                    setIsLocked(true);
-                    api.lockAssignment(assignmentId).catch(err => console.error(err));
-                    // Clear session storage on lock
-                    sessionStorage.removeItem(`fullscreen_exit_${assignmentId}`);
-                    sessionStorage.removeItem(`test_session_${assignmentId}`);
-                    Swal.fire({
-                        title: 'Tes Terkunci',
-                        text: 'Anda terlalu sering keluar dari mode layar penuh.',
-                        icon: 'error',
-                        allowOutsideClick: false
-                    });
-                    if (onLock) onLock();
-                } else {
-                    setIsFullscreen(false);
-                    Swal.fire({
-                        title: `Warning ${newCount}/3`,
-                        text: 'Please return to fullscreen immediately!',
-                        icon: 'warning',
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
-                }
-            } else if (isCurrentlyFullscreen) {
+            if (!isCurrentlyFullscreen) {
+                handleViolation();
+            } else {
                 setIsFullscreen(true);
             }
         };
 
-        // Safari uses webkitfullscreenchange event
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                handleViolation();
+            }
+        };
+
+        const handleBlur = () => {
+            // Small delay to ensure it wasn't a transient blur (like a browser popup)
+            setTimeout(() => {
+                if (!document.hasFocus() && !isLocked && isInitialized) {
+                    handleViolation();
+                }
+            }, 500);
+        };
+
+        // Listen for fullscreen changes
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);  // Safari
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        
+        // Listen for tab switching
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Listen for window blurring (clicking away)
+        window.addEventListener('blur', handleBlur);
+
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
-            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);  // Safari
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('blur', handleBlur);
         };
     }, [exitCount, isLocked, isInitialized, assignmentId, onLock, fullscreenSupported]);
 

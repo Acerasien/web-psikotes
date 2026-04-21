@@ -32,6 +32,12 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
+      // If the error is from the login endpoint, don't reload
+      // because the Login component needs to handle the error itself
+      if (error.config?.url?.includes('/login')) {
+        return Promise.reject(error);
+      }
+
       // Token expired or invalid - clear session and redirect to login
       sessionStorage.removeItem('token');
       window.location.reload();
