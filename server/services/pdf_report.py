@@ -1,7 +1,12 @@
 # server/services/pdf_report.py
 from datetime import datetime
 from typing import Dict, List, Optional
-from weasyprint import HTML
+try:
+    from weasyprint import HTML
+    HAS_WEASYPRINT = True
+except Exception as e:
+    print(f"Warning: WeasyPrint could not be loaded ({e}). PDF exports will be disabled.")
+    HAS_WEASYPRINT = False
 from models import User, Result  # assuming these are accessible
 
 
@@ -59,6 +64,8 @@ def get_rating(score: int, max_score: Optional[int], test_name: str) -> Dict[str
 
 
 def generate_participant_pdf(user: User, results: List[Result]) -> bytes:
+    if not HAS_WEASYPRINT:
+        raise RuntimeError("PDF generation is currently unavailable on this server due to missing system libraries.")
     # Sort results in desired order
     test_order = {
         "DISC": 1,
