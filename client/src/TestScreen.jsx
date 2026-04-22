@@ -129,18 +129,29 @@ function TestScreen({ assignmentId, onFinish }) {
   };
 
   const handleSubmit = async (currentAnswers = answers, isTimeout = false) => {
-    // Check if all questions answered
-    const answeredCount = Object.keys(currentAnswers).length;
-    const totalQuestions = testData?.questions?.length || 0;
-    
-    if (!isTimeout && totalQuestions > 0 && answeredCount < totalQuestions) {
-      Swal.fire({
-        title: 'Belum Lengkap',
-        text: `Anda baru menjawab ${answeredCount} dari ${totalQuestions} pertanyaan.`,
-        icon: 'warning',
-        confirmButtonText: 'OK'
-      });
-      return;
+    // Check if all questions or specific answers are missing
+    if (!isTimeout) {
+      const missingIndices = (testData?.questions || [])
+        .map((q, idx) => answers[q.id] ? null : idx)
+        .filter(idx => idx !== null);
+
+      if (missingIndices.length > 0) {
+        Swal.fire({
+          title: 'Jawaban Belum Lengkap',
+          html: `Anda belum menjawab ${missingIndices.length} soal.<br/><br/><div class="text-sm font-mono bg-neutral-50 p-2 border border-neutral-200">Nomor: ${missingIndices.map(i => i + 1).join(', ')}</div>`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Lengkapi Jawaban',
+          cancelButtonText: 'Batal',
+          confirmButtonColor: '#0F172A',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            setCurrentIndex(missingIndices[0]);
+            setShowConfirmModal(false);
+          }
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -152,7 +163,7 @@ function TestScreen({ assignmentId, onFinish }) {
         type: 'single'
       }));
 
-      await api.submitTest(assignmentId, finalAnswers, timeTaken);
+      await api.submitTest(assignmentId, finalAnswers, timeTaken, getDeviceInfo());
 
       if (isTimeout) Swal.fire("Time is up!", "Your test has been submitted.", "info");
       onFinish();
@@ -161,6 +172,17 @@ function TestScreen({ assignmentId, onFinish }) {
       setIsSubmitting(false);
       Swal.fire("Error", "Failed to submit test.", "error");
     }
+  };
+
+  const getDeviceInfo = () => {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+      return "Tablet";
+    }
+    if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|NetFront|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/i.test(ua)) {
+      return "Mobile";
+    }
+    return "Desktop";
   };
 
   // --- RENDER ---

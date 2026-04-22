@@ -44,6 +44,7 @@ def get_assignments(
     assignments = query.all()
     result = []
     for a in assignments:
+        exit_count = db.query(ExitLog).filter(ExitLog.assignment_id == a.id).count()
         result.append({
             "id": a.id,
             "user_id": a.user_id,
@@ -53,7 +54,9 @@ def get_assignments(
             "test_name": a.test.name,
             "test_code": a.test.code,
             "status": a.status,
-            "assigned_at": a.assigned_at,
+            "assigned_at": a.assigned_at.isoformat() + "Z" if a.assigned_at else None,
+            "started_at": a.started_at.isoformat() + "Z" if a.started_at else None,
+            "exit_count": exit_count,
             "pretest_completed": a.pretest_completed
         })
     return result
@@ -145,6 +148,7 @@ def start_test(
         raise HTTPException(status_code=403, detail="This test has already been completed and cannot be retaken.")
     if assignment.status == "pending":
         assignment.status = "in_progress"
+        assignment.started_at = datetime.utcnow()
         db.commit()
 
     # Determine time limit: check user's class override first, then fall back to test default
@@ -374,6 +378,13 @@ def submit_test(
     # Add completion info to details
     if details is None:
         details = {}
+    
+    # Add session metadata
+    details["session"] = {
+        "device": submission.device_info,
+        "started_at": assignment.started_at.isoformat() if assignment.started_at else None,
+        "completed_at": datetime.utcnow().isoformat()
+    }
     details["answered_count"] = answered_count
     details["total_questions"] = total_questions
     details["is_complete"] = is_complete

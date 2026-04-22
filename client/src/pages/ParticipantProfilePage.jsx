@@ -333,6 +333,107 @@ function ParticipantProfilePage() {
                 </div>
             </div>
 
+            {/* Ringkasan Aktivitas & Integritas Sesi */}
+            <section className="animate-fade-in-up mt-12 mb-12">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="h-8 w-1.5 bg-neutral-900"></div>
+                    <div className="flex flex-col">
+                        <h2 className="text-xl font-black text-neutral-900 uppercase tracking-tight leading-none">Integritas Sesi & Aktivitas</h2>
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Audit log aktivitas pengerjaan tes</span>
+                    </div>
+                </div>
+                
+                <div className="bg-white border-2 border-neutral-900 overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,0.05)]">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[900px]">
+                            <thead>
+                                <tr className="bg-neutral-900 text-white border-b-2 border-neutral-900">
+                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 w-1/4">Nama Pengujian</th>
+                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[120px]">Status</th>
+                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700">Sesi Pengerjaan (WIB)</th>
+                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[130px]">Perangkat</th>
+                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-center">Indikasi Kecurangan</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-200">
+                                {assignments.map((a, idx) => {
+                                    const result = results.find(r => r.assignment_id === a.id);
+                                    const started_at = a.started_at || result?.started_at;
+                                    const completed_at = result?.completed_at;
+                                    const device = result?.details?.session?.device || (a.status === 'completed' ? 'Desktop' : '–');
+                                    const exit_count = a.exit_count || 0;
+                                    
+                                    const formatIndoDate = (dateStr) => {
+                                        if (!dateStr) return null;
+                                        return new Date(dateStr).toLocaleString('id-ID', {
+                                            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                                        });
+                                    };
+
+                                    const startStr = formatIndoDate(started_at);
+                                    const endStr = formatIndoDate(completed_at);
+                                    
+                                    return (
+                                        <tr key={a.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50'} hover:bg-neutral-100/50 transition-colors`}>
+                                            <td className="px-5 py-3 border-r border-neutral-100">
+                                                <span className="text-xs font-black text-neutral-900 uppercase tracking-tighter">{a.test_name}</span>
+                                            </td>
+                                            <td className="px-5 py-3 border-r border-neutral-100">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                                        a.status === 'completed' ? 'bg-success' : 'bg-neutral-300'
+                                                    }`}></div>
+                                                    <span className="text-[10px] font-black text-neutral-600 uppercase">
+                                                        {a.status === 'completed' ? 'Selesai' : 'Belum Mulai'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3 border-r border-neutral-100">
+                                                <div className="flex items-center gap-2 font-mono text-[10px]">
+                                                    <span className={startStr ? 'text-neutral-900 font-bold' : 'text-neutral-300'}>
+                                                        {startStr ? `${startStr} WIB` : '––/–– ––:––'}
+                                                    </span>
+                                                    <span className="text-neutral-300">→</span>
+                                                    <span className={endStr ? 'text-neutral-900 font-bold' : 'text-neutral-300'}>
+                                                        {endStr ? `${endStr} WIB` : '––/–– ––:––'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3 border-r border-neutral-100 text-center">
+                                                <div className="flex justify-center items-center gap-2 text-neutral-500">
+                                                    {device === 'Mobile' ? (
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                    ) : device !== '–' ? (
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 21h6l-.75-4M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                    ) : <span className="text-neutral-300">–</span>}
+                                                    <span className="text-[9px] font-black uppercase tracking-tighter">{device !== '–' ? device : ''}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-3 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span className={`text-[10px] font-black px-2 py-0.5 border ${
+                                                        exit_count > 5 ? 'bg-error text-white border-neutral-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 
+                                                        exit_count > 0 ? 'bg-warning-light text-warning-dark border-warning/30' :
+                                                        'bg-neutral-50 text-neutral-400 border-neutral-200'
+                                                    }`}>
+                                                        {exit_count} GANGGUAN
+                                                    </span>
+                                                    {exit_count > 5 && (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[9px] font-black text-error uppercase tracking-tighter">Beresiko</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             {/* Assigned Tests - Industrial Grid */}
             <section className="animate-fade-in-up">
                 <div className="flex items-center gap-4 mb-6">
@@ -432,6 +533,7 @@ function ParticipantProfilePage() {
                                                     <span className="text-sm font-black text-primary-700 uppercase">{result.details.iq} — {result.details.classification}</span>
                                                 </div>
                                             )}
+
                                         </div>
                                     </div>
 

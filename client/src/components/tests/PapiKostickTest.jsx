@@ -46,6 +46,11 @@ export function PapiKostickTest() {
   } = useTestSession(assignmentId, {
     requireAllAnswers: true,
     onTestComplete: handleTestComplete,
+    onJump: (index) => {
+      const page = Math.floor(index / ITEMS_PER_PAGE);
+      setCurrentPage(page);
+      window.scrollTo(0, 0);
+    },
     formatAnswers: () => {
       const formatted = [];
       Object.entries(selectedAnswers).forEach(([qIdx, selection]) => {
@@ -127,17 +132,8 @@ export function PapiKostickTest() {
   }, [currentPage]);
 
   const handleFinish = useCallback(() => {
-    if (Object.keys(selectedAnswers).length < 90) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Belum Selesai',
-        text: `Anda baru menjawab ${Object.keys(selectedAnswers).length} dari 90 soal. Harap jawab semua soal.`,
-        confirmButtonText: 'OK'
-      });
-      return;
-    }
-    setShowConfirmModal(true);
-  }, [selectedAnswers, setShowConfirmModal]);
+    handleSubmit();
+  }, [handleSubmit]);
 
   const handleConfirmSubmit = useCallback(() => {
     handleSubmit();

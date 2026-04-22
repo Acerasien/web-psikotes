@@ -114,10 +114,11 @@ export const api = {
     apiClient.post('/assignments/', null, { params: { user_id: userId, test_id: testId } }),
   assignAllTests: (userId) => apiClient.post(`/assignments/assign-all/${userId}`),
   startTest: (assignmentId) => apiClient.get(`/assignments/${assignmentId}/start`),
-  submitTest: (assignmentId, answers, timeTaken) =>
+  submitTest: (assignmentId, answers, timeTaken, deviceInfo) =>
     apiClient.post(`/assignments/${assignmentId}/submit`, {
       answers,
       time_taken: timeTaken,
+      device_info: deviceInfo,
     }),
   lockAssignment: (assignmentId) =>
     apiClient.post(`/assignments/${assignmentId}/lock`),

@@ -224,17 +224,33 @@ export function useTestSession(assignmentId, options = {}) {
     const currentTimeLeft = timeLeftRef.current;
 
     // Check if all questions answered
-    const answeredCount = Object.keys(currentAnswers).length;
-    const totalQuestions = currentTestData?.questions?.length || 0;
+    if (requireAllAnswers && !isTimeout) {
+      const missingIndices = (currentTestData?.questions || [])
+        .map((q, idx) => {
+          // Check if answered. Some tests (DISC) have complex answer structures
+          const answer = answersRef.current[q.id];
+          if (!answer) return idx;
+          if (typeof answer === 'object' && (!answer.most || !answer.least)) return idx; // DISC check
+          return null;
+        })
+        .filter(idx => idx !== null);
 
-    if (requireAllAnswers && !isTimeout && answeredCount < totalQuestions) {
-      Swal.fire({
-        title: 'Belum Lengkap',
-        text: `Anda baru menjawab ${answeredCount} dari ${totalQuestions} pertanyaan.`,
-        icon: 'warning',
-        confirmButtonText: 'OK'
-      });
-      return;
+      if (missingIndices.length > 0) {
+        Swal.fire({
+          title: 'Jawaban Belum Lengkap',
+          html: `Anda belum menjawab ${missingIndices.length} soal.<br/><br/><div class="text-sm font-mono bg-neutral-50 p-2 border border-neutral-200">Nomor: ${missingIndices.map(i => i + 1).join(', ')}</div>`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Lengkapi Jawaban',
+          cancelButtonText: 'Batal',
+          confirmButtonColor: '#0F172A',
+        }).then((result) => {
+          if (result.isConfirmed && options.onJump) {
+            options.onJump(missingIndices[0]);
+          }
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);

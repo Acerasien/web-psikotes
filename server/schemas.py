@@ -44,6 +44,7 @@ class UserCreate(BaseModel):
 class TestSubmission(BaseModel):
     answers: List[dict]  # Make sure this is List[dict], not dict
     time_taken: int
+    device_info: Optional[str] = None
 
 # IQ Test Phase schemas
 class PhaseOut(BaseModel):

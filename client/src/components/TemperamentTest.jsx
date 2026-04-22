@@ -39,7 +39,8 @@ function TemperamentTest({ assignmentId }) {
         formatTime,
     } = useTestSession(assignmentId, {
         requireAllAnswers: true,
-        onTestComplete: handleTestComplete
+        onTestComplete: handleTestComplete,
+        onJump: (index) => setCurrentIndex(index)
     });
 
     // Refs to hold latest values for stable callbacks

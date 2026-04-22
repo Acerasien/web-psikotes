@@ -40,7 +40,8 @@ export function StandardTest() {
     formatTime,
   } = useTestSession(assignmentId, {
     requireAllAnswers: true,
-    onTestComplete: handleTestComplete
+    onTestComplete: handleTestComplete,
+    onJump: (index) => setCurrentIndex(index)
   });
 
   // Auto-advance for tests with speed setting (IQ)

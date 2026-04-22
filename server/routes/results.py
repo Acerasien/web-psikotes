@@ -12,7 +12,7 @@ import io
 
 from auth import require_superadmin, get_current_user
 from database import get_db
-from models import User, Test, Assignment, Result, Question
+from models import User, Test, Assignment, Result, Question, ExitLog
 from utils import get_max_score
 from services.pdf_report import generate_participant_pdf
 
@@ -30,7 +30,7 @@ def get_results(
     superadmin: User = Depends(require_superadmin)
 ):
     """Get results with filters (superadmin only)"""
-    query = db.query(Result).join(User).join(Test)
+    query = db.query(Result).options(joinedload(Result.assignment), joinedload(Result.test), joinedload(Result.user))
 
     if user_id is not None:
         query = query.filter(Result.user_id == user_id)
@@ -51,6 +51,8 @@ def get_results(
         total_questions = db.query(Question).filter(Question.test_id == r.test_id).count()
         max_score = get_max_score(r.test.code)
 
+        exit_count = db.query(ExitLog).filter(ExitLog.assignment_id == r.assignment_id).count()
+
         output.append({
             "id": r.id,
             "user_id": r.user_id,
@@ -59,11 +61,14 @@ def get_results(
             "test_name": r.test.name,
             "test_code": r.test.code,
             "test_id": r.test_id,
+            "assignment_id": r.assignment_id,
             "score": r.score,
             "total_questions": total_questions,
             "max_score": max_score,
             "time_taken": r.time_taken,
-            "completed_at": r.completed_at,
+            "exit_count": exit_count,
+            "completed_at": r.completed_at.isoformat() + "Z" if r.completed_at else None,
+            "started_at": r.assignment.started_at.isoformat() + "Z" if r.assignment and r.assignment.started_at else None,
             "details": r.details
         })
     return output

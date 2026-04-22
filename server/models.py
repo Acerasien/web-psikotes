@@ -120,6 +120,7 @@ class Assignment(Base):
     status = Column(String, default="pending", index=True) # pending, in_progress, completed, locked
     pretest_completed = Column(Boolean, default=False) # The Tutorial flag
     assigned_at = Column(DateTime, default=datetime.utcnow, index=True) # Needs import: from datetime import datetime
+    started_at = Column(DateTime, nullable=True, index=True)
 
     # Relationships
     user = relationship("User", back_populates="assignments")

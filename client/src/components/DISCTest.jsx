@@ -41,6 +41,10 @@ function DISCTest({ assignmentId }) {
     } = useTestSession(assignmentId, {
         requireAllAnswers: true,
         onTestComplete: handleTestComplete,
+        onJump: (index) => {
+            const el = document.getElementById(`q-${index}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        },
         formatAnswers: () => {
             const payload = [];
             Object.keys(answersRef.current).forEach(qId => {
@@ -108,10 +112,8 @@ function DISCTest({ assignmentId }) {
 
     // Handle confirm submission
     const handleConfirmSubmit = useCallback(() => {
-        if (checkAllAnswered()) {
-            setShowConfirmModal(false);
-            handleSubmit(false);
-        }
+        setShowConfirmModal(false);
+        handleSubmit(false);
     }, [handleSubmit, setShowConfirmModal]);
 
     // ----- Render locked screen -----
@@ -150,7 +152,7 @@ function DISCTest({ assignmentId }) {
                     {/* Mobile: Card view */}
                     <div className="lg:hidden space-y-4">
                         {testData?.questions.map((q, qIdx) => (
-                            <div key={q.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div key={q.id} id={`q-${qIdx}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">No. {qIdx + 1}</span>
                                 </div>
@@ -215,7 +217,7 @@ function DISCTest({ assignmentId }) {
                                             if (isMost) rowClass = "bg-green-100 border-green-300";
                                             if (isLeast) rowClass = "bg-red-100 border-red-300";
                                             return (
-                                                <tr key={opt.id} className={rowClass}>
+                                                <tr key={opt.id} id={optIdx === 0 ? `q-${qIdx}` : undefined} className={rowClass}>
                                                     <td className="border p-2 text-center text-gray-500 font-bold">
                                                         {optIdx === 0 ? qIdx + 1 : ""}
                                                     </td>
@@ -262,9 +264,7 @@ function DISCTest({ assignmentId }) {
 
                     <div className="mt-6 text-center">
                         <button
-                            onClick={() => {
-                                if (checkAllAnswered()) setShowConfirmModal(true);
-                            }}
+                            onClick={() => handleSubmit(false)}
                             className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg w-full sm:w-auto min-h-[48px]"
                         >
                             Selesai & Kirim

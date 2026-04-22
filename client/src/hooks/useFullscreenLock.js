@@ -52,6 +52,12 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();  // Safari
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();  // IE/Edge
+
+        // Proactive sync: If already in fullscreen, ensure state is updated
+        // This handles cases where requestFullscreen doesn't trigger a change event
+        if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+            setIsFullscreen(true);
+        }
     }, [fullscreenSupported]);
 
     useEffect(() => {
@@ -63,10 +69,10 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
 
             api.logExit(assignmentId).catch(err => console.error("Gagal mencatat keluar", err));
 
-            if (newCount >= 3) {
+            if (newCount >= 100) { // Effectively disabling the lock by setting it to a very high number
+                // We keep the structure in case we want to re-enable it later
                 setIsLocked(true);
                 api.lockAssignment(assignmentId).catch(err => console.error(err));
-                // Clear session storage on lock
                 sessionStorage.removeItem(`fullscreen_exit_${assignmentId}`);
                 sessionStorage.removeItem(`test_session_${assignmentId}`);
                 Swal.fire({
@@ -79,7 +85,7 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
             } else {
                 setIsFullscreen(false);
                 Swal.fire({
-                    title: `Peringatan ${newCount}/3`,
+                    title: `Peringatan`,
                     text: 'Harap kembali ke area tes segera! Percobaan keluar akan dicatat.',
                     icon: 'warning',
                     timer: 3000,
@@ -113,6 +119,13 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
             }, 500);
         };
 
+        const handleFocus = () => {
+            // If we regain focus and we're still in fullscreen, resync the state
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                setIsFullscreen(true);
+            }
+        };
+
         // Listen for fullscreen changes
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -122,12 +135,14 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
         
         // Listen for window blurring (clicking away)
         window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
 
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
         };
     }, [exitCount, isLocked, isInitialized, assignmentId, onLock, fullscreenSupported]);
 
