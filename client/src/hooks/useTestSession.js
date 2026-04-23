@@ -224,10 +224,6 @@ export function useTestSession(assignmentId, options = {}) {
         return;
     }
     
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
-    console.log('--- Submission LOCK ACQUIRED ---');
-
     let currentAnswers;
 
     // Priority: 1) overrideAnswers, 2) formatAnswers() if provided (for custom answer storage like DISC), 3) answersRef.current
@@ -275,13 +271,9 @@ export function useTestSession(assignmentId, options = {}) {
       }
     }
 
-    // Show confirmation modal if not a timeout/auto-submission
-    if (!isTimeout) {
-      setShowConfirmModal(true);
-      return;
-    }
-
+    console.log('--- Submission LOCK ACQUIRED ---');
     setIsSubmitting(true);
+    isSubmittingRef.current = true;
     const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);
 
     try {
