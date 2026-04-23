@@ -126,7 +126,8 @@ export function useTestSession(assignmentId, options = {}) {
     loadTest();
   }, [assignmentId, enterFullscreen, navigate]);
 
-  // Prevent context menu and dev tools
+  // Prevent context menu and dev tools (TEMPORARILY DISABLED FOR DEBUGGING)
+  /*
   useEffect(() => {
     const handleContextMenu = (e) => e.preventDefault();
     const handleKeyDown = (e) => {
@@ -143,6 +144,7 @@ export function useTestSession(assignmentId, options = {}) {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+  */
 
   // Prevent browser back button and tab navigation during test
   // Returns a cleanup function that can be called to disable the prevention
@@ -213,6 +215,11 @@ export function useTestSession(assignmentId, options = {}) {
 
     return () => clearInterval(timerId);
   }, [timeLeft, loading, isLocked, disableTimer]);
+
+  // Keep ref updated with latest callback
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
