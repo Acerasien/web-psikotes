@@ -136,15 +136,13 @@ export function useTestSession(assignmentId, options = {}) {
           (e.ctrlKey && ['U', 'u'].includes(e.key))) {
         e.preventDefault();
       }
-        // Anti-cheat disabled for debugging
-        /*
-        document.addEventListener('contextmenu', handleContextMenu);
-        document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('contextmenu', handleContextMenu);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-        */
+    };
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
   */
 
