@@ -175,15 +175,12 @@ function LogicTest({ assignmentId }) {
                 e.preventDefault();
             }
         };
-        // UNLOCKED FOR DEBUGGING
-        /*
         document.addEventListener('contextmenu', handleContextMenu);
         document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('contextmenu', handleContextMenu);
             document.removeEventListener('keydown', handleKeyDown);
         };
-        */
     }, []);
 
     if (isLocked) {

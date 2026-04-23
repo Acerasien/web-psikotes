@@ -126,8 +126,7 @@ export function useTestSession(assignmentId, options = {}) {
     loadTest();
   }, [assignmentId, enterFullscreen, navigate]);
 
-  // Prevent context menu and dev tools (TEMPORARILY DISABLED FOR DEBUGGING)
-  /*
+  // Prevent context menu and dev tools
   useEffect(() => {
     const handleContextMenu = (e) => e.preventDefault();
     const handleKeyDown = (e) => {
@@ -144,7 +143,6 @@ export function useTestSession(assignmentId, options = {}) {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
-  */
 
   // Prevent browser back button and tab navigation during test
   // Returns a cleanup function that can be called to disable the prevention
@@ -218,9 +216,7 @@ export function useTestSession(assignmentId, options = {}) {
 
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
-    console.log('--- Submission Attempt ---', { isTimeout, assignmentId });
     if (isSubmittingRef.current) {
-        console.warn('--- SUBMISSION BLOCKED: Already in progress ---');
         return;
     }
     
@@ -271,7 +267,6 @@ export function useTestSession(assignmentId, options = {}) {
       }
     }
 
-    console.log('--- Submission LOCK ACQUIRED ---');
     setIsSubmitting(true);
     isSubmittingRef.current = true;
     const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);

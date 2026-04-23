@@ -24,8 +24,9 @@ export function PhaseHub({
   }, [setShowConfirmModal]);
 
   const handleConfirmSubmit = useCallback(() => {
+    setShowConfirmModal(false);
     onSubmitAll();
-  }, [onSubmitAll]);
+  }, [onSubmitAll, setShowConfirmModal]);
 
   if (isLocked) {
     return (

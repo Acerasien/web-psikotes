@@ -184,8 +184,14 @@ export function useIQTestSession(assignmentId) {
     }
   }, [assignmentId]);
 
+  // Timer state for submission prevention
+  const isSubmittingRef = useRef(false);
+
   // Submit all phases
   const submitAll = useCallback(async () => {
+    if (isSubmittingRef.current) return;
+    
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     try {
       // Get device info
