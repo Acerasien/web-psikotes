@@ -319,6 +319,14 @@ export function useTestSession(assignmentId, options = {}) {
 
       if (isTimeout) {
         Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
+      } else {
+        Swal.fire({
+          title: 'Tes Terkirim',
+          text: 'Jawaban Anda telah berhasil dikirim.',
+          icon: 'success',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#0F172A',
+        });
       }
 
       if (onTestComplete) {

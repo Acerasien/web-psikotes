@@ -163,6 +163,14 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
 
       if (isTimeout) {
         Swal.fire('Waktu Habis', 'Fase telah dikirim otomatis.', 'info');
+      } else {
+        Swal.fire({
+          title: 'Fase Selesai',
+          text: 'Jawaban fase ini telah tersimpan.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
       }
 
       onReturnToHub();
