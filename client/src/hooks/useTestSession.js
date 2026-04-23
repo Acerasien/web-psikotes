@@ -136,13 +136,15 @@ export function useTestSession(assignmentId, options = {}) {
           (e.ctrlKey && ['U', 'u'].includes(e.key))) {
         e.preventDefault();
       }
-    };
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+        // Anti-cheat disabled for debugging
+        /*
+        document.addEventListener('contextmenu', handleContextMenu);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('contextmenu', handleContextMenu);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+        */
   }, []);
   */
 
@@ -218,11 +220,15 @@ export function useTestSession(assignmentId, options = {}) {
 
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
-    console.log('--- Submission Started ---', { isTimeout, assignmentId });
+    console.log('--- Submission Attempt ---', { isTimeout, assignmentId });
     if (isSubmittingRef.current) {
-        console.warn('Submission already in progress, skipping...');
+        console.warn('--- SUBMISSION BLOCKED: Already in progress ---');
         return;
     }
+    
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    console.log('--- Submission LOCK ACQUIRED ---');
 
     let currentAnswers;
 
