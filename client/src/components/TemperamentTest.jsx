@@ -37,6 +37,7 @@ function TemperamentTest({ assignmentId }) {
         enterFullscreen,
         handleSubmit,
         formatTime,
+        syncAnswer,
     } = useTestSession(assignmentId, {
         requireAllAnswers: true,
         onTestComplete: handleTestComplete,
@@ -82,6 +83,7 @@ function TemperamentTest({ assignmentId }) {
     const handleSelect = (optionId) => {
         const qId = questions[currentIndex].id;
         setAnswers({ ...answers, [qId]: optionId });
+        syncAnswer(qId, optionId, 'single');
         setJustAnswered(true);
 
         // Auto‑next after delay with visual feedback

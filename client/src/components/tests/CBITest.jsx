@@ -28,6 +28,7 @@ export function CBITest() {
     enterFullscreen,
     handleSubmit,
     formatTime,
+    syncAnswer,
   } = useTestSession(assignmentId, {
     requireAllAnswers: true,
     onTestComplete: handleTestComplete
@@ -38,6 +39,7 @@ export function CBITest() {
     if (!qId) return;
 
     setAnswers(prev => ({ ...prev, [qId]: optionId }));
+    syncAnswer(qId, optionId, 'single');
 
     // Auto-advance
     setTimeout(() => {

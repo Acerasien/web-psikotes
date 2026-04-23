@@ -126,6 +126,8 @@ export const api = {
     apiClient.post(`/admin/assignments/${assignmentId}/unlock`),
   resetAssignment: (assignmentId) =>
     apiClient.post(`/admin/assignments/${assignmentId}/reset`),
+  saveAnswer: (assignmentId, data) => 
+    apiClient.post(`/assignments/${assignmentId}/save-answer`, null, { params: data }),
   logExit: (assignmentId) =>
     apiClient.post(`/assignments/${assignmentId}/exit-log`),
   getLockedAssignments: () => apiClient.get('/admin/locked-assignments'),

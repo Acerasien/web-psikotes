@@ -39,6 +39,7 @@ function LogicTest({ assignmentId }) {
         enterFullscreen,
         handleSubmit,
         formatTime,
+        syncAnswer,
     } = useTestSession(assignmentId, {
         requireAllAnswers: true,
         onTestComplete: handleTestComplete,
@@ -113,11 +114,16 @@ function LogicTest({ assignmentId }) {
                     : [...current, optionId];
                 // Limit to 2 selections
                 if (updated.length > 2) return prev;
+                
+                // Sync multi-select to backend
+                syncAnswer(qId, updated.join(','), 'multi');
+                
                 return { ...prev, [qId]: updated };
             });
         } else {
             // Single select mode
             setAnswers(prev => ({ ...prev, [qId]: optionId }));
+            syncAnswer(qId, optionId, 'single');
         }
 
         setJustAnswered(true);

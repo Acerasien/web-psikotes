@@ -68,8 +68,9 @@ function TestScreen({ assignmentId, onFinish }) {
         }
 
         setTestData(testDataFromServer);
-        if (res.data.time_limit === 0) setTimeLeft(null);
-        else setTimeLeft(res.data.time_limit);
+        // Use remaining_time from backend if available
+        const initialTime = res.data.remaining_time ?? (res.data.time_limit === 0 ? null : res.data.time_limit);
+        setTimeLeft(initialTime);
         setLoading(false);
         enterFullscreen();
       } catch (err) {
@@ -98,6 +99,15 @@ function TestScreen({ assignmentId, onFinish }) {
   // --- INTERACTION LOGIC ---
   const handleSelect = (optionId) => {
     const currentQuestionId = testData.questions[currentIndex].id;
+    const type = testData.settings?.type || 'single';
+    
+    // Sync to backend immediately
+    api.saveAnswer(assignmentId, {
+      question_id: currentQuestionId,
+      option_id: optionId,
+      type: type
+    }).catch(err => console.error("Sync failed:", err));
+
     if (testData.settings?.type === 'speed') {
       const newAnswers = { ...answers, [currentQuestionId]: optionId };
       setAnswers(newAnswers);
@@ -170,7 +180,19 @@ function TestScreen({ assignmentId, onFinish }) {
     } catch (err) {
       console.error(err);
       setIsSubmitting(false);
-      Swal.fire("Error", "Failed to submit test.", "error");
+      Swal.fire({
+        title: 'Gagal Mengirim',
+        text: 'Terjadi kesalahan saat mengirim jawaban. Periksa koneksi internet Anda.',
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonText: 'Coba Lagi',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#0F172A',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          handleSubmit(currentAnswers, isTimeout);
+        }
+      });
     }
   };
 

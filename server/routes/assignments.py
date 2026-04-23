@@ -41,7 +41,38 @@ def get_assignments(
     query = db.query(Assignment)
     if user_id is not None:
         query = query.filter(Assignment.user_id == user_id)
+    
+    # Load all assignments first to avoid cursor issues during auto-submit
     assignments = query.all()
+    
+    # Lazy auto-submit check for admin view
+    for a in assignments:
+        if a.status == "in_progress" and a.started_at:
+            # Determine time limit (simple fetch for admin view)
+            time_limit = a.test.time_limit
+            # Check for class overrides
+            if a.user.class_id:
+                class_config = db.query(ClassConfig).filter(ClassConfig.id == a.user.class_id).first()
+                if class_config:
+                    override = class_config.config.get("time_overrides", {}).get(a.test.code)
+                    if override:
+                        if isinstance(override, dict):
+                            if "encoding" in override and "recall" in override:
+                                time_limit = override["encoding"] + override["recall"]
+                            elif "phases" in override and isinstance(override["phases"], list):
+                                time_limit = sum(override["phases"])
+                        else:
+                            time_limit = override
+            
+            if time_limit > 0:
+                elapsed = (datetime.utcnow() - a.started_at).total_seconds()
+                if elapsed > (time_limit + 30):
+                    try:
+                        process_test_submission(a, db, is_auto=True)
+                        db.refresh(a)
+                    except Exception as e:
+                        print(f"Admin lazy-submit failed for {a.id}: {e}")
+
     result = []
     for a in assignments:
         exit_count = db.query(ExitLog).filter(ExitLog.assignment_id == a.id).count()
@@ -103,16 +134,26 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
         if a.test.code in time_overrides:
             override = time_overrides[a.test.code]
             if isinstance(override, dict):
-                # Handle special complex overrides (MEM and IQ)
                 if "encoding" in override and "recall" in override:
                     time_limit = override["encoding"] + override["recall"]
                 elif "phases" in override and isinstance(override["phases"], list):
                     time_limit = sum(override["phases"])
                 else:
-                    # Fallback to test default or 0 if dict structure unknown
                     time_limit = a.test.time_limit
             else:
                 time_limit = override
+        
+        # Check for auto-submit if in progress and timed out
+        if a.status == "in_progress" and a.started_at and time_limit > 0:
+            elapsed = (datetime.utcnow() - a.started_at).total_seconds()
+            if elapsed > (time_limit + 30): # 30s grace period
+                try:
+                    # Auto-submit using background process logic
+                    process_test_submission(a, db, is_auto=True)
+                    # Refresh assignment from DB to get updated status
+                    db.refresh(a)
+                except Exception as e:
+                    print(f"Auto-submit failed for assignment {a.id}: {e}")
             
         # Ensure time_limit is a number before division
         time_in_minutes = (time_limit // 60) if isinstance(time_limit, (int, float)) and time_limit > 0 else 0
@@ -191,22 +232,250 @@ def start_test(
         })
     test_settings = assignment.test.settings or {}
     # Apply special overrides for Memory Test (MEM) if defined in class config
-    if assignment.test.code == "MEM" and current_user.class_config:
-        time_overrides = current_user.class_config.config.get("time_overrides", {})
-        mem_overrides = time_overrides.get("MEM", {})
-        if isinstance(mem_overrides, dict):
-            if "encoding" in mem_overrides:
-                test_settings["encoding_time"] = mem_overrides["encoding"]
-            if "recall" in mem_overrides:
-                test_settings["recall_time"] = mem_overrides["recall"]
+    if assignment.test.code == "MEM" and current_user.class_id:
+        class_config = db.query(ClassConfig).filter(ClassConfig.id == current_user.class_id).first()
+        if class_config:
+            time_overrides = class_config.config.get("time_overrides", {})
+            mem_overrides = time_overrides.get("MEM", {})
+            if isinstance(mem_overrides, dict):
+                if "encoding" in mem_overrides:
+                    test_settings["encoding_time"] = mem_overrides["encoding"]
+                if "recall" in mem_overrides:
+                    test_settings["recall_time"] = mem_overrides["recall"]
+
+    # Calculate remaining time if the test is already in progress
+    remaining_time = time_limit
+    if assignment.status == "in_progress" and assignment.started_at:
+        elapsed = (datetime.utcnow() - assignment.started_at).total_seconds()
+        if time_limit > 0:
+            remaining_time = max(0, int(time_limit - elapsed))
+
+    # Fetch existing answers to restore session if needed
+    responses = db.query(Response).filter(Response.assignment_id == assignment_id).all()
+    existing_answers = {}
+    
+    if assignment.test.code == "DISC":
+        for r in responses:
+            q_id = str(r.question_id)
+            if q_id not in existing_answers:
+                existing_answers[q_id] = {"most": None, "least": None}
+            if r.selection_type in ["most", "least"]:
+                existing_answers[q_id][r.selection_type] = r.selected_option_id
+    elif assignment.test.code == "LOGIC":
+        # Handle multi-select questions (comma-separated string)
+        multi_map = {}
+        for r in responses:
+            if r.selection_type == "multi":
+                if r.question_id not in multi_map: multi_map[r.question_id] = []
+                multi_map[r.question_id].append(str(r.selected_option_id))
+            else:
+                existing_answers[str(r.question_id)] = r.selected_option_id
+        for q_id, opt_ids in multi_map.items():
+            existing_answers[str(q_id)] = ",".join(opt_ids)
+    else:
+        for r in responses:
+            existing_answers[str(r.question_id)] = r.selected_option_id
 
     return {
         "test_name": assignment.test.name,
         "test_code": assignment.test.code,
         "time_limit": time_limit,
+        "remaining_time": remaining_time,
+        "existing_answers": existing_answers,
         "settings": test_settings,
         "questions": output
     }
+
+
+@router.post("/assignments/{assignment_id}/save-answer")
+def save_answer(
+    assignment_id: int,
+    question_id: int,
+    option_id: Optional[str] = None, # can be comma-separated for multi
+    type: str = "single",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Save or update a single answer in real-time"""
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id, Assignment.user_id == current_user.id).first()
+    if not assignment or assignment.status != "in_progress":
+        raise HTTPException(status_code=400, detail="Test is not in progress or unauthorized")
+
+    # Delete existing responses for this question AND TYPE to handle updates (e.g. DISC most/least)
+    db.query(Response).filter(
+        Response.assignment_id == assignment_id, 
+        Response.question_id == question_id,
+        Response.selection_type == type
+    ).delete()
+
+    # Create new response(s)
+    if option_id and "," in str(option_id):
+        # Multi-select
+        ids = [int(x.strip()) for x in str(option_id).split(",") if x.strip()]
+        for opt_id in ids:
+            resp = Response(
+                user_id=current_user.id,
+                test_id=assignment.test_id,
+                assignment_id=assignment_id,
+                question_id=question_id,
+                selected_option_id=opt_id,
+                selection_type="multi"
+            )
+            db.add(resp)
+    else:
+        # Single select
+        resp = Response(
+            user_id=current_user.id,
+            test_id=assignment.test_id,
+            assignment_id=assignment_id,
+            question_id=question_id,
+            selected_option_id=int(option_id) if option_id and str(option_id).isdigit() else None,
+            selection_type=type
+        )
+        db.add(resp)
+    
+    db.commit()
+    return {"status": "success"}
+
+
+def process_test_submission(assignment, db: Session, submission_data: Optional[TestSubmission] = None, is_auto: bool = False):
+    """
+    Core logic to score and complete a test. 
+    Can be called manually (via submit_test) or automatically (via lazy auto-close).
+    """
+    # 1. Prepare answers list
+    answers_to_score = []
+    device_info = "Unknown"
+    time_taken = 0
+
+    if submission_data:
+        # Manual submission: use provided answers and save them to DB
+        answers_to_score = submission_data.answers
+        device_info = submission_data.device_info or "Unknown"
+        time_taken = submission_data.time_taken
+        
+        # Save answers to Response table (clear existing first)
+        db.query(Response).filter(Response.assignment_id == assignment.id).delete()
+        for ans in answers_to_score:
+            opt_id = ans.get("option_id")
+            if opt_id and "," in str(opt_id):
+                ids = [int(x.strip()) for x in str(opt_id).split(",")]
+                for o_id in ids:
+                    db.add(Response(
+                        user_id=assignment.user_id,
+                        test_id=assignment.test_id,
+                        assignment_id=assignment.id,
+                        question_id=ans["question_id"],
+                        selected_option_id=o_id,
+                        selection_type="multi"
+                    ))
+            else:
+                db.add(Response(
+                    user_id=assignment.user_id,
+                    test_id=assignment.test_id,
+                    assignment_id=assignment.id,
+                    question_id=ans["question_id"],
+                    selected_option_id=opt_id,
+                    selection_type=ans.get("type", "single")
+                ))
+    else:
+        # Auto-submission: fetch answers already saved in Response table
+        responses = db.query(Response).filter(Response.assignment_id == assignment.id).all()
+        # Group by question_id for scoring format
+        q_map = {}
+        for r in responses:
+            if r.question_id not in q_map:
+                q_map[r.question_id] = {"question_id": r.question_id, "option_id": r.selected_option_id, "type": r.selection_type}
+            if r.selection_type == "multi":
+                # Collect multi IDs
+                curr = str(q_map[r.question_id]["option_id"])
+                if r.selected_option_id and str(r.selected_option_id) not in curr:
+                    q_map[r.question_id]["option_id"] = f"{curr},{r.selected_option_id}" if curr != "None" else str(r.selected_option_id)
+        
+        answers_to_score = list(q_map.values())
+        device_info = "Server Auto-Submit"
+        # time_taken will be calculated from started_at below
+
+    # 2. Score
+    test_code = assignment.test.code
+    score = 0
+    details = {}
+    answered_count = 0
+    total_questions = 0
+    scoring_error = None
+
+    try:
+        # Reuse existing scoring blocks (fetching questions here)
+        questions = db.query(Question).options(joinedload(Question.options)).filter(Question.test_id == assignment.test_id).all()
+        total_questions = len(questions)
+
+        if test_code == "DISC":
+            details = score_disc(answers_to_score, questions)
+            score = len({ans["question_id"] for ans in answers_to_score})
+            answered_count = score
+        elif test_code == "SPEED":
+            details = score_speed(answers_to_score, questions)
+            score = details["score"]
+            answered_count = details.get("total_answered", len(answers_to_score))
+        elif test_code == "TEMP":
+            details = score_temperament(answers_to_score, questions)
+            score = sum(details["raw_scores"].values()) if details["raw_scores"] else 0
+            answered_count = len({ans["question_id"] for ans in answers_to_score})
+        elif test_code == "MEM":
+            details = score_memory(answers_to_score, questions)
+            score = details["score"]
+            answered_count = len(answers_to_score)
+        elif test_code == "LOGIC":
+            details = score_logic(answers_to_score, questions)
+            score = details["score"]
+            answered_count = len(answers_to_score)
+        elif test_code == "LEAD":
+            details = score_papi_kostick(answers_to_score, questions)
+            score = len(answers_to_score)
+            answered_count = len(answers_to_score)
+        elif test_code == "CBI":
+            details = score_cbi_test(answers_to_score, questions)
+            score = details["score"]
+            answered_count = len(answers_to_score)
+        else:
+            for ans in answers_to_score:
+                opt = db.query(Option).filter(Option.id == ans.get("option_id")).first()
+                if opt and opt.scoring_logic.get("correct"): score += 1
+            answered_count = len(answers_to_score)
+    except Exception as e:
+        scoring_error = str(e)
+        details["scoring_error"] = scoring_error
+        answered_count = len({ans.get("question_id") for ans in answers_to_score})
+
+    # 3. Finalize Result
+    is_complete = answered_count >= total_questions
+    if details is None: details = {}
+    details["session"] = {
+        "device": device_info,
+        "started_at": assignment.started_at.isoformat() if assignment.started_at else None,
+        "completed_at": datetime.utcnow().isoformat(),
+        "is_auto": is_auto
+    }
+    details.update({"answered_count": answered_count, "total_questions": total_questions, "is_complete": is_complete})
+
+    # Server-side time taken
+    server_time_taken = time_taken
+    if assignment.started_at:
+        server_time_taken = int((datetime.utcnow() - assignment.started_at).total_seconds())
+
+    result = Result(
+        user_id=assignment.user_id,
+        test_id=assignment.test_id,
+        assignment_id=assignment.id,
+        score=score,
+        time_taken=server_time_taken,
+        details=details,
+        completed_at=datetime.utcnow()
+    )
+    db.add(result)
+    assignment.status = "completed"
+    db.commit()
+    return {"score": score, "test_type": test_code}
 
 
 @router.post("/assignments/{assignment_id}/submit")
@@ -217,212 +486,18 @@ def submit_test(
     current_user: User = Depends(get_current_user)
 ):
     """Submit test answers and get scored"""
-    # 1. Find the assignment
-    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    assignment = db.query(Assignment).with_for_update().filter(Assignment.id == assignment_id).first()
     if not assignment or assignment.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if assignment.status != "in_progress":
         raise HTTPException(status_code=400, detail="Test is not in progress")
     
-    # Check if result already exists (prevent duplicate submissions)
-    existing_result = db.query(Result).filter(
-        Result.assignment_id == assignment_id,
-        Result.user_id == current_user.id
-    ).first()
-    if existing_result:
-        raise HTTPException(
-            status_code=400,
-            detail="This test has already been submitted. Duplicate submissions are not allowed."
-        )
+    # Check for existing result
+    if db.query(Result).filter(Result.assignment_id == assignment_id).first():
+        raise HTTPException(status_code=400, detail="Already submitted")
 
-    # 2. Save all responses
-    for ans in submission.answers:
-        option_id = ans.get("option_id")
-        # Handle multi-select (comma-separated option IDs)
-        if option_id and "," in str(option_id):
-            # Multi-select question - create multiple response records
-            option_ids = [int(x.strip()) for x in str(option_id).split(",")]
-            for opt_id in option_ids:
-                resp = Response(
-                    user_id=current_user.id,
-                    test_id=assignment.test_id,
-                    assignment_id=assignment.id,
-                    question_id=ans["question_id"],
-                    selected_option_id=opt_id,
-                    selection_type="multi",  # Mark as multi-select
-                )
-                db.add(resp)
-        else:
-            # Single select - normal behavior
-            resp = Response(
-                user_id=current_user.id,
-                test_id=assignment.test_id,
-                assignment_id=assignment.id,
-                question_id=ans["question_id"],
-                selected_option_id=ans.get("option_id"),
-                selection_type=ans.get("type", "single"),
-            )
-            db.add(resp)
-
-    # 3. Score based on test code
-    test_code = assignment.test.code
-    score = 0
-    details = None
-    answered_count = 0
-    total_questions = 0
-
-    if test_code == "DISC":
-        questions = (
-            db.query(Question)
-            .options(joinedload(Question.options))
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        details = score_disc(submission.answers, questions)
-        score = len({ans["question_id"] for ans in submission.answers})
-        answered_count = score  # For DISC, each question answered = 1
-
-    elif test_code == "SPEED":
-        questions = (
-            db.query(Question)
-            .options(joinedload(Question.options))
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        details = score_speed(submission.answers, questions)
-        score = details["score"]
-        answered_count = details.get("total_answered", len(submission.answers))
-
-    elif test_code == "TEMP":
-        questions = (
-            db.query(Question)
-            .options(joinedload(Question.options))
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        details = score_temperament(submission.answers, questions)
-        score = sum(details["raw_scores"].values()) if details["raw_scores"] else 0
-        answered_count = len({ans["question_id"] for ans in submission.answers})
-
-    elif test_code == "MEM":
-        questions = (
-            db.query(Question)
-            .options(joinedload(Question.options))
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        details = score_memory(submission.answers, questions)
-        score = details["score"]
-        answered_count = len(submission.answers)
-
-    elif test_code == "LOGIC":
-        questions = (
-            db.query(Question)
-            .options(joinedload(Question.options))
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        details = score_logic(submission.answers, questions)
-        score = details["score"]
-        answered_count = len(submission.answers)
-
-    elif test_code == "LEAD":
-        questions = (
-            db.query(Question)
-            .options(joinedload(Question.options))
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        details = score_papi_kostick(submission.answers, questions)
-        # Score = total number of answers (PAPI is personality, no "correct")
-        score = len(submission.answers)
-        answered_count = len(submission.answers)
-
-    elif test_code == "CBI":
-        questions = (
-            db.query(Question)
-            .options(joinedload(Question.options))
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        details = score_cbi_test(submission.answers, questions)
-        # Score = overall concern score
-        score = details["score"]
-        answered_count = len(submission.answers)
-
-    else:
-        # Default: simple correct count
-        questions = (
-            db.query(Question)
-            .filter(Question.test_id == assignment.test_id)
-            .all()
-        )
-        total_questions = len(questions)
-        for ans in submission.answers:
-            if ans.get("type", "single") == "single":
-                option = db.query(Option).filter(Option.id == ans["option_id"]).first()
-                if option and option.scoring_logic.get("correct"):
-                    score += 1
-        answered_count = len(submission.answers)
-
-    # Calculate completion status
-    is_complete = answered_count >= total_questions
-
-    # Add completion info to details
-    if details is None:
-        details = {}
-    
-    # Add session metadata
-    details["session"] = {
-        "device": submission.device_info,
-        "started_at": assignment.started_at.isoformat() if assignment.started_at else None,
-        "completed_at": datetime.utcnow().isoformat()
-    }
-    details["answered_count"] = answered_count
-    details["total_questions"] = total_questions
-    details["is_complete"] = is_complete
-
-    # 4. Create Result record with additional race condition check
-    # Re-check assignment status to prevent race condition duplicate submissions
-    assignment = db.query(Assignment).with_for_update().filter(Assignment.id == assignment_id).first()
-    if not assignment:
-        db.rollback()
-        raise HTTPException(status_code=404, detail="Assignment not found")
-    
-    if assignment.status != "in_progress":
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="Test has already been submitted or is no longer in progress."
-        )
-    
-    result = Result(
-        user_id=current_user.id,
-        test_id=assignment.test_id,
-        assignment_id=assignment.id,
-        score=score,
-        time_taken=submission.time_taken,
-        details=details,
-        completed_at=datetime.utcnow()
-    )
-    db.add(result)
-
-    # 5. Mark assignment as completed
-    assignment.status = "completed"
-    db.commit()
-
-    return {
-        "message": "Test submitted successfully",
-        "score": score,
-        "test_type": test_code
-    }
+    res = process_test_submission(assignment, db, submission_data=submission)
+    return {"message": "Test submitted successfully", **res}
 
 
 @router.post("/assignments/{assignment_id}/lock")

@@ -43,10 +43,9 @@ def score_disc(answers, questions):
     total_least = sum(least_scores.values())
     expected = len(questions)
     
-    if total_most != expected:
-        raise ValueError(f"Expected {expected} 'Most' selections, got {total_most}")
-    if total_least != expected:
-        raise ValueError(f"Expected {expected} 'Least' selections, got {total_least}")
+    is_valid = (total_most == expected and total_least == expected)
+    if not is_valid:
+        print(f"Warning: DISC test incomplete. Expected {expected}, got Most={total_most}, Least={total_least}")
 
     # Graph I: Raw "Most" scores (public self under pressure)
     # High score = trait prominently displayed when under pressure
@@ -90,5 +89,6 @@ def score_disc(answers, questions):
         "graph_iii": graph_iii,
         "percentages": percentages,
         "stress_gap": stress_gap,
-        "intensity_zones": intensity_zones
+        "intensity_zones": intensity_zones,
+        "is_valid": is_valid
     }

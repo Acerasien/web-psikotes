@@ -38,6 +38,7 @@ function DISCTest({ assignmentId }) {
         enterFullscreen,
         handleSubmit,
         formatTime,
+        syncAnswer,
     } = useTestSession(assignmentId, {
         requireAllAnswers: true,
         onTestComplete: handleTestComplete,
@@ -90,6 +91,9 @@ function DISCTest({ assignmentId }) {
             }
             return { ...prev, [questionId]: { most: newMost, least: newLeast } };
         });
+
+        // Sync to backend
+        syncAnswer(questionId, optionId, type);
     };
 
     const checkAllAnswered = () => {

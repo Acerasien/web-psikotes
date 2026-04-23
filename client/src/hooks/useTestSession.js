@@ -99,7 +99,17 @@ export function useTestSession(assignmentId, options = {}) {
         const res = await api.startTest(assignmentId);
         setTestData(res.data);
         setQuestions(res.data.questions || []);
-        setTimeLeft(res.data.time_limit === 0 ? null : res.data.time_limit);
+
+        // Restore answers from server if local state is empty (e.g. first load on new device)
+        if (Object.keys(answersRef.current).length === 0 && res.data.existing_answers) {
+          console.log('☁️ Restored answers from server sync');
+          setAnswers(res.data.existing_answers);
+        }
+        
+        // Use remaining_time from backend if available (to handle refreshes)
+        const initialTime = res.data.remaining_time ?? (res.data.time_limit === 0 ? null : res.data.time_limit);
+        setTimeLeft(initialTime);
+        
         setLoading(false);
         enterFullscreen();
       } catch (err) {
@@ -299,7 +309,21 @@ export function useTestSession(assignmentId, options = {}) {
     } catch (err) {
       console.error('Failed to submit test:', err);
       setIsSubmitting(false);
-      Swal.fire('Kesalahan', 'Gagal mengirim tes.', 'error');
+      
+      // Better error handling with Retry option
+      Swal.fire({
+        title: 'Gagal Mengirim',
+        text: 'Terjadi kesalahan saat mengirim jawaban. Periksa koneksi internet Anda.',
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonText: 'Coba Lagi',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#0F172A',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          handleSubmit(isTimeout, overrideAnswers);
+        }
+      });
     }
   }, [assignmentId, formatAnswers, requireAllAnswers, onTestComplete, navigate]);
 
@@ -339,5 +363,18 @@ export function useTestSession(assignmentId, options = {}) {
     // Actions
     handleSubmit,
     formatTime,
+    
+    // Real-time Sync
+    syncAnswer: async (qId, optionId, type = 'single') => {
+      try {
+        await api.saveAnswer(assignmentId, {
+          question_id: qId,
+          option_id: optionId,
+          type: type
+        });
+      } catch (err) {
+        console.error("Failed to sync answer to server:", err);
+      }
+    }
   };
 }
