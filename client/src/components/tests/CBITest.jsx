@@ -52,7 +52,7 @@ export function CBITest() {
   }, [questions, currentIndex, setAnswers, setShowConfirmModal]);
 
   const handleConfirmSubmit = useCallback(() => {
-    handleSubmit(true);
+    handleSubmit(false);
   }, [handleSubmit]);
 
   // Loading state

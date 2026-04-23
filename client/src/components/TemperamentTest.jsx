@@ -103,7 +103,7 @@ function TemperamentTest({ assignmentId }) {
 
     // Handle confirm submission from global modal
     const handleConfirmSubmit = useCallback(() => {
-        handleSubmit(true);
+        handleSubmit(false);
     }, [handleSubmit]);
 
     if (isLocked) {

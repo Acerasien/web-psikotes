@@ -117,7 +117,7 @@ function DISCTest({ assignmentId }) {
     // Handle confirm submission
     const handleConfirmSubmit = useCallback(() => {
         setShowConfirmModal(false);
-        handleSubmit(true);
+        handleSubmit(false);
     }, [handleSubmit, setShowConfirmModal]);
 
     // ----- Render locked screen -----
