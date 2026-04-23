@@ -9,12 +9,27 @@ import { formatLocalDateTime } from '../utils/dateUtils';
 function computePrimaryTrait(details) {
     if (!details) return null;
     if (details.primary_trait) return details.primary_trait;
+    
     const percentages = details.percentages;
     if (!percentages) return null;
+    
     const entries = Object.entries(percentages);
     if (entries.length === 0) return null;
+    
+    // Find the maximum percentage
     const maxPct = Math.max(...entries.map(([, v]) => v));
+    
+    // If max percentage is 0 or all scores are tied and there are many of them, 
+    // it's better not to list them all as "primary".
+    if (maxPct === 0) return null;
+
     const topNorms = entries.filter(([, v]) => v === maxPct).map(([k]) => k);
+    
+    // If more than 3 traits are tied, just call it "Balanced" or return null for fallback
+    if (topNorms.length > 3) {
+        return "Multiple"; 
+    }
+    
     return topNorms.length === 1 ? topNorms[0] : topNorms.join(' & ');
 }
 
