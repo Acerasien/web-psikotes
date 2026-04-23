@@ -8,7 +8,8 @@ import { format } from 'date-fns';
  */
 export const formatLocalDateTime = (isoString, formatStr = 'dd MMM yyyy HH:mm') => {
     if (!isoString) return '-';
-    // Append 'Z' to treat as UTC
-    const date = new Date(isoString + 'Z');
+    // Append 'Z' only if missing to avoid double Z (which causes Invalid Date)
+    const normalizedString = isoString.endsWith('Z') ? isoString : isoString + 'Z';
+    const date = new Date(normalizedString);
     return format(date, formatStr);
-};
+};

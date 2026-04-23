@@ -50,12 +50,18 @@ function ResultsTable({ filters, onFilterChange, tests }) {
         fetchResults();
     }, [filters]);
 
+    const parseDate = (d) => {
+        if (!d) return 0;
+        const normalized = d.endsWith('Z') ? d : d + 'Z';
+        return new Date(normalized).getTime();
+    };
+
     // Sorting function
     const sortedResults = [...results].sort((a, b) => {
         if (sortConfig.key === 'completed_at') {
-            return sortConfig.direction === 'asc'
-                ? new Date(a.completed_at) - new Date(b.completed_at)
-                : new Date(b.completed_at) - new Date(a.completed_at);
+            const dateA = parseDate(a.completed_at);
+            const dateB = parseDate(b.completed_at);
+            return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
         }
         if (sortConfig.key === 'score') {
             return sortConfig.direction === 'asc'
