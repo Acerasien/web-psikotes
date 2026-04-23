@@ -32,6 +32,7 @@ export function SpeedTest({ assignmentId }) {
     enterFullscreen,
     handleSubmit: submitTestSession,
     formatTime,
+    syncAnswer,
     currentQuestion: currentIndex,
     setCurrentQuestion: setCurrentIndex,
   } = useTestSession(assignmentId, {
@@ -54,8 +55,8 @@ export function SpeedTest({ assignmentId }) {
       type: 'single'
     }));
 
-    // Call the original submit with formatted answers
-    await submitTestSession(false, formattedAnswers);
+    // Call the original submit with formatted answers, skipping confirmation modal
+    await submitTestSession(true, formattedAnswers);
   }, [submitTestSession, answers]);
 
   // Use local confirm state to avoid conflict with hook
@@ -69,6 +70,7 @@ export function SpeedTest({ assignmentId }) {
 
     // Record answer and trigger visual feedback
     setAnswers(prev => ({ ...prev, [qId]: optionId }));
+    syncAnswer(qId, optionId, 'single');
     setJustAnswered(true);
 
     // Auto-advance after delay to let user see their selection

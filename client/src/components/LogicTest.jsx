@@ -8,8 +8,6 @@ function LogicTest({ assignmentId }) {
     const navigate = useNavigate();
     const [flagged, setFlagged] = useState(new Set());
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
     const [multiSelectAnswers, setMultiSelectAnswers] = useState({}); // For Q23, Q41
 
@@ -161,11 +159,9 @@ function LogicTest({ assignmentId }) {
         }
     };
 
-    // Handle confirm submission
+    // Handle confirm submission from global modal
     const handleConfirmSubmit = useCallback(() => {
-        setShowConfirm(false);
-        // Answers are already synced via useEffect, just submit
-        handleSubmit(false);
+        handleSubmit(true);
     }, [handleSubmit]);
 
     // Prevent context menu and dev tools
@@ -211,7 +207,37 @@ function LogicTest({ assignmentId }) {
     const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
+        <>
+            {/* Standard Confirmation Modal Wrapper */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-8 text-center">
+                        <h3 className="text-xl font-bold mb-3 text-gray-900">Selesaikan Tes?</h3>
+                        <p className="text-gray-600 mb-6">
+                            Anda telah menjawab {answeredCount} dari {questions.length} pertanyaan.
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition min-h-[44px]"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleConfirmSubmit}
+                                disabled={hookIsSubmitting}
+                                className={`px-6 py-3 text-white rounded-lg shadow-md transition min-h-[44px] font-bold ${hookIsSubmitting
+                                        ? 'bg-blue-400 cursor-wait'
+                                        : 'bg-green-600 hover:bg-green-700'
+                                    }`}
+                            >
+                                {hookIsSubmitting ? 'Mengirim...' : 'Ya, Kirim'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Header */}
             <div className="bg-white shadow px-4 py-3 flex items-center justify-between sticky top-0 z-10">
                 <h1 className="font-semibold text-lg">Tes Logika & Aritmatika</h1>
@@ -349,7 +375,7 @@ function LogicTest({ assignmentId }) {
                 </span>
                 {currentIndex === questions.length - 1 ? (
                     <button
-                        onClick={() => setShowConfirm(true)}
+                        onClick={() => handleSubmit()}
                         className="px-5 py-3 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 shadow-sm transition min-h-[44px]"
                     >
                         Selesai
@@ -364,35 +390,7 @@ function LogicTest({ assignmentId }) {
                 )}
             </div>
 
-            {/* Confirmation Modal */}
-            {showConfirm && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
-                        <h3 className="text-xl font-bold mb-3">Selesaikan Tes?</h3>
-                        <p className="text-gray-600 mb-6">
-                            Anda telah menjawab {answeredCount} dari {questions.length} pertanyaan.
-                        </p>
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={() => setShowConfirm(false)}
-                                className="px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition min-h-[44px]"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleConfirmSubmit}
-                                disabled={isSubmitting}
-                                className={`px-5 py-3 text-white rounded-lg shadow transition min-h-[44px] ${isSubmitting
-                                        ? 'bg-blue-400 cursor-wait'
-                                        : 'bg-green-500 hover:bg-green-600'
-                                    }`}
-                            >
-                                {isSubmitting ? 'Mengirim...' : 'Kirim'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Standard Confirmation modal is now handled by the wrapper at the top */}
 
             {/* Fullscreen Overlay - Only show if fullscreen is supported */}
             {!isFullscreen && !isLocked && isFullscreenSupported && (
@@ -461,6 +459,7 @@ function LogicTest({ assignmentId }) {
                 }
             `}</style>
         </div>
+        </>
     );
 }
 

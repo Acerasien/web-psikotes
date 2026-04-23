@@ -9,7 +9,7 @@ from datetime import datetime
 from auth import get_current_user
 from database import get_db
 from models import User, Test, Assignment, Result, Question, Option, Response, Phase
-from schemas import PhaseOut, PhaseSubmitRequest, PhaseSubmitResponse, IQSubmitAllResponse
+from schemas import PhaseOut, PhaseSubmitRequest, PhaseSubmitResponse, IQSubmitAllResponse, IQSubmitAllRequest
 
 router = APIRouter(tags=["iq"])
 
@@ -313,6 +313,7 @@ def submit_phase(
 @router.post("/assignments/{assignment_id}/submit-all", response_model=IQSubmitAllResponse)
 def submit_all(
     assignment_id: int,
+    submission: IQSubmitAllRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -398,6 +399,7 @@ def submit_all(
         time_taken=0,  # Phase-based, not tracked globally
         completed_at=datetime.utcnow(),
         details={
+            "device": submission.device_info or "Unknown",
             "raw_score": scoring_result["raw_score"],
             "max_score": scoring_result["max_score"],
             "iq": scoring_result["iq"],

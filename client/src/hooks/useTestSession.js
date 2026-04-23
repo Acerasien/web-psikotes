@@ -263,6 +263,12 @@ export function useTestSession(assignmentId, options = {}) {
       }
     }
 
+    // Show confirmation modal if not a timeout/auto-submission
+    if (!isTimeout) {
+      setShowConfirmModal(true);
+      return;
+    }
+
     setIsSubmitting(true);
     const timeTaken = currentTestData?.time_limit === 0 ? 0 : (currentTestData?.time_limit || 0) - (currentTimeLeft ?? 0);
 
@@ -284,7 +290,21 @@ export function useTestSession(assignmentId, options = {}) {
         }));
       }
 
-      await api.submitTest(assignmentId, finalAnswers, timeTaken);
+      // Get device info
+      const ua = navigator.userAgent;
+      let deviceType = "Desktop";
+      if (/Android/i.test(ua)) deviceType = "Android";
+      else if (/iPhone|iPad|iPod/i.test(ua)) deviceType = "iOS";
+      
+      let browserName = "Unknown Browser";
+      if (ua.indexOf("Chrome") > -1) browserName = "Chrome";
+      else if (ua.indexOf("Safari") > -1) browserName = "Safari";
+      else if (ua.indexOf("Firefox") > -1) browserName = "Firefox";
+      else if (ua.indexOf("MSIE") > -1 || !!document.documentMode === true) browserName = "IE";
+      
+      const deviceInfo = `${deviceType} (${browserName})`;
+
+      await api.submitTest(assignmentId, finalAnswers, timeTaken, deviceInfo);
 
       // Clear session storage on successful submission
       sessionStorage.removeItem(sessionKey);

@@ -50,6 +50,7 @@ export function StandardTest() {
     if (!qId) return;
 
     setAnswers(prev => ({ ...prev, [qId]: optionId }));
+    syncAnswer(qId, optionId, 'single');
 
     // Auto-advance for IQ tests
     if (testData?.settings?.type === 'speed') {
@@ -101,7 +102,7 @@ export function StandardTest() {
   }, [setShowConfirmModal]);
 
   const handleConfirmSubmit = useCallback(() => {
-    handleSubmit();
+    handleSubmit(true);
   }, [handleSubmit]);
 
   // Loading state

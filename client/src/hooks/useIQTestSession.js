@@ -131,11 +131,36 @@ export function useIQTestSession(assignmentId) {
     }
   }, [assignmentId, loadPhases]);
 
+  // Sync individual answer
+  const syncAnswer = useCallback(async (questionId, optionId, type = 'single') => {
+    try {
+      await api.saveAnswer(assignmentId, questionId, optionId, type);
+    } catch (err) {
+      console.warn('Failed to sync answer:', err);
+    }
+  }, [assignmentId]);
+
   // Submit all phases
   const submitAll = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      const res = await api.post(`/assignments/${assignmentId}/submit-all`);
+      // Get device info
+      const ua = navigator.userAgent;
+      let deviceType = "Desktop";
+      if (/Android/i.test(ua)) deviceType = "Android";
+      else if (/iPhone|iPad|iPod/i.test(ua)) deviceType = "iOS";
+      
+      let browserName = "Unknown Browser";
+      if (ua.indexOf("Chrome") > -1) browserName = "Chrome";
+      else if (ua.indexOf("Safari") > -1) browserName = "Safari";
+      else if (ua.indexOf("Firefox") > -1) browserName = "Firefox";
+      else if (ua.indexOf("MSIE") > -1 || !!document.documentMode === true) browserName = "IE";
+      
+      const deviceInfo = `${deviceType} (${browserName})`;
+
+      const res = await api.post(`/assignments/${assignmentId}/submit-all`, {
+        device_info: deviceInfo
+      });
 
       // Clear all sessions
       phases.forEach(p => clearPhaseSession(p.id));
@@ -183,6 +208,7 @@ export function useIQTestSession(assignmentId) {
     getHubProgress,
     setHubProgress,
     submitPhase,
+    syncAnswer,
     submitAll,
     loadPhases,
     formatTime,

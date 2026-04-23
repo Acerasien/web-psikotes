@@ -7,8 +7,6 @@ import Swal from 'sweetalert2';
 function TemperamentTest({ assignmentId }) {
     const navigate = useNavigate();
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [justAnswered, setJustAnswered] = useState(false);
 
     const handleTestComplete = useCallback(() => {
@@ -92,7 +90,7 @@ function TemperamentTest({ assignmentId }) {
             if (currentIndex < questions.length - 1) {
                 setCurrentIndex(currentIndex + 1);
             } else {
-                setShowConfirm(true);
+                handleSubmit(); // This will trigger the global confirmation modal
             }
         }, 350);
     };
@@ -103,10 +101,9 @@ function TemperamentTest({ assignmentId }) {
         }
     };
 
-    // Handle confirm submission
+    // Handle confirm submission from global modal
     const handleConfirmSubmit = useCallback(() => {
-        setShowConfirm(false);
-        handleSubmit(false);
+        handleSubmit(true);
     }, [handleSubmit]);
 
     if (isLocked) {
@@ -127,7 +124,36 @@ function TemperamentTest({ assignmentId }) {
     const progress = ((Object.keys(answers).length) / testData.questions.length * 100).toFixed(0);
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
+        <>
+            {/* Standard Confirmation Modal Wrapper (Legacy fix) */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg p-8 max-w-md w-full text-center shadow-xl">
+                        <h3 className="text-xl font-bold mb-4 text-gray-900">Selesaikan Tes?</h3>
+                        <p className="mb-6 text-gray-600">
+                            Anda telah menjawab {Object.keys(answers).length} pertanyaan.
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-6 py-3 bg-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-300 transition-colors min-h-[44px]"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleConfirmSubmit}
+                                disabled={hookIsSubmitting}
+                                className={`px-6 py-3 text-white rounded-lg font-bold min-h-[44px] transition-colors ${hookIsSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-md'
+                                    }`}
+                            >
+                                {hookIsSubmitting ? 'Mengirim...' : 'Ya, Kirim'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Header with progress and timer */}
             <div className="bg-white shadow p-4 flex justify-between items-center">
                 <h1 className="font-bold text-lg">{testData.test_name}</h1>
@@ -182,7 +208,7 @@ function TemperamentTest({ assignmentId }) {
             <div className="bg-white p-4 shadow flex justify-end">
                 {currentIndex === testData.questions.length - 1 ? (
                     <button
-                        onClick={() => setShowConfirm(true)}
+                        onClick={() => handleSubmit()}
                         className="px-6 py-3 bg-green-500 text-white rounded font-bold hover:bg-green-600 min-h-[44px]"
                     >
                         Selesai
@@ -197,30 +223,8 @@ function TemperamentTest({ assignmentId }) {
                 )}
             </div>
 
-            {/* Confirmation modal */}
-            {showConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg p-6 sm:p-8 max-w-md w-full text-center">
-                        <h3 className="text-xl font-bold mb-4">Selesaikan Tes?</h3>
-                        <p className="mb-6 text-gray-600">
-                            Anda telah menjawab {Object.keys(answers).length} pertanyaan.
-                        </p>
-                        <div className="flex gap-4 justify-center">
-                            <button onClick={() => setShowConfirm(false)} className="px-6 py-3 bg-gray-200 rounded min-h-[44px]">
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleConfirmSubmit}
-                                disabled={isSubmitting}
-                                className={`px-6 py-3 text-white rounded font-bold min-h-[44px] ${isSubmitting ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
-                                    }`}
-                            >
-                                {isSubmitting ? 'Mengirim...' : 'Kirim'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Confirmation modal from Layout */}
+            {/* Standard Confirmation modal is now handled by TestLayout or useTestSession */}
 
             {/* Fullscreen overlay - Only show if fullscreen is supported */}
             {!isFullscreen && !isLocked && isFullscreenSupported && (
@@ -243,6 +247,7 @@ function TemperamentTest({ assignmentId }) {
                 </div>
             )}
         </div>
+        </>
     );
 }
 

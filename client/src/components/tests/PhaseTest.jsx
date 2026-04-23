@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
  * Phase Test — Timed assessment with auto-advance (single) or manual (multi).
  * Light theme, matching the rest of the website.
  */
-export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked }) {
+export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAnswer }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -158,6 +158,8 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked }) {
       setSelectedAnswers(prev => {
         if (prev.includes(optionId)) return prev.filter(id => id !== optionId);
         if (prev.length >= 2) return prev;
+        
+        // No auto-sync here yet, wait for manual "Next" button for multi-select
         return [...prev, optionId];
       });
     } else {
@@ -167,6 +169,9 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked }) {
 
       const updated = [...allAnswersRef.current, newAnswer];
       allAnswersRef.current = updated;
+
+      // Sync to backend
+      if (syncAnswer) syncAnswer(q.id, optionId, 'single');
 
       // Save session
       const sessionKey = `iq_phase_${phaseRef.current.id}_answers`;
@@ -195,6 +200,9 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked }) {
 
     const sessionKey = `iq_phase_${phaseRef.current.id}_answers`;
     sessionStorage.setItem(sessionKey, JSON.stringify(updated));
+
+    // Sync multi-select to backend
+    if (syncAnswer) syncAnswer(q.id, selectedAnswers.join(','), 'multi');
 
     setSelectedAnswers([]);
 

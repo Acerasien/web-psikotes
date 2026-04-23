@@ -25,6 +25,7 @@ export function IQTest() {
     setShowConfirmModal,
     isLocked,
     submitAll,
+    syncAnswer,
     loadPhases,
   } = useIQTestSession(assignmentId);
 
@@ -76,6 +77,7 @@ export function IQTest() {
           assignmentId={assignmentId}
           onReturnToHub={handleReturnToHub}
           isLocked={isLocked}
+          syncAnswer={syncAnswer}
         />
       );
     default:

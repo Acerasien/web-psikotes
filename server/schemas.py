@@ -64,6 +64,9 @@ class PhaseSubmitRequest(BaseModel):
     phase_id: int
     answers: List[dict]  # [{question_id, option_id(s)}]
 
+class IQSubmitAllRequest(BaseModel):
+    device_info: Optional[str] = None
+
 class IQSubmitAllResponse(BaseModel):
     message: str
     score: int
