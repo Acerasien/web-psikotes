@@ -172,7 +172,7 @@ export function PapiKostickTest() {
   }, [handleSubmit]);
 
   const handleConfirmSubmit = useCallback(() => {
-    handleSubmit();
+    handleSubmit(true);
   }, [handleSubmit]);
 
   if (loading) {
