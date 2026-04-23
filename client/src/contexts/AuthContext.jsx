@@ -16,7 +16,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => sessionStorage.getItem('token'));
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
     const newToken = response.data.access_token;
     
     setToken(newToken);
-    sessionStorage.setItem('token', newToken);
+    localStorage.setItem('token', newToken);
     
     // Fetch user info after login
     const userResponse = await api.getCurrentUser();
@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
-    sessionStorage.removeItem('token');
+    localStorage.removeItem('token');
   }, []);
 
   const value = {

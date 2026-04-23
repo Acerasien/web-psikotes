@@ -14,8 +14,8 @@ const isFullscreenSupported = () => {
 
 export function useFullscreenLock({ assignmentId, token, onLock }) {
     const [exitCount, setExitCount] = useState(() => {
-        // Restore exitCount from sessionStorage on mount
-        const saved = sessionStorage.getItem(`fullscreen_exit_${assignmentId}`);
+        // Restore exitCount from localStorage on mount
+        const saved = localStorage.getItem(`fullscreen_exit_${assignmentId}`);
         return saved ? parseInt(saved, 10) : 0;
     });
     const [isLocked, setIsLocked] = useState(false);
@@ -25,9 +25,9 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
     const [isFullscreen, setIsFullscreen] = useState(fullscreenSupported ? false : true);
     const [isInitialized, setIsInitialized] = useState(false);
 
-    // Save exitCount to sessionStorage whenever it changes
+    // Save exitCount to localStorage whenever it changes
     useEffect(() => {
-        sessionStorage.setItem(`fullscreen_exit_${assignmentId}`, exitCount.toString());
+        localStorage.setItem(`fullscreen_exit_${assignmentId}`, exitCount.toString());
     }, [exitCount, assignmentId]);
 
     // Initialize fullscreen state after a small delay to avoid counting browser's F5 exit
@@ -73,8 +73,8 @@ export function useFullscreenLock({ assignmentId, token, onLock }) {
                 // We keep the structure in case we want to re-enable it later
                 setIsLocked(true);
                 api.lockAssignment(assignmentId).catch(err => console.error(err));
-                sessionStorage.removeItem(`fullscreen_exit_${assignmentId}`);
-                sessionStorage.removeItem(`test_session_${assignmentId}`);
+                localStorage.removeItem(`fullscreen_exit_${assignmentId}`);
+                localStorage.removeItem(`test_session_${assignmentId}`);
                 Swal.fire({
                     title: 'Tes Terkunci',
                     text: 'Anda terlalu sering keluar dari area tes.',

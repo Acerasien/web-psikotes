@@ -241,7 +241,7 @@ questions_data = [
     },
     # Q37 - Pola dibagi 2: 0.125 / 2 = 0.0625
     {
-        "content": "Apakah angka selanjutnya dari seri ini? 1  .5  .25  .125  ?",
+        "content": "Apakah angka selanjutnya dari seri ini? 1.0  0.50  0.25  0.125  ?",
         "options": ["0.100", "0.0625", "0.050", "0.025"],
         "correct_index": 1  # 0.0625
     },

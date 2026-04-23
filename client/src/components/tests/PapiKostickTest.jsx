@@ -26,7 +26,7 @@ export function PapiKostickTest() {
   const [selectedAnswers, setSelectedAnswers] = useState({}); // { questionIndex: 'a' | 'b' }
 
   const handleTestComplete = useCallback(() => {
-    sessionStorage.removeItem(papiSessionKey);
+    localStorage.removeItem(papiSessionKey);
     navigate('/dashboard');
   }, [navigate, papiSessionKey]);
 
@@ -75,8 +75,8 @@ export function PapiKostickTest() {
   // Restore session
   useEffect(() => {
     if (questions.length > 0 && Object.keys(selectedAnswers).length === 0) {
-      // 1. Check sessionStorage
-      const saved = sessionStorage.getItem(papiSessionKey);
+      // 1. Check localStorage
+      const saved = localStorage.getItem(papiSessionKey);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -97,7 +97,7 @@ export function PapiKostickTest() {
         } catch (e) { /* ignore */ }
       }
 
-      // 2. If nothing in sessionStorage, but hook has answers (restored from server sync)
+      // 2. If nothing in localStorage, but hook has answers (restored from server sync)
       if (Object.keys(answers).length > 0) {
         const restored = {};
         questions.forEach((q, idx) => {
@@ -116,7 +116,7 @@ export function PapiKostickTest() {
   // Persist answers + current page
   useEffect(() => {
     const data = { selectedAnswers, papiPage: currentPage };
-    sessionStorage.setItem(papiSessionKey, JSON.stringify(data));
+    localStorage.setItem(papiSessionKey, JSON.stringify(data));
   }, [selectedAnswers, currentPage]);
 
   const pageItems = useMemo(() => {

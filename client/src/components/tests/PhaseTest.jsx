@@ -11,7 +11,16 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(phase.timer_seconds);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const endKey = `iq_phase_${phase.id}_end`;
+    const savedEnd = localStorage.getItem(endKey);
+    if (savedEnd) {
+      const remaining = Math.floor((parseInt(savedEnd) - Date.now()) / 1000);
+      return remaining > 0 ? remaining : 0;
+    }
+    // If no end time saved, don't set it yet - wait for first mount
+    return phase.timer_seconds;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
 
@@ -38,7 +47,7 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
 
         // Restore session
         const sessionKey = `iq_phase_${phase.id}_answers`;
-        const saved = sessionStorage.getItem(sessionKey);
+        const saved = localStorage.getItem(sessionKey);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
@@ -77,6 +86,17 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // Set/Initialize end time in localStorage on mount
+  useEffect(() => {
+    if (loading) return;
+    const endKey = `iq_phase_${phase.id}_end`;
+    const savedEnd = localStorage.getItem(endKey);
+    if (!savedEnd) {
+      const endTime = Date.now() + (phase.timer_seconds * 1000);
+      localStorage.setItem(endKey, endTime.toString());
+    }
+  }, [loading, phase]);
 
   // Main timer
   useEffect(() => {
@@ -138,7 +158,8 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
         answers,
       });
 
-      sessionStorage.removeItem(`iq_phase_${phaseId}_answers`);
+      localStorage.removeItem(`iq_phase_${phaseId}_answers`);
+      localStorage.removeItem(`iq_phase_${phaseId}_end`);
 
       if (isTimeout) {
         Swal.fire('Waktu Habis', 'Fase telah dikirim otomatis.', 'info');
@@ -175,7 +196,7 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
 
       // Save session
       const sessionKey = `iq_phase_${phaseRef.current.id}_answers`;
-      sessionStorage.setItem(sessionKey, JSON.stringify(updated));
+      localStorage.setItem(sessionKey, JSON.stringify(updated));
 
       // Advance after short delay
       if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
@@ -199,7 +220,7 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
     allAnswersRef.current = updated;
 
     const sessionKey = `iq_phase_${phaseRef.current.id}_answers`;
-    sessionStorage.setItem(sessionKey, JSON.stringify(updated));
+    localStorage.setItem(sessionKey, JSON.stringify(updated));
 
     // Sync multi-select to backend
     if (syncAnswer) syncAnswer(q.id, selectedAnswers.join(','), 'multi');

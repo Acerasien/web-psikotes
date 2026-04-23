@@ -62,9 +62,9 @@ export function useTestSession(assignmentId, options = {}) {
     token
   });
 
-  // Restore session from sessionStorage on mount
+  // Restore session from localStorage on mount
   useEffect(() => {
-    const savedSession = sessionStorage.getItem(sessionKey);
+    const savedSession = localStorage.getItem(sessionKey);
     if (savedSession) {
       try {
         const parsed = JSON.parse(savedSession);
@@ -75,12 +75,12 @@ export function useTestSession(assignmentId, options = {}) {
         // The timer will continue from where it should be based on elapsed time
       } catch (e) {
         console.error('Gagal memulihkan sesi:', e);
-        sessionStorage.removeItem(sessionKey);
+        localStorage.removeItem(sessionKey);
       }
     }
   }, [sessionKey]);
 
-  // Save session to sessionStorage whenever state changes
+  // Save session to localStorage whenever state changes
   useEffect(() => {
     if (!testData) return; // Don't save until test data is loaded
 
@@ -89,7 +89,7 @@ export function useTestSession(assignmentId, options = {}) {
       currentQuestion,
       timestamp: Date.now()
     };
-    sessionStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
   }, [answers, currentQuestion, testData, sessionKey]);
 
   // Load test data
@@ -307,7 +307,7 @@ export function useTestSession(assignmentId, options = {}) {
       await api.submitTest(assignmentId, finalAnswers, timeTaken, deviceInfo);
 
       // Clear session storage on successful submission
-      sessionStorage.removeItem(sessionKey);
+      localStorage.removeItem(sessionKey);
 
       // Disable back button prevention before navigating
       if (disableBackButtonPrevention.current) {

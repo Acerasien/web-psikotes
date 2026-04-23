@@ -12,4 +12,4 @@ export const formatLocalDateTime = (isoString, formatStr = 'dd MMM yyyy HH:mm') 
     const normalizedString = isoString.endsWith('Z') ? isoString : isoString + 'Z';
     const date = new Date(normalizedString);
     return format(date, formatStr);
-};
+};

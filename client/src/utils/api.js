@@ -11,7 +11,7 @@ const apiClient = axios.create({
 // Request interceptor: Add auth token to every request
 apiClient.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -39,7 +39,7 @@ apiClient.interceptors.response.use(
       }
 
       // Token expired or invalid - clear session and redirect to login
-      sessionStorage.removeItem('token');
+      localStorage.removeItem('token');
       window.location.reload();
       return Promise.reject(error);
     }

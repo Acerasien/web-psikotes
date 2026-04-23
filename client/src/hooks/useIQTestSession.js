@@ -82,10 +82,54 @@ export function useIQTestSession(assignmentId) {
     };
   }, []);
 
+  // Prevent browser back button and tab navigation during test
+  const disableBackButtonPrevention = useRef(null);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = 'Anda sedang dalam pengerjaan tes. Yakin ingin keluar?';
+      return e.returnValue;
+    };
+
+    // Push a state to the history stack to intercept back button
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      // Push the state again to prevent navigation
+      window.history.pushState(null, '', window.location.href);
+
+      // Show warning
+      Swal.fire({
+        title: 'Tidak Bisa Kembali',
+        text: 'Anda tidak dapat meninggalkan halaman ini saat tes sedang berlangsung.',
+        icon: 'warning',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false,
+        confirmButtonColor: '#0F172A',
+      });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    // Store cleanup function for manual invocation
+    disableBackButtonPrevention.current = () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+
+    return () => {
+      if (disableBackButtonPrevention.current) {
+        disableBackButtonPrevention.current();
+      }
+    };
+  }, []);
+
   // Phase session helpers
   const getPhaseAnswers = (phaseId) => {
     try {
-      const stored = sessionStorage.getItem(sessionKey(phaseId));
+      const stored = localStorage.getItem(sessionKey(phaseId));
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -93,16 +137,16 @@ export function useIQTestSession(assignmentId) {
   };
 
   const setPhaseAnswers = (phaseId, answers) => {
-    sessionStorage.setItem(sessionKey(phaseId), JSON.stringify(answers));
+    localStorage.setItem(sessionKey(phaseId), JSON.stringify(answers));
   };
 
   const clearPhaseSession = (phaseId) => {
-    sessionStorage.removeItem(sessionKey(phaseId));
+    localStorage.removeItem(sessionKey(phaseId));
   };
 
   const getHubProgress = () => {
     try {
-      const stored = sessionStorage.getItem(hubKey);
+      const stored = localStorage.getItem(hubKey);
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -110,7 +154,7 @@ export function useIQTestSession(assignmentId) {
   };
 
   const setHubProgress = (donePhaseIds) => {
-    sessionStorage.setItem(hubKey, JSON.stringify(donePhaseIds));
+    localStorage.setItem(hubKey, JSON.stringify(donePhaseIds));
   };
 
   // Submit phase
@@ -164,9 +208,17 @@ export function useIQTestSession(assignmentId) {
 
       // Clear all sessions
       phases.forEach(p => clearPhaseSession(p.id));
-      sessionStorage.removeItem(hubKey);
+      localStorage.removeItem(hubKey);
 
       setShowConfirmModal(false);
+      
+      // Disable back button prevention before navigating
+      if (disableBackButtonPrevention.current) {
+        disableBackButtonPrevention.current();
+      }
+      
+      // Clear all history states by replacing the current state
+      window.history.replaceState(null, '', window.location.pathname);
 
       Swal.fire({
         title: 'Tes Terkirim',
