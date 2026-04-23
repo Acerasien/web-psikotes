@@ -90,7 +90,7 @@ function TemperamentTest({ assignmentId }) {
             if (currentIndex < questions.length - 1) {
                 setCurrentIndex(currentIndex + 1);
             } else {
-                handleSubmit(); // This will trigger the global confirmation modal
+                setShowConfirmModal(true); // This will trigger the global confirmation modal
             }
         }, 350);
     };

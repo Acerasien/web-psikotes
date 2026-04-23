@@ -268,7 +268,7 @@ function DISCTest({ assignmentId }) {
 
                     <div className="mt-6 text-center">
                         <button
-                            onClick={() => handleSubmit(false)}
+                            onClick={() => setShowConfirmModal(true)}
                             className="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg w-full sm:w-auto min-h-[48px]"
                         >
                             Selesai & Kirim

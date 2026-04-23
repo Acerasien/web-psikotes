@@ -376,7 +376,7 @@ function LogicTest({ assignmentId }) {
                 </span>
                 {currentIndex === questions.length - 1 ? (
                     <button
-                        onClick={() => handleSubmit()}
+                        onClick={() => setShowConfirmModal(true)}
                         className="px-5 py-3 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 shadow-sm transition min-h-[44px]"
                     >
                         Selesai
