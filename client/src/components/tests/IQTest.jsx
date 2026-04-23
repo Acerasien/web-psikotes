@@ -30,8 +30,18 @@ export function IQTest() {
   } = useIQTestSession(assignmentId);
 
   const handleStartTutorial = useCallback((phase) => {
-    setActivePhase(phase);
-    setCurrentView('tutorial');
+    // Check if there's already progress for this phase
+    const endKey = `iq_phase_${phase.id}_end`;
+    const ansKey = `iq_phase_${phase.id}_answers`;
+    const hasProgress = localStorage.getItem(endKey) || localStorage.getItem(ansKey);
+
+    if (hasProgress) {
+      setActivePhase(phase);
+      setCurrentView('test');
+    } else {
+      setActivePhase(phase);
+      setCurrentView('tutorial');
+    }
   }, []);
 
   const handleStartTest = useCallback((phase) => {
