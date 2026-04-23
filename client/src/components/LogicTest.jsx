@@ -161,8 +161,9 @@ function LogicTest({ assignmentId }) {
 
     // Handle confirm submission from global modal
     const handleConfirmSubmit = useCallback(() => {
+        setShowConfirmModal(false);
         handleSubmit(false);
-    }, [handleSubmit]);
+    }, [handleSubmit, setShowConfirmModal]);
 
     // Prevent context menu and dev tools
     useEffect(() => {

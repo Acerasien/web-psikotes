@@ -165,8 +165,9 @@ function MemoryTest({ assignmentId }) {
 
     // Handle confirm submission from global modal
     const handleConfirmSubmit = useCallback(() => {
+        setShowConfirmModal(false);
         handleSubmit(false);
-    }, [handleSubmit]);
+    }, [handleSubmit, setShowConfirmModal]);
 
     const getTableRows = (tableData) => {
         if (!tableData) return 0;

@@ -172,8 +172,9 @@ export function PapiKostickTest() {
   }, [handleSubmit]);
 
   const handleConfirmSubmit = useCallback(() => {
+    setShowConfirmModal(false);
     handleSubmit(false);
-  }, [handleSubmit]);
+  }, [handleSubmit, setShowConfirmModal]);
 
   if (loading) {
     return (

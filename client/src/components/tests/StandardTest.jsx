@@ -102,8 +102,9 @@ export function StandardTest() {
   }, [setShowConfirmModal]);
 
   const handleConfirmSubmit = useCallback(() => {
+    setShowConfirmModal(false);
     handleSubmit(false);
-  }, [handleSubmit]);
+  }, [handleSubmit, setShowConfirmModal]);
 
   // Loading state
   if (loading) {
