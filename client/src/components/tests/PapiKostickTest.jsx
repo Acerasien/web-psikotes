@@ -30,9 +30,8 @@ export function PapiKostickTest() {
     navigate('/dashboard');
   }, [navigate, papiSessionKey]);
 
-  const {
-    testData,
-    questions,
+    answers,
+    setAnswers,
     timeLeft,
     loading,
     isSubmitting,
@@ -43,6 +42,7 @@ export function PapiKostickTest() {
     enterFullscreen,
     handleSubmit,
     formatTime,
+    syncAnswer,
   } = useTestSession(assignmentId, {
     requireAllAnswers: true,
     onTestComplete: handleTestComplete,
@@ -72,23 +72,43 @@ export function PapiKostickTest() {
   // Restore session
   useEffect(() => {
     if (questions.length > 0 && Object.keys(selectedAnswers).length === 0) {
+      // 1. Check sessionStorage
       const saved = sessionStorage.getItem(papiSessionKey);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           if (parsed.selectedAnswers) {
             setSelectedAnswers(parsed.selectedAnswers);
+            // Also sync to hook answers
+            const newAnswers = {};
+            Object.entries(parsed.selectedAnswers).forEach(([idx, sel]) => {
+                const q = questions[parseInt(idx)];
+                if (q) newAnswers[q.id] = q.options[sel === 'a' ? 0 : 1].id;
+            });
+            setAnswers(prev => ({ ...prev, ...newAnswers }));
           }
           if (parsed.papiPage !== undefined) {
             setCurrentPage(parsed.papiPage);
           }
           return;
-        } catch (e) {
-          // ignore
+        } catch (e) { /* ignore */ }
+      }
+
+      // 2. If nothing in sessionStorage, but hook has answers (restored from server sync)
+      if (Object.keys(answers).length > 0) {
+        const restored = {};
+        questions.forEach((q, idx) => {
+          const ansId = answers[q.id];
+          if (ansId) {
+            restored[idx] = q.options[0].id === ansId ? 'a' : 'b';
+          }
+        });
+        if (Object.keys(restored).length > 0) {
+            setSelectedAnswers(restored);
         }
       }
     }
-  }, [questions, assignmentId]);
+  }, [questions, assignmentId, answers, setAnswers]);
 
   // Persist answers + current page
   useEffect(() => {
@@ -110,11 +130,24 @@ export function PapiKostickTest() {
   }, [pageItems, selectedAnswers]);
 
   const handleSelect = useCallback((questionIndex, selection) => {
+    const question = questions[questionIndex];
+    if (!question) return;
+
+    const option = question.options[selection === 'a' ? 0 : 1];
+    if (!option) return;
+
+    // Update local state (for UI)
     setSelectedAnswers(prev => ({
       ...prev,
       [questionIndex]: selection,
     }));
-  }, []);
+
+    // Update hook state (for validation)
+    setAnswers(prev => ({ ...prev, [question.id]: option.id }));
+
+    // Sync to backend
+    syncAnswer(question.id, option.id, 'single');
+  }, [questions, setAnswers, syncAnswer]);
 
   const goNext = useCallback(() => {
     if (!currentPageAnswered) return;
