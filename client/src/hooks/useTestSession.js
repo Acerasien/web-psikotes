@@ -216,11 +216,6 @@ export function useTestSession(assignmentId, options = {}) {
     return () => clearInterval(timerId);
   }, [timeLeft, loading, isLocked, disableTimer]);
 
-  // Keep ref updated with latest callback
-  useEffect(() => {
-    handleSubmitRef.current = handleSubmit;
-  }, [handleSubmit]);
-
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
     console.log('--- Submission Started ---', { isTimeout, assignmentId });
