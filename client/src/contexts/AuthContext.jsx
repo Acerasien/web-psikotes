@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
       setUser(response.data);
     } catch (err) {
       console.error('Gagal mengambil data pengguna:', err);
-      handleLogout();
+      logout();
     } finally {
       setLoading(false);
     }
