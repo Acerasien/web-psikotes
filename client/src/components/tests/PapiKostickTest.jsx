@@ -30,6 +30,9 @@ export function PapiKostickTest() {
     navigate('/dashboard');
   }, [navigate, papiSessionKey]);
 
+  const {
+    testData,
+    questions,
     answers,
     setAnswers,
     timeLeft,
