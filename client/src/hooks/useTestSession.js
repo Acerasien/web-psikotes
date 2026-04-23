@@ -216,6 +216,12 @@ export function useTestSession(assignmentId, options = {}) {
 
   // Submit test
   const handleSubmit = useCallback(async (isTimeout = false, overrideAnswers = null) => {
+    console.log('--- Submission Started ---', { isTimeout, assignmentId });
+    if (isSubmittingRef.current) {
+        console.warn('Submission already in progress, skipping...');
+        return;
+    }
+
     let currentAnswers;
 
     // Priority: 1) overrideAnswers, 2) formatAnswers() if provided (for custom answer storage like DISC), 3) answersRef.current
