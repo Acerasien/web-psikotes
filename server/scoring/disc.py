@@ -51,24 +51,22 @@ def score_disc(answers, questions):
     # High score = trait prominently displayed when under pressure
     graph_i = most_scores.copy()
 
-    # Graph II: Inverted "Least" scores (adapted self / social mask)
-    # Inversion: max_possible - least_count = comfort level
-    # High score = trait NOT rejected = comfortable with = part of social mask
-    # Low score = trait frequently rejected = avoided = not natural to display
+    # Graph II: Raw "Least" scores (private self / core)
+    # Standard DISC outputs raw least count.
+    graph_ii = least_scores.copy()
+
+    # Graph III: Integrated profile (MOST - LEAST)
+    # Used as primary reference for overall personality assessment (range: -24 to +24)
+    graph_iii = {t: graph_i[t] - graph_ii[t] for t in traits}
+
+    # Percentages: Convert Graph III (-24 to +24) to a 0-100 percentage
     max_possible = len(questions)  # 24
-    graph_ii = {t: max_possible - least_scores[t] for t in traits}
+    percentages = {t: ((graph_iii[t] + max_possible) / (max_possible * 2)) * 100 for t in traits}
 
-    # Graph III: Integrated profile (average of I and II)
-    # Used as primary reference for overall personality assessment
-    graph_iii = {t: (graph_i[t] + graph_ii[t]) / 2 for t in traits}
-
-    # Percentages: Graph III as % of maximum possible
-    percentages = {t: (graph_iii[t] / max_possible) * 100 for t in traits}
-
-    # Stress Gap: Maximum difference between Graph I and II
+    # Stress Gap: Maximum difference between Graph I and inverted Graph II
     # Indicates psychological stress from adapting to environment
     # <5: Low stress (authentic), 5-10: Moderate stress, >10: High stress
-    stress_gap = max(abs(graph_i[t] - graph_ii[t]) for t in traits)
+    stress_gap = max(abs(graph_i[t] - (max_possible - graph_ii[t])) for t in traits)
 
     # Intensity Zones: Classify each trait based on Graph III percentage
     # High (>70%): Prominent trait, Medium (30-70%): Moderate, Low (<30%): Minimal

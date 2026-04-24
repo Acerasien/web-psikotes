@@ -650,7 +650,7 @@ function ParticipantProfilePage() {
                                                     const chartData = ['D', 'I', 'S', 'C'].map(trait => ({
                                                         trait,
                                                         'Grafik I': r.details.graph_i?.[trait] || 0,
-                                                        'Grafik II': r.details.graph_ii?.[trait] || 0,
+                                                        'Grafik II': 24 - (r.details.graph_ii?.[trait] || 0), // Visually invert so high trait presence plots high
                                                         'Grafik III': r.details.graph_iii?.[trait] || 0,
                                                     }));
 
@@ -659,8 +659,11 @@ function ParticipantProfilePage() {
                                                             <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                                                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                                                                 <XAxis dataKey="trait" axisLine={{ stroke: '#171717', strokeWidth: 2 }} tick={{ fill: '#171717', fontWeight: 900 }} />
-                                                                <YAxis domain={[0, 24]} axisLine={{ stroke: '#171717', strokeWidth: 2 }} tick={{ fill: '#a3a3a3', fontSize: 10 }} />
-                                                                <Tooltip />
+                                                                <YAxis domain={[-24, 24]} axisLine={{ stroke: '#171717', strokeWidth: 2 }} tick={{ fill: '#a3a3a3', fontSize: 10 }} />
+                                                                <Tooltip formatter={(value, name) => {
+                                                                    if (name === 'Grafik II') return 24 - value;
+                                                                    return value;
+                                                                }} />
                                                                 <Line type="monotone" dataKey="Grafik I" stroke="#3b82f6" strokeWidth={4} dot={{ r: 6, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
                                                                 <Line type="monotone" dataKey="Grafik II" stroke="#22c55e" strokeWidth={4} dot={{ r: 6, fill: '#22c55e', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
                                                                 <Line type="monotone" dataKey="Grafik III" stroke="#a855f7" strokeWidth={4} dot={{ r: 6, fill: '#a855f7', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
