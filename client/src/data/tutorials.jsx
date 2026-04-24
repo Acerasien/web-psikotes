@@ -39,12 +39,11 @@ export const tutorials = {
             {
                 question: "Saya senang menjadi pusat perhatian.",
                 options: [
-                    { label: "1", content: "Sangat Tidak Setuju" },
-                    { label: "2", content: "Tidak Setuju" },
-                    { label: "3", content: "Agak Tidak Setuju" },
-                    { label: "4", content: "Agak Setuju" },
-                    { label: "5", content: "Setuju" },
-                    { label: "6", content: "Sangat Setuju" }
+                    { label: "1", content: "Sangat Tidak Menggambarkan Diri Saya" },
+                    { label: "2", content: "Tidak Menggambarkan Diri Saya" },
+                    { label: "3", content: "Netral" },
+                    { label: "4", content: "Menggambarkan Diri Saya" },
+                    { label: "5", content: "Sangat Menggambarkan Diri Saya" }
                 ],
                 explanation: "Pilih tingkat kesesuaian Anda. Tidak ada jawaban benar atau salah."
             }

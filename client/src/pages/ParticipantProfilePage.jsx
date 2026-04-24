@@ -581,15 +581,17 @@ function ParticipantProfilePage() {
                                 <div className="bg-neutral-900 px-6 py-4 border-b-2 border-neutral-900 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                                     <h3 className="text-lg font-black text-white uppercase tracking-wider">{r.test_name}</h3>
                                     <div className="flex items-center gap-3">
-                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Global Score</span>
-                                        {r.max_score && r.test_name !== "Test Kepemimpinan" && (
+                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                                            {r.test_name === "Test Kepemimpinan" || r.test_name === "Temperament Test" ? "Profile" : "Global Score"}
+                                        </span>
+                                        {r.max_score && r.test_name !== "Test Kepemimpinan" && r.test_name !== "Temperament Test" && (
                                             <div className="px-3 py-1 bg-white border-2 border-white text-neutral-900 font-mono font-black text-sm">
                                                 {r.score} <span className="text-neutral-400 font-normal">/ {r.max_score}</span>
                                             </div>
                                         )}
-                                        {r.test_name === "Test Kepemimpinan" && (
+                                        {(r.test_name === "Test Kepemimpinan" || r.test_name === "Temperament Test") && (
                                             <div className="px-3 py-1 bg-accent-gold text-neutral-900 font-bold text-xs uppercase border-2 border-accent-gold">
-                                                {computePrimaryTrait(r.details) || "Personality Profile"}
+                                                {r.test_name === "Temperament Test" ? r.details?.primary || "Personality Profile" : computePrimaryTrait(r.details) || "Personality Profile"}
                                             </div>
                                         )}
                                     </div>
@@ -802,8 +804,17 @@ function ParticipantProfilePage() {
                                                     {Object.entries(r.details.percentages || {}).map(([trait, pct]) => (
                                                         <div key={trait} className="flex flex-col gap-1">
                                                             <div className="flex justify-between items-baseline">
-                                                                <span className="text-[10px] font-black uppercase text-neutral-900">{trait}</span>
-                                                                <span className="font-mono text-xs font-bold">{Math.round(pct)}%</span>
+                                                                <span className="text-[10px] font-black uppercase text-neutral-900">
+                                                                    {trait} {r.details.raw_scores && <span className="text-neutral-400 font-mono text-[9px] ml-1">({r.details.raw_scores[trait === "Sanguine" ? "S" : trait === "Choleric" ? "C" : trait === "Melancholic" ? "M" : "P"]}/30)</span>}
+                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    {r.details.categories && r.details.categories[trait] && (
+                                                                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 ${r.details.categories[trait] === 'Tinggi' ? 'bg-primary-600 text-white' : r.details.categories[trait] === 'Sedang' ? 'bg-primary-300 text-white' : 'bg-neutral-200 text-neutral-500'}`}>
+                                                                            {r.details.categories[trait]}
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="font-mono text-xs font-bold">{Math.round(pct)}%</span>
+                                                                </div>
                                                             </div>
                                                             <div className="h-1.5 w-full bg-neutral-100 border border-neutral-200">
                                                                 <div className="h-full bg-neutral-900" style={{ width: `${pct}%` }}></div>
@@ -812,6 +823,18 @@ function ParticipantProfilePage() {
                                                     ))}
                                                 </div>
                                             </div>
+
+                                            {/* Interpretation Text */}
+                                            {r.details.interpretation_text && (
+                                                <div className="bg-white border-2 border-neutral-900 p-6 mt-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)]">
+                                                    <h5 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">
+                                                        Hasil Interpretasi Skor Tertinggi ({r.details.primary})
+                                                    </h5>
+                                                    <p className="text-sm text-neutral-700 whitespace-pre-wrap leading-relaxed font-medium">
+                                                        {r.details.interpretation_text}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 

@@ -1,4 +1,20 @@
 # server/scoring/temperament.py
+
+INTERPRETATIONS = {
+    "Choleric": "Berdasarkan hasil tes, testee menunjukkan dominansi temperamen Choleric, yaitu individu yang tegas, fokus, dan berorientasi pada tujuan.\nIndividu dengan temperamen koleris adalah pribadi yang bertekad kuat dan fokus pada pencapaian, menjadikannya pemimpin yang efektif. Meskipun mereka mungkin perlu mengembangkan empati dan keterampilan interpersonal, dorongan dan dedikasi mereka adalah aset berharga untuk mencapai tujuan dan menginspirasi orang lain.",
+    "Phlegmatic": "Berdasarkan hasil tes, testee menunjukkan dominansi temperamen Plegmatis, yaitu individu yang cenderung tenang, sabar, dan harmonis.\nIndividu dengan temperamen plegmatis adalah sosok yang stabil, penuh empati, dan mampu menciptakan lingkungan kerja yang damai. Meskipun mereka mungkin perlu mengembangkan motivasi dan keterbukaan dalam komunikasi, keandalan dan sikap tenang mereka adalah aset penting dalam membangun kerja sama dan ketahanan tim.",
+    "Melancholic": "Berdasarkan hasil tes, testee menunjukkan dominansi temperament Melancholis, yaitu individu yang analitis, reflektif dan perfeksionis.\nIndividu dengan temperamen melankolis adalah pribadi yang terstruktur, empatik dan berdedikasi tinggi. Walaupun mereka mungkin perlu mengelola emosi negatif dan mengurangi perfeksionis, kedalaman analitis dan ketajaman perasaan mereka memberikan kontribusi signifikan dalam pekerjaan yang menuntut ketelitian dan kepekaan.",
+    "Sanguine": "Berdasarkan hasil tes, testee menunjukkan dominansi temperamen Sanguin, yaitu individu yang ramah, optimis, dan penuh semangat.\nIndividu dengan temperamen sanguin adalah sosok yang energik, komunikatif, dan inspiratif. Meskipun mereka perlu meningkatkan disiplin dan konsistensi, semangat dan keterbukaan mereka menjadi kekuatan penting dalam membangun semangat tim dan menciptakan suasana kerja yang positif."
+}
+
+def get_category(score):
+    if score >= 23:
+        return "Tinggi"
+    elif score >= 14:
+        return "Sedang"
+    else:
+        return "Rendah"
+
 def score_temperament(answers, questions):
     """
     answers: list of dicts with keys: question_id, option_id, type (should be 'single')
@@ -7,8 +23,10 @@ def score_temperament(answers, questions):
     Returns a dict with:
         - raw_scores: dict of trait sums
         - percentages: dict of trait percentages (0-100)
+        - categories: dict of trait categories (Rendah, Sedang, Tinggi)
         - primary: trait with highest percentage
         - secondary: trait with second highest
+        - interpretation_text: descriptive text for primary trait
         - interactions: list of trait combination descriptions (optional)
         - straight_line_flag: boolean if all answers are identical
     """
@@ -40,26 +58,20 @@ def score_temperament(answers, questions):
                 count[trait] += 1
                 selected_values.append(value)
 
-    # Normalize to percentages (max possible per trait = 7 questions * 6 = 42)
+    # Normalize to percentages and calculate categories
     percentages = {}
+    categories = {}
     for trait in trait_map.keys():
-        max_possible = 7 * 6  # 7 questions per trait, each max 6
-        # If some questions unanswered, adjust max? For now assume all answered.
-        # But if not all answered, we should scale accordingly.
+        trait_name = trait_map[trait]
+        max_possible = 6 * 5  # 6 questions per trait, each max 5
         answered = count[trait]
+        
         if answered > 0:
-            # Scale to percentage of maximum possible for answered questions
-            # Actually we want percentage based on max possible (42) for consistency.
-            # But if some questions missing, the raw sum is out of (answered*6).
-            # Better to compute percentage based on answered questions to be fair.
-            # Let's do: percentage = (raw[trait] / (answered * 6)) * 100
-            # Then average across answered? But spec says normalize to 0-100% based on max possible points for that trait.
-            # Since each trait has 7 questions, max = 42.
-            # So percentage = (raw[trait] / 42) * 100.
-            # This penalizes missing questions, but we assume they answered all.
-            percentages[trait_map[trait]] = (raw[trait] / 42) * 100
+            percentages[trait_name] = (raw[trait] / 30) * 100
         else:
-            percentages[trait_map[trait]] = 0
+            percentages[trait_name] = 0
+            
+        categories[trait_name] = get_category(raw[trait])
 
     # Determine primary and secondary
     sorted_traits = sorted(percentages.items(), key=lambda x: x[1], reverse=True)
@@ -75,12 +87,17 @@ def score_temperament(answers, questions):
     interactions = []
     if primary and secondary:
         interactions.append(f"{primary} utama dengan nuansa {secondary}")
+        
+    # Set interpretation text based on primary trait
+    interpretation_text = INTERPRETATIONS.get(primary, "")
 
     return {
         "raw_scores": raw,
         "percentages": percentages,
+        "categories": categories,
         "primary": primary,
         "secondary": secondary,
+        "interpretation_text": interpretation_text,
         "interactions": interactions,
         "straight_line_flag": straight_line_flag
     }
