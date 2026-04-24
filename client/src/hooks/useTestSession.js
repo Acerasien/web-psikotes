@@ -317,7 +317,22 @@ export function useTestSession(assignmentId, options = {}) {
       window.history.replaceState(null, '', window.location.pathname);
 
       if (isTimeout) {
-        Swal.fire('Waktu Habis', 'Tes telah dikirim otomatis.', 'info');
+        Swal.fire({
+          title: 'Waktu Habis',
+          text: 'Tes telah dikirim otomatis.',
+          icon: 'info',
+          confirmButtonText: 'Kembali ke Dashboard',
+          confirmButtonColor: '#0F172A',
+          timer: 3000,
+          timerProgressBar: true,
+          allowOutsideClick: false
+        }).then(() => {
+          if (onTestComplete) {
+            onTestComplete();
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
+        });
       } else {
         Swal.fire({
           title: 'Tes Terkirim',
@@ -325,13 +340,13 @@ export function useTestSession(assignmentId, options = {}) {
           icon: 'success',
           confirmButtonText: 'OK',
           confirmButtonColor: '#0F172A',
+        }).then(() => {
+          if (onTestComplete) {
+            onTestComplete();
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
         });
-      }
-
-      if (onTestComplete) {
-        onTestComplete();
-      } else {
-        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       console.error('Failed to submit test:', err);

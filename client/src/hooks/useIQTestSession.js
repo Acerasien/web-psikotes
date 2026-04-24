@@ -230,10 +230,11 @@ export function useIQTestSession(assignmentId) {
         title: 'Tes Terkirim',
         text: 'Jawaban Anda telah berhasil dikirim.',
         icon: 'success',
-        confirmButtonText: 'OK'
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0F172A',
+      }).then(() => {
+        navigate('/dashboard', { replace: true });
       });
-
-      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Failed to submit all:', err);
       Swal.fire('Kesalahan', err.response?.data?.detail || 'Gagal mengirim tes.', 'error');

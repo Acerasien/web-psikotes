@@ -162,7 +162,16 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
       localStorage.removeItem(`iq_phase_${phaseId}_end`);
 
       if (isTimeout) {
-        Swal.fire('Waktu Habis', 'Fase telah dikirim otomatis.', 'info');
+        Swal.fire({
+          title: 'Waktu Habis',
+          text: 'Fase telah dikirim otomatis.',
+          icon: 'info',
+          timer: 2000,
+          timerProgressBar: true,
+          allowOutsideClick: false
+        }).then(() => {
+          onReturnToHub();
+        });
       } else {
         Swal.fire({
           title: 'Fase Selesai',
@@ -170,10 +179,10 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
           icon: 'success',
           timer: 1500,
           showConfirmButton: false
+        }).then(() => {
+          onReturnToHub();
         });
       }
-
-      onReturnToHub();
     } catch (err) {
       console.error('Failed to submit phase:', err);
       Swal.fire('Kesalahan', 'Gagal mengirim fase.', 'error');
