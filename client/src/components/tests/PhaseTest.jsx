@@ -107,7 +107,6 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
         if (prev <= 1) {
           clearInterval(timerId);
           if (!isSubmittingRef.current) {
-            isSubmittingRef.current = true;
             handleSubmitPhaseInternal(true);
           }
           return 0;
@@ -135,6 +134,9 @@ export function PhaseTest({ phase, assignmentId, onReturnToHub, isLocked, syncAn
    * Internal submit — uses refs to avoid stale closures.
    */
   const handleSubmitPhaseInternal = useCallback(async (isTimeout = false) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     const answers = allAnswersRef.current;
     const qCount = questionsRef.current.length;
     const phaseId = phaseRef.current.id;

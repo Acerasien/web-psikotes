@@ -152,7 +152,6 @@ function MemoryTest({ assignmentId }) {
                 if (prev <= 1) {
                     clearInterval(timer);
                     if (!isSubmittingRef.current) {
-                        isSubmittingRef.current = true;
                         handleSubmit(true);
                     }
                     return 0;

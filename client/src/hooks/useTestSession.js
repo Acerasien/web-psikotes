@@ -202,7 +202,6 @@ export function useTestSession(assignmentId, options = {}) {
         if (prev <= 1) {
           clearInterval(timerId);
           if (!isSubmittingRef.current) {
-            isSubmittingRef.current = true;
             handleSubmitRef.current?.(true);
           }
           return 0;
