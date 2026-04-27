@@ -18,7 +18,8 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
     position: '',
     business_unit: '',
     role: initialRole, // use prop-driven initial role
-    class_id: ''
+    class_id: '',
+    assign_all_tests: false
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -112,7 +113,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
     };
 
     try {
-      await api.createUser(payload);
+      const res = await api.createUser(payload);
       
       Swal.fire({
         icon: 'success',
@@ -139,6 +140,27 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
       setErrors({});
       
       if (onUserCreated) onUserCreated();
+
+      // If assign all tests is checked, do it now
+      if (payload.role === 'participant' && formData.assign_all_tests && res.data.id) {
+        try {
+          await api.assignAllTests(res.data.id);
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: `Peserta berhasil dibuat dan semua tes telah ditugaskan!`,
+            timer: 2500,
+            showConfirmButton: false
+          });
+        } catch (assignErr) {
+          console.error('Failed to assign all tests:', assignErr);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Peserta Dibuat',
+            text: 'Peserta berhasil dibuat, tetapi gagal menugaskan semua tes secara otomatis.',
+          });
+        }
+      }
     } catch (err) {
       const detail = err.response?.data?.detail;
       let errorMessage = 'Failed to create user';
@@ -386,6 +408,25 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 </select>
               </div>
             )}
+
+            {/* Assign All Tests Checkbox - Only for participants */}
+            {formData.role === 'participant' && (
+              <div className="md:col-span-2 mt-2">
+                <label className="flex items-center space-x-3 p-3 bg-blue-50 border border-blue-100 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    name="assign_all_tests"
+                    checked={formData.assign_all_tests}
+                    onChange={(e) => setFormData({ ...formData, assign_all_tests: e.target.checked })}
+                    className="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-blue-900">Tugaskan Semua Tes Secara Otomatis</span>
+                    <p className="text-xs text-blue-700">Jika dicentang, semua tes yang tersedia akan langsung ditugaskan ke peserta ini.</p>
+                  </div>
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
@@ -436,7 +477,8 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 position: '',
                 business_unit: '',
                 role: 'participant',
-                class_id: ''
+                class_id: '',
+                assign_all_tests: false
               });
               setErrors({});
             }}

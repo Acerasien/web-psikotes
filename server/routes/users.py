@@ -89,7 +89,7 @@ def create_user(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"message": "User created successfully", "username": new_user.username}
+    return {"message": "User created successfully", "username": new_user.username, "id": new_user.id}
 
 
 @router.get("/{user_id}")
