@@ -80,25 +80,25 @@ function ParticipantProfilePage() {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
-    const [pdfExporting, setPdfExporting] = useState(false);
+    const [docxExporting, setDocxExporting] = useState(false);
 
-    // PDF export handler
-    const handleExportPDF = async () => {
-        setPdfExporting(true);
+    // DOCX export handler
+    const handleExportDOCX = async () => {
+        setDocxExporting(true);
         try {
-            const response = await api.exportParticipantPdf(id);
+            const response = await api.exportParticipantDocx(id);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `${user?.username || 'participant'}_report.pdf`);
+            link.setAttribute('download', `${user?.username || 'participant'}_report.docx`);
             document.body.appendChild(link);
             link.click();
             link.remove();
         } catch (err) {
             console.error(err);
-            Swal.fire('Kesalahan', 'Gagal mengekspor PDF.', 'error');
+            Swal.fire('Kesalahan', 'Gagal mengekspor DOCX.', 'error');
         } finally {
-            setPdfExporting(false);
+            setDocxExporting(false);
         }
     };
 
@@ -240,15 +240,15 @@ function ParticipantProfilePage() {
                                     <span className="sm:hidden">CSV</span>
                                 </button>
                                 <button
-                                    onClick={handleExportPDF}
-                                    disabled={pdfExporting}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
+                                    onClick={handleExportDOCX}
+                                    disabled={docxExporting}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
                                 >
                                     <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                     </svg>
-                                    <span className="hidden sm:inline">{pdfExporting ? 'Membuat...' : 'Ekspor PDF'}</span>
-                                    <span className="sm:hidden">PDF</span>
+                                    <span className="hidden sm:inline">{docxExporting ? 'Membuat...' : 'Ekspor DOCX'}</span>
+                                    <span className="sm:hidden">DOCX</span>
                                 </button>
                             </div>
                         )}
@@ -524,6 +524,13 @@ function ParticipantProfilePage() {
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Dominasi Tipe</span>
                                                     <span className="text-sm font-black text-primary-600 uppercase">{result.details?.primary || 'N/A'}</span>
+                                                </div>
+                                            )}
+
+                                            {result && a.test_code === "LEAD" && (
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Profil Kepemimpinan</span>
+                                                    <span className="text-sm font-black text-primary-600 uppercase">{computePrimaryTrait(result.details) || 'General Profile'}</span>
                                                 </div>
                                             )}
 

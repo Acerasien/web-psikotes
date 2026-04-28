@@ -16,6 +16,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
     education: '',
     department: '',
     position: '',
+    level: '',
     business_unit: '',
     role: initialRole, // use prop-driven initial role
     class_id: '',
@@ -63,6 +64,11 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
     // Full name validation
     if (!formData.full_name.trim()) {
       newErrors.full_name = 'Nama lengkap wajib diisi';
+    }
+
+    // Level validation
+    if (!formData.level) {
+      newErrors.level = 'Level wajib dipilih';
     }
 
     // Age validation (if provided)
@@ -200,10 +206,10 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Required Fields Section */}
+        {/* Account Info Section */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
-            Informasi Wajib
+            Informasi Akun
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -242,7 +248,16 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
             </div>
+          </div>
+        </div>
 
+        {/* Personal Info Section */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
+            Informasi Personal
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">
                 Nama Lengkap <span className="text-red-500">*</span>
@@ -259,16 +274,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Optional Fields Section */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
-            Informasi Tambahan
-          </h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
               <select
@@ -300,7 +306,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
               )}
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">Pendidikan</label>
               <input
                 type="text"
@@ -310,6 +316,37 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 placeholder="contoh: S1"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Job/Organizational Info Section */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
+            Informasi Pekerjaan
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Level <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="level"
+                value={formData.level}
+                onChange={handleChange}
+                className={inputClass('level')}
+              >
+                <option value="">Pilih Level</option>
+                <option value="Operator / Mekanik">Operator / Mekanik</option>
+                <option value="Admin / Non - Staff">Admin / Non - Staff</option>
+                <option value="Foreman / Officier">Foreman / Officier</option>
+                <option value="Supervisor / Section Head">Supervisor / Section Head</option>
+                <option value="Superintendent / Dept. Head">Superintendent / Dept. Head</option>
+              </select>
+              {errors.level && (
+                <p className="mt-1 text-sm text-red-600">{errors.level}</p>
+              )}
             </div>
 
             <div>

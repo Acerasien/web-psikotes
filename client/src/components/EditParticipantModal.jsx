@@ -15,6 +15,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
         education: '',
         department: '',
         position: '',
+        level: '',
         business_unit: '',
         role: 'participant',
         class_id: ''
@@ -37,6 +38,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                 education: user.education || '',
                 department: user.department || '',
                 position: user.position || '',
+                level: user.level || '',
                 business_unit: user.business_unit || '',
                 role: user.role || 'participant',
                 class_id: user.class_id || ''
@@ -196,6 +198,23 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                                 Organisasi
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Level <span className="text-red-500">*</span></label>
+                                    <select
+                                        name="level"
+                                        value={formData.level}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full border border-neutral-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-primary-500"
+                                        required
+                                    >
+                                        <option value="">Pilih Level</option>
+                                        <option value="Operator / Mekanik">Operator / Mekanik</option>
+                                        <option value="Admin / Non - Staff">Admin / Non - Staff</option>
+                                        <option value="Foreman / Officier">Foreman / Officier</option>
+                                        <option value="Supervisor / Section Head">Supervisor / Section Head</option>
+                                        <option value="Superintendent / Dept. Head">Superintendent / Dept. Head</option>
+                                    </select>
+                                </div>
                                 <div>
                                     <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Departemen</label>
                                     <select

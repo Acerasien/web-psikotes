@@ -263,7 +263,14 @@ def bulk_create_users(
                 row_dict[headers[col_idx]] = str(val) if val else ''
             rows.append(row_dict)
 
-    required_fields = ['username', 'password', 'full_name', 'class']
+    required_fields = ['username', 'password', 'full_name', 'class', 'level']
+    VALID_LEVELS = [
+        "Operator / Mekanik", 
+        "Admin / Non - Staff", 
+        "Foreman / Officier", 
+        "Supervisor / Section Head", 
+        "Superintendent / Dept. Head"
+    ]
     results = {
         "total": len(rows),
         "success": 0,
@@ -290,6 +297,14 @@ def bulk_create_users(
         password = str(row['password']).strip()
         full_name = str(row['full_name']).strip()
         class_name = str(row['class']).strip()
+        level_input = str(row['level']).strip()
+
+        # Normalize level (case-insensitive)
+        level = next((l for l in VALID_LEVELS if l.lower() == level_input.lower()), None)
+        if not level:
+            results["failed"] += 1
+            results["errors"].append(f"Baris {row_num}: Level '{level_input}' tidak valid. Gunakan salah satu dari: {', '.join(VALID_LEVELS)}")
+            continue
 
         if db.query(User).filter(User.username == username).first():
             results["failed"] += 1
@@ -315,6 +330,7 @@ def bulk_create_users(
             'department': str(row.get('department', '')).strip() or None,
             'position': str(row.get('position', '')).strip() or None,
             'business_unit': str(business_unit_val).strip() if business_unit_val else None,
+            'level': level,
             'role': 'participant'
         }
 
@@ -337,6 +353,7 @@ def bulk_create_users(
             department=user_data['department'],
             position=user_data['position'],
             business_unit=user_data['business_unit'],
+            level=user_data['level'],
             class_id=class_config.id
         )
         db.add(new_user)

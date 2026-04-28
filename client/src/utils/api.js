@@ -131,6 +131,8 @@ export const api = {
   logExit: (assignmentId) =>
     apiClient.post(`/assignments/${assignmentId}/exit-log`),
   getLockedAssignments: () => apiClient.get('/admin/locked-assignments'),
+  updateAssignmentReview: (assignmentId, data) => 
+    apiClient.patch(`/assignments/${assignmentId}/review`, data),
 
   // Results
   getResults: (params = {}) => apiClient.get('/results/', { params }),
@@ -148,12 +150,10 @@ export const api = {
     apiClient.get(`/admin/stats/security-events?limit=${limit}`),
 
   // Export/Download methods (blob responses)
-  exportParticipantPdf: (id) =>
-    apiClient.get(`/admin/export/participant/${id}/pdf`, { responseType: 'blob' }),
+  exportResults: (params) => apiClient.get('/admin/export/results', { params, responseType: 'blob' }),
+  exportParticipantDocx: (id) => apiClient.get(`/admin/export/participant/${id}/docx`, { responseType: 'blob' }),
   exportParticipant: (id) =>
     apiClient.get(`/admin/export/participant/${id}`, { responseType: 'blob' }),
-  exportResults: (params = {}) =>
-    apiClient.get('/admin/export/results', { params, responseType: 'blob' }),
 };
 
 export default apiClient;

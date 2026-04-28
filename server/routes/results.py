@@ -178,13 +178,15 @@ def export_participant_results(
     return response
 
 
-@router.get("/admin/export/participant/{user_id}/pdf")
-def export_participant_pdf(
+from services.word_report import generate_participant_docx
+
+@router.get("/admin/export/participant/{user_id}/docx")
+def export_participant_docx(
     user_id: int,
     db: Session = Depends(get_db),
     superadmin: User = Depends(require_superadmin)
 ):
-    """Export single participant results as PDF (superadmin only)"""
+    """Export single participant results as DOCX (superadmin only)"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -200,12 +202,12 @@ def export_participant_pdf(
     
     results = list(latest_results.values())
 
-    pdf_bytes = generate_participant_pdf(user, results)
+    docx_bytes = generate_participant_docx(user, results)
 
     return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={
-            "Content-Disposition": f'attachment; filename="Laporan_Psikotes_{user.username or user.id}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+            "Content-Disposition": f'attachment; filename="Laporan_Psikotes_{user.username or user.id}_{datetime.now().strftime("%Y%m%d")}.docx"'
         },
     )
