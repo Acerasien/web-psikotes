@@ -201,7 +201,7 @@ function BulkUploadModal({ onClose, onSuccess }) {
                                 </table>
                                 <p className="text-xs text-info-600 mt-1 font-medium bg-info-50 p-2 rounded border border-info-200">
                                     * Kolom wajib. Kolom lain opsional. <br/>
-                                    ** Pilihan Level: Operator / Mekanik, Admin / Non - Staff, Foreman / Officier, Supervisor / Section Head, Superintendent / Dept. Head <br/>
+                                    ** Pilihan Level: Operator / Mekanik, Admin / Non - Staff, Foreman / Officer, Supervisor / Section Head, Superintendent / Dept. Head <br/>
                                     <strong>Klasifikasi yang tersedia:</strong> {classes.length > 0 ? classes.map(c => c.name).join(', ') : 'HO Staff, Site Operator, dll.'}
                                 </p>
                             </div>

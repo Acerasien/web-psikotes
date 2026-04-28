@@ -267,7 +267,7 @@ def bulk_create_users(
     VALID_LEVELS = [
         "Operator / Mekanik", 
         "Admin / Non - Staff", 
-        "Foreman / Officier", 
+        "Foreman / Officer", 
         "Supervisor / Section Head", 
         "Superintendent / Dept. Head"
     ]

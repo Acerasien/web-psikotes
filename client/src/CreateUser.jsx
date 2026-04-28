@@ -340,7 +340,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 <option value="">Pilih Level</option>
                 <option value="Operator / Mekanik">Operator / Mekanik</option>
                 <option value="Admin / Non - Staff">Admin / Non - Staff</option>
-                <option value="Foreman / Officier">Foreman / Officier</option>
+                <option value="Foreman / Officer">Foreman / Officer</option>
                 <option value="Supervisor / Section Head">Supervisor / Section Head</option>
                 <option value="Superintendent / Dept. Head">Superintendent / Dept. Head</option>
               </select>
