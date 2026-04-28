@@ -280,7 +280,12 @@ def bulk_create_users(
     created_users = []
 
     for row_num, row in enumerate(rows, start=2):
+        # Skip empty rows (common in Excel/CSV exports)
+        if not any(str(v).strip() for v in row.values()) or not str(row.get('username', '')).strip():
+            continue
+
         # Allow 'kelas' as an alias for 'class' in the CSV
+
         if 'kelas' in row and not row.get('class'):
             row['class'] = row['kelas']
             
