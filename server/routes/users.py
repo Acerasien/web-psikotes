@@ -43,7 +43,9 @@ def get_users(
             "business_unit": u.business_unit,
             "education": u.education,
             "class_id": u.class_id,
+            "level": u.level,
             "class_name": u.class_config.name if u.class_config else None
+
         }
         for u in users
     ]
@@ -84,7 +86,9 @@ def create_user(
         department=user.department,
         position=user.position,
         business_unit=user.business_unit,
+        level=user.level,
         class_id=user.class_id
+
     )
     db.add(new_user)
     db.commit()
@@ -114,7 +118,9 @@ def get_user(
         "position": user.position,
         "business_unit": user.business_unit,
         "class_id": user.class_id,
+        "level": user.level,
         "class_name": user.class_config.name if user.class_config else None
+
     }
 
 
@@ -165,7 +171,10 @@ def update_user(
         user.position = user_update.position
     if user_update.business_unit is not None:
         user.business_unit = user_update.business_unit
+    if user_update.level is not None:
+        user.level = user_update.level
     if user_update.role is not None:
+
         user.role = user_update.role
     if user_update.class_id is not None:
         if user_update.class_id == 0:

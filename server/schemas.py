@@ -40,6 +40,8 @@ class UserCreate(BaseModel):
     position: Optional[str] = None
     business_unit: Optional[str] = None
     class_id: Optional[int] = None
+    level: Optional[str] = None
+
 
 class TestSubmission(BaseModel):
     answers: List[dict]  # Make sure this is List[dict], not dict
@@ -94,3 +96,4 @@ class UserUpdate(BaseModel):
     position: Optional[str] = None
     business_unit: Optional[str] = None
     class_id: Optional[int] = None
+    level: Optional[str] = None

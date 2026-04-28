@@ -41,6 +41,8 @@ class User(Base):
     position = Column(String, nullable=True)
     business_unit = Column(String, nullable=True)
     class_id = Column(Integer, ForeignKey("class_configs.id"), nullable=True, index=True)
+    level = Column(String, nullable=True)  # e.g., "Supervisor / Section Head"
+
 
     # Relationships with cascade delete
     assignments = relationship("Assignment", back_populates="user", cascade="all, delete-orphan")
