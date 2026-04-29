@@ -365,34 +365,66 @@ def generate_participant_docx(user, results):
         primary_trait = max(g3, key=g3.get) if g3 else "D"
         trait_names = {"D": "Dominance", "I": "Influence", "S": "Steadiness", "C": "Compliance"}
         trait_desc = {
-            "D": "Individu cenderung tegas, berorientasi hasil, kompetitif, dan pengambil keputusan cepat.",
-            "I": "Individu cenderung antusias, optimis, kolaboratif, dan senang berinteraksi sosial.",
-            "S": "Individu cenderung sabar, konsisten, stabil, dan menghargai harmoni.",
-            "C": "Individu cenderung analitis, teliti, sistematis, dan menjaga kualitas."
+            "D": "Percaya diri, menyukai tantangan, berorientasi pada pencapaian, senang memberi pengaruh besar dalam hasil.",
+            "I": "Hangat, optimis, terbuka, mudah membangun jaringan sosial, dan termotivasi lewat interaksi.",
+            "S": "Sabar, konsisten, setia, menghargai kestabilan, dan nyaman di lingkungan harmonis.",
+            "C": "Teliti, berhati-hati, mengutamakan akurasi, nyaman dengan aturan jelas dan standar tinggi."
         }
         
-        p_kes = cell_kes.paragraphs[0]
-        p_kes.paragraph_format.left_indent = Pt(8)
-        p_kes.paragraph_format.space_before = Pt(6) # Padding top
+        # Dictionaries for interpretations
+        desc_i = {
+            "D": "Cenderung berorientasi pada hasil dan pencapaian target. Mereka tegas, cepat dalam mengambil keputusan, menyukai tantangan, dan senang memimpin. Biasanya berperan mendorong tim agar tetap bergerak maju dan produktif.",
+            "I": "Energik, persuasif, dan mudah membangun hubungan. Mereka menyukai interaksi sosial, mampu memotivasi orang lain, serta menciptakan suasana kerja yang positif dan penuh semangat.",
+            "S": "Stabil, sabar, dan pendengar yang baik. Mereka berfokus pada kerja sama tim, menjaga keharmonisan, serta lebih nyaman bekerja di lingkungan yang teratur dan konsisten.",
+            "C": "Teliti, logis, dan analitis. Mereka bekerja dengan standar tinggi, mengikuti aturan, serta fokus pada detail dan kualitas hasil."
+        }
+        desc_ii = {
+            "D": "Cenderung menjadi lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain (Dominance - D).",
+            "I": "Bisa menjadi terlalu emosional, kurang fokus, dan mudah terdistraksi. Mereka sering mencari dukungan dari orang lain untuk merasa aman (Influence - I).",
+            "S": "Menjadi lebih pasif, menghindari konflik, dan membutuhkan arahan yang jelas. Mereka bisa merasa kewalahan jika perubahan terlalu cepat (Steadiness - S).",
+            "C": "Cenderung perfeksionis, terlalu banyak menganalisis, dan takut membuat kesalahan. Hal ini dapat memperlambat pengambilan keputusan (Conscientiousness - C)."
+        }
+        desc_iii = {
+            "D": "Secara natural, mereka percaya diri, berorientasi pada pencapaian, dan menyukai tantangan baru. Mereka senang berada dalam posisi yang memberi pengaruh besar terhadap hasil.",
+            "I": "Alami sebagai pribadi yang hangat, optimis, terbuka, dan mudah membangun jaringan sosial. Mereka lebih termotivasi ketika bisa berinteraksi dengan orang lain.",
+            "S": "Sifat alaminya adalah sabar, konsisten, dan setia. Mereka menghargai kestabilan, serta lebih suka bekerja dalam lingkungan yang harmonis dan minim konflik.",
+            "C": "Alami sebagai individu yang teliti, berhati-hati, dan mengutamakan akurasi. Mereka nyaman bekerja dengan aturan yang jelas serta standar kerja yang tinggi."
+        }
+
+        g1 = disc_details.get("graph_i", {})
+        g2 = disc_details.get("graph_ii", {})
+        g3 = disc_details.get("graph_iii", {})
         
-        r1 = p_kes.add_run(f"Tipe Dominan Aktual (G-III): ")
-        r1.bold = True
-        r1.font.size = Pt(9)
-        r1.font.color.rgb = COLOR_BLUE_TEXT
+        p1 = max(g1, key=g1.get) if g1 else "D"
+        p2 = max(g2, key=g2.get) if g2 else "D"
+        p3 = max(g3, key=g3.get) if g3 else "D"
+
+        kesimpulan_text = f"Kesimpulan: {desc_i.get(p1, '')} {desc_ii.get(p2, '')} {desc_iii.get(p3, '')}"
+
+        # 1st Paragraph: Kesimpulan (Dynamic)
+        p_kes1 = cell_kes.paragraphs[0]
+        p_kes1.paragraph_format.left_indent = Pt(8)
+        p_kes1.paragraph_format.space_before = Pt(6) # Padding top
+        r_kes = p_kes1.add_run(kesimpulan_text)
+        r_kes.font.size = Pt(8)
+        r_kes.font.italic = True
         
-        r_trait = p_kes.add_run(f"[{primary_trait} – {trait_names.get(primary_trait, '')}]")
-        r_trait.bold = True
-        r_trait.font.size = Pt(9)
-        r_trait.font.color.rgb = RGBColor.from_string(bar_colors.get(primary_trait, "DC2626"))
-        
-        p_kes.add_run(f" → {trait_desc.get(primary_trait, '')}").font.size = Pt(9)
-        
+        # 2nd Paragraph: Tipe Dominan Aktual
         p_kes2 = cell_kes.add_paragraph()
         p_kes2.paragraph_format.left_indent = Pt(8)
         p_kes2.paragraph_format.space_after = Pt(6) # Padding bottom
-        r2 = p_kes2.add_run("Kesimpulan:\n....")
-        r2.font.size = Pt(9)
-        r2.font.italic = True
+        
+        r1 = p_kes2.add_run(f"Tipe Dominan Aktual (G-III): ")
+        r1.bold = True
+        r1.font.size = Pt(8)
+        r1.font.color.rgb = COLOR_BLUE_TEXT
+        
+        r_trait = p_kes2.add_run(f"[{primary_trait} – {trait_names.get(primary_trait, '')}]")
+        r_trait.bold = True
+        r_trait.font.size = Pt(8)
+        r_trait.font.color.rgb = RGBColor.from_string(bar_colors.get(primary_trait, "DC2626"))
+        
+        p_kes2.add_run(f" → {trait_desc.get(primary_trait, '')}").font.size = Pt(8)
         
         # Gap after DISC (Safe here as TEMP follows)
         doc.add_paragraph()
