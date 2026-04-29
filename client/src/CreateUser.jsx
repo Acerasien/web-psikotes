@@ -114,6 +114,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
       department: formData.department || null,
       position: formData.position.trim() || null,
       business_unit: formData.business_unit || null,
+      level: formData.level || null,
       role: formData.role,
       class_id: formData.class_id || null
     };
@@ -140,6 +141,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
         department: '',
         position: '',
         business_unit: '',
+        level: '',
         role: 'participant',
         class_id: ''
       });
