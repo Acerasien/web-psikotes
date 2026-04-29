@@ -100,7 +100,7 @@ def create_user(
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    admin: User = Depends(require_admin)
 ):
     """Get single user by ID (superadmin only)"""
     user = db.query(User).filter(User.id == user_id).first()
@@ -119,6 +119,7 @@ def get_user(
         "business_unit": user.business_unit,
         "class_id": user.class_id,
         "level": user.level,
+        "report_decisions": user.report_decisions,
         "class_name": user.class_config.name if user.class_config else None
 
     }
@@ -186,6 +187,8 @@ def update_user(
             user.class_id = user_update.class_id
     if user_update.password is not None and user_update.password != "":
         user.password_hash = hash_password(user_update.password)
+    if user_update.report_decisions is not None:
+        user.report_decisions = user_update.report_decisions
 
     db.commit()
     db.refresh(user)

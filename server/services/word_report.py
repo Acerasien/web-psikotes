@@ -127,6 +127,72 @@ def add_section_heading(doc, text, size=Pt(11)):
     run.font.color.rgb = COLOR_BLUE_TEXT
     return p
 
+# --- SHARED SUMMARY LOGIC ---
+def get_summary_data(code, d):
+    if not d: return ("-", "-", "-")
+    if code == "DISC":
+        g3 = d.get('graph_iii', {})
+        dom = max(g3, key=g3.get) if g3 else "D"
+        val = g3.get(dom, 0)
+        dom_map = {"D":"Dominance","I":"Influence","S":"Steadiness","C":"Compliance"}
+        return (f"{dom[0]} - {dom_map.get(dom, dom)} (G-III: {val})", "Tegas & Berorientasi Hasil", "SESUAI")
+    if code == "TEMP":
+        prim = d.get('primary', '-')
+        # Mapping back to trait keys
+        rev_map = {"Sanguine":"S", "Choleric":"C", "Melancholic":"M", "Phlegmatic":"P"}
+        score = d.get('raw_scores', {}).get(rev_map.get(prim, ""), 0)
+        return (f"{prim} Dominan ({score}/30)", "Analitis & Detail", "SESUAI")
+    if code == "IQ":
+        iq = d.get('iq', 0)
+        cls = "Rata-rata"
+        if iq >= 110: cls = "Di Atas Rata-rata"
+        if iq >= 120: cls = "Unggul"
+        if iq <= 90: cls = "Rata-rata Bawah"
+        return (f"IQ {iq} - {cls}", "Kemampuan Kognitif Baik", "SESUAI")
+    if code == "LOGIC":
+        iq = d.get('est_iq', 0)
+        cls = d.get('classification', 'Rata-rata')
+        return (f"IQ {iq} - {cls}", "Logika Numerik Baik", "SESUAI")
+    if code == "SPEED":
+        score = d.get('score', 0)
+        band = d.get('band', '-')
+        # Mapping common band names to professional labels
+        band_map = {"Excellent": "Tahan Tekanan", "Good": "Baik", "Average": "Cukup", "Needs Improvement": "Perlu Ditingkatkan"}
+        clean_band = band_map.get(band, band)
+        return (f"Skor {score} - {clean_band}", "Mampu dalam Kondisi Tekanan", "SESUAI")
+    if code == "CBI":
+        lvl_map = {"White": "Rendah", "Light Blue": "Sedang", "Dark Blue": "Tinggi", "-": "-"}
+        lvl = lvl_map.get(d.get('overall_level', '-'), d.get('overall_level', '-'))
+        return (f"Risiko {lvl} di Semua Aspek", "Minim Perilaku Kontraproduktif", "AMAN")
+    if code == "LEAD":
+        top_list = d.get('top_factors', [("N",0)])
+        if not top_list: return ("-", "-", "-")
+        top1_norm = top_list[0][0]
+        val = d.get('stanines', {}).get(top1_norm, 0)
+        # Short map for PAPI names
+        papi_names = {"N":"Need to Lead","G":"Work Vigor","A":"Achievement","X":"Change","P":"Notice"}
+        return (f"Top: {papi_names.get(top1_norm, top1_norm)} ({top1_norm}={val})", "Potensi Kepemimpinan Kuat", "UNGGUL")
+    if code == "MEM":
+        acc = d.get('accuracy', 0)
+        score = d.get('correct_count', 0)
+        total = d.get('total_answered', 0)
+        band = "Sangat Baik" if acc >= 80 else "Baik" if acc >= 60 else "Rata-rata"
+        if acc < 40: band = "Perlu Ditingkatkan"
+        return (f"{score}/{total} ({acc}%) - {band}", "Kemampuan Mengingat Tinggi", "SESUAI")
+    return ("-", "-", "-")
+
+SUMMARY_CONFIGS = [
+    ("DISC", "DISC"),
+    ("TEMP", "4 Temperament"),
+    ("IQ", "IQ Pola (CFIT)"),
+    ("LOGIC", "IQ Aritmatika (WPT)"),
+    ("SPEED", "Speed Test"),
+    ("CBI", "CBI™"),
+    ("LEAD", "Papikostick"),
+    ("MEM", "Memory Test"),
+]
+
+
 def generate_participant_docx(user, results):
     """
     Generate Word report for a participant.
@@ -1030,75 +1096,9 @@ def generate_participant_docx(user, results):
 
     # --- SUMMARY PAGE ---
     add_section_heading(doc, "RINGKASAN & KESIMPULAN HASIL PSIKOTES", size=Pt(12))
-    
-    # Map test codes to summary info
-    # Map test codes to summary info (Hasil, Interpretasi, Status)
-    def get_summary_data(code, d):
-        if not d: return ("-", "-", "-")
-        if code == "DISC":
-            g3 = d.get('graph_iii', {})
-            dom = max(g3, key=g3.get) if g3 else "D"
-            val = g3.get(dom, 0)
-            dom_map = {"D":"Dominance","I":"Influence","S":"Steadiness","C":"Compliance"}
-            return (f"{dom[0]} - {dom_map.get(dom, dom)} (G-III: {val})", "Tegas & Berorientasi Hasil", "SESUAI")
-        if code == "TEMP":
-            prim = d.get('primary', '-')
-            # Mapping back to trait keys
-            rev_map = {"Sanguine":"S", "Choleric":"C", "Melancholic":"M", "Phlegmatic":"P"}
-            score = d.get('raw_scores', {}).get(rev_map.get(prim, ""), 0)
-            return (f"{prim} Dominan ({score}/30)", "Analitis & Detail", "SESUAI")
-        if code == "IQ":
-            iq = d.get('iq', 0)
-            cls = "Rata-rata"
-            if iq >= 110: cls = "Di Atas Rata-rata"
-            if iq >= 120: cls = "Unggul"
-            if iq <= 90: cls = "Rata-rata Bawah"
-            return (f"IQ {iq} - {cls}", "Kemampuan Kognitif Baik", "SESUAI")
-        if code == "LOGIC":
-            iq = d.get('est_iq', 0)
-            cls = d.get('classification', 'Rata-rata')
-            return (f"IQ {iq} - {cls}", "Logika Numerik Baik", "SESUAI")
-        if code == "SPEED":
-            score = d.get('score', 0)
-            band = d.get('band', '-')
-            # Mapping common band names to professional labels
-            band_map = {"Excellent": "Tahan Tekanan", "Good": "Baik", "Average": "Cukup", "Needs Improvement": "Perlu Ditingkatkan"}
-            clean_band = band_map.get(band, band)
-            return (f"Skor {score} - {clean_band}", "Mampu dalam Kondisi Tekanan", "SESUAI")
-        if code == "CBI":
-            lvl_map = {"White": "Rendah", "Light Blue": "Sedang", "Dark Blue": "Tinggi", "-": "-"}
-            lvl = lvl_map.get(d.get('overall_level', '-'), d.get('overall_level', '-'))
-            return (f"Risiko {lvl} di Semua Aspek", "Minim Perilaku Kontraproduktif", "AMAN")
-        if code == "LEAD":
-            top_list = d.get('top_factors', [("N",0)])
-            if not top_list: return ("-", "-", "-")
-            top1_norm = top_list[0][0]
-            val = d.get('stanines', {}).get(top1_norm, 0)
-            # Short map for PAPI names
-            papi_names = {"N":"Need to Lead","G":"Work Vigor","A":"Achievement","X":"Change","P":"Notice"}
-            return (f"Top: {papi_names.get(top1_norm, top1_norm)} ({top1_norm}={val})", "Potensi Kepemimpinan Kuat", "UNGGUL")
-        if code == "MEM":
-            acc = d.get('accuracy', 0)
-            score = d.get('correct_count', 0)
-            total = d.get('total_answered', 0)
-            band = "Sangat Baik" if acc >= 80 else "Baik" if acc >= 60 else "Rata-rata"
-            if acc < 40: band = "Perlu Ditingkatkan"
-            return (f"{score}/{total} ({acc}%) - {band}", "Kemampuan Mengingat Tinggi", "SESUAI")
-        return ("-", "-", "-")
 
-    summary_configs = [
-        ("DISC", "DISC"),
-        ("TEMP", "4 Temperament"),
-        ("IQ", "IQ Pola (CFIT)"),
-        ("LOGIC", "IQ Aritmatika (WPT)"),
-        ("SPEED", "Speed Test"),
-        ("CBI", "CBI™"),
-        ("LEAD", "Papikostick"),
-        ("MEM", "Memory Test"),
-    ]
-    
     # Header + 8 Rows + Final Rec Row
-    table_sum = doc.add_table(rows=len(summary_configs)+2, cols=6)
+    table_sum = doc.add_table(rows=len(SUMMARY_CONFIGS)+2, cols=6)
     table_sum.alignment = WD_TABLE_ALIGNMENT.CENTER
     table_sum.style = 'Table Grid'
     table_sum.autofit = False
@@ -1118,7 +1118,7 @@ def generate_participant_docx(user, results):
         set_cell_text(cell, h, bold=True, color=RGBColor(255,255,255), align=WD_ALIGN_PARAGRAPH.CENTER, size=Pt(7.5))
         cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         
-    for i, (code, name) in enumerate(summary_configs):
+    for i, (code, name) in enumerate(SUMMARY_CONFIGS):
         row = table_sum.rows[i+1]
         row.height = Cm(0.7)
         
@@ -1131,6 +1131,11 @@ def generate_participant_docx(user, results):
         det = res_dict.get(code, {}).details if code in res_dict else None
         hasil, interp, status = get_summary_data(code, det)
         
+        # Check for manual overrides from the new decision feature
+        manual_decisions = (user.report_decisions or {}).get("test_decisions", {}).get(code, {})
+        manual_status = manual_decisions.get("status")
+        manual_rec = manual_decisions.get("recommendation")
+
         # Col 2: Hasil (Left)
         set_cell_text(row.cells[2], hasil, size=Pt(7.5), align=WD_ALIGN_PARAGRAPH.LEFT).paragraph_format.left_indent = Pt(5)
         
@@ -1139,12 +1144,18 @@ def generate_participant_docx(user, results):
         row.cells[3].paragraphs[0].runs[0].font.italic = True
         
         # Col 4: Status (Center)
+        final_status = manual_status if manual_status else status
         stat_color = RGBColor(16,185,129) # Green
-        if status in ["UNGGUL", "AMAN"]: stat_color = COLOR_BLUE_TEXT
-        set_cell_text(row.cells[4], status, bold=True, color=stat_color, size=Pt(7.5), align=WD_ALIGN_PARAGRAPH.CENTER)
+        if final_status in ["UNGGUL", "AMAN", "Lulus", "LANJUT"]: stat_color = COLOR_BLUE_TEXT
+        if final_status in ["Tidak Lulus", "TIDAK SESUAI", "TIDAK LANJUT"]: stat_color = RGBColor(220, 38, 38) # Red
+        set_cell_text(row.cells[4], final_status, bold=True, color=stat_color, size=Pt(7.5), align=WD_ALIGN_PARAGRAPH.CENTER)
         
         # Col 5: Rekomendasi (Center)
-        set_cell_text(row.cells[5], "✔ LANJUT", bold=True, color=RGBColor(6,95,70), size=Pt(7.5), align=WD_ALIGN_PARAGRAPH.CENTER)
+        final_rec = manual_rec if manual_rec else "✔ LANJUT"
+        rec_color = RGBColor(6,95,70) # Dark Green
+        if final_rec in ["LULUS"]: rec_color = COLOR_BLUE_TEXT
+        if final_rec in ["Tidak Lanjut", "TIDAK LANJUT", "TIDAK LULUS"]: rec_color = RGBColor(220, 38, 38) # Red
+        set_cell_text(row.cells[5], final_rec, bold=True, color=rec_color, size=Pt(7.5), align=WD_ALIGN_PARAGRAPH.CENTER)
         
         for cell in row.cells: cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
@@ -1152,17 +1163,34 @@ def generate_participant_docx(user, results):
     row_final = table_sum.rows[-1]
     row_final.height = Cm(0.8)
     
-    # Merge cells for "Final Recommendation :" label (No, Tes, Hasil, Interpretasi)
+    # Merge cells for "Final Recommendation :" label
     c_label = row_final.cells[0]
     c_label.merge(row_final.cells[3])
-    set_cell_background(c_label, "F1F5F9") # Soft grey
+    set_cell_background(c_label, "F1F5F9")
     set_cell_text(c_label, "Final Recommendation :", bold=True, color=COLOR_BLUE_TEXT, align=WD_ALIGN_PARAGRAPH.CENTER)
+    
+    # Get the saved final status or default to calculated
+    # Note: calculateSystemSuggestion logic is on frontend, but we pull the saved 'final_status'
+    saved_final = (user.report_decisions or {}).get("final_status", "DIPERTIMBANGKAN")
     
     # "Direkomendasikan" cell (Status, Rekomendasi)
     c_rec = row_final.cells[4]
     c_rec.merge(row_final.cells[5])
-    set_cell_background(c_rec, "D1FAE5") # Light Green
-    set_cell_text(c_rec, "Direkomendasikan", bold=True, color=RGBColor(6,95,70), align=WD_ALIGN_PARAGRAPH.CENTER)
+    
+    # Formatting based on status
+    bg_color = "D1FAE5" # Light Green
+    text_color = RGBColor(6,95,70) # Dark Green
+    display_text = saved_final.title() # e.g. "Direkomendasikan"
+    
+    if saved_final == "DIPERTIMBANGKAN":
+        bg_color = "FEF3C7" # Light Yellow
+        text_color = RGBColor(146, 64, 14) # Dark Yellow
+    elif saved_final == "TIDAK DISARANKAN":
+        bg_color = "FEE2E2" # Light Red
+        text_color = RGBColor(153, 27, 27) # Dark Red
+        
+    set_cell_background(c_rec, bg_color)
+    set_cell_text(c_rec, display_text, bold=True, color=text_color, align=WD_ALIGN_PARAGRAPH.CENTER)
     
     for cell in row_final.cells: cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 

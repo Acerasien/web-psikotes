@@ -15,6 +15,7 @@ from auth import require_admin, require_superadmin, hash_password
 from database import get_db
 from models import User, Test, Assignment, Result, ExitLog, Question, ClassConfig
 from utils import get_max_score
+from services.word_report import SUMMARY_CONFIGS, get_summary_data
 
 router = APIRouter(tags=["admin"])
 
@@ -174,6 +175,62 @@ def get_locked_assignments(db: Session = Depends(get_db), superadmin: User = Dep
             "assigned_at": a.assigned_at,
         })
     return result
+
+
+@router.get("/admin/participant/{user_id}/summary")
+def get_participant_summary(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Get calculated summary data for a participant (for decision page)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get results for this user
+    results = db.query(Result).filter(Result.user_id == user_id).all()
+    # Get assignments for this user to check completion status
+    assignments = db.query(Assignment).filter(Assignment.user_id == user_id).all()
+    
+    # Map to latest results per test
+    res_dict = {}
+    for r in results:
+        if r.test.code not in res_dict or r.completed_at > res_dict[r.test.code].completed_at:
+            res_dict[r.test.code] = r
+            
+    # Map assignments by test code
+    assign_dict = {a.test.code: a.status for a in assignments}
+            
+    summary_data = []
+    for code, name in SUMMARY_CONFIGS:
+        det = res_dict.get(code).details if code in res_dict else None
+        hasil, interp, status = get_summary_data(code, det)
+        
+        # Determine current assignment status
+        assign_status = assign_dict.get(code, "not_assigned")
+        
+        summary_data.append({
+            "code": code,
+            "name": name,
+            "hasil": hasil,
+            "interpretasi": interp,
+            "default_status": status,
+            "assignment_status": assign_status
+        })
+        
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "full_name": user.full_name or user.username,
+        "position": user.position,
+        "department": user.department,
+        "role": user.role,
+        "business_unit": user.business_unit,
+        "level": user.level,
+        "gender": user.gender,
+        "age": user.age,
+        "education": user.education,
+        "class_name": user.class_config.name if user.class_config else "Standard",
+        "summary": summary_data,
+        "existing_decisions": user.report_decisions or {}
+    }
 
 
 @router.get("/admin/exit-logs")

@@ -42,6 +42,7 @@ class User(Base):
     business_unit = Column(String, nullable=True)
     class_id = Column(Integer, ForeignKey("class_configs.id"), nullable=True, index=True)
     level = Column(String, nullable=True)  # e.g., "Supervisor / Section Head"
+    report_decisions = Column(JSON, nullable=True, default=dict)
 
 
     # Relationships with cascade delete

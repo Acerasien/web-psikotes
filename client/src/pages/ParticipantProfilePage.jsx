@@ -159,7 +159,7 @@ function ParticipantProfilePage() {
     const getLatestResults = () => {
         const latestResults = {};
         results.forEach(r => {
-            if (!latestResults[r.test_id] || 
+            if (!latestResults[r.test_id] ||
                 new Date(r.completed_at) > new Date(latestResults[r.test_id].completed_at)) {
                 latestResults[r.test_id] = r;
             }
@@ -209,126 +209,138 @@ function ParticipantProfilePage() {
 
     return (
         <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto font-sans">
-            {/* Page Header with Back and Actions */}
-            <div className="bg-white shadow rounded-lg">
-                <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => navigate(-1)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors min-h-[44px] flex-shrink-0"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                <span className="hidden sm:inline">Kembali</span>
-                            </button>
-                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Profil Peserta</h1>
-                        </div>
-                        {/* Show export buttons only if the logged-in user is superadmin */}
-                        {isSuperadmin && (
-                            <div className="flex gap-2 flex-wrap">
+            {/* Floating Header Container */}
+            <div className="sticky top-0 z-30 space-y-4 bg-neutral-50/90 backdrop-blur-md pt-1 pb-4 -mx-4 px-4 md:-mx-6 md:px-6">
+                {/* Page Header with Back and Actions */}
+                <div className="bg-white shadow rounded-lg">
+                    <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-3">
                                 <button
-                                    onClick={handleExportParticipant}
-                                    disabled={exporting}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
+                                    onClick={() => navigate(-1)}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors min-h-[44px] flex-shrink-0"
                                 >
-                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                     </svg>
-                                    <span className="hidden sm:inline">{exporting ? 'Mengekspor...' : 'Ekspor CSV'}</span>
-                                    <span className="sm:hidden">CSV</span>
+                                    <span className="hidden sm:inline">Kembali</span>
                                 </button>
-                                <button
-                                    onClick={handleExportDOCX}
-                                    disabled={docxExporting}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
-                                >
-                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                    </svg>
-                                    <span className="hidden sm:inline">{docxExporting ? 'Membuat...' : 'Ekspor DOCX'}</span>
-                                    <span className="sm:hidden">DOCX</span>
-                                </button>
+                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Profil Peserta</h1>
                             </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Profile Header - Industrial Utilitarian Aesthetic */}
-            <div className="bg-white border-2 border-neutral-900 rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-                <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-neutral-900">
-                    {/* Primary Identity Section */}
-                    <div className="flex-1 p-6 md:p-8 bg-neutral-50">
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400 mb-1 block">Profil Peserta</span>
-                                <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight leading-none group flex items-baseline gap-3">
-                                    {user.full_name || user.username}
-                                    <span className="text-sm font-mono text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200 uppercase">
-                                        ID-{user.id?.toString().padStart(4, '0')}
-                                    </span>
-                                </h2>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-6">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Jabatan</span>
-                                <span className="text-sm font-semibold text-neutral-800 uppercase">{user.position || 'N/A'}</span>
-                            </div>
-                            <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Departemen</span>
-                                <span className="text-sm font-semibold text-neutral-800 uppercase">{user.department || 'N/A'}</span>
-                            </div>
-                            <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Peran Akses</span>
-                                <span className="text-sm font-bold text-primary-600 uppercase tracking-tighter">{user.role?.replace('_', ' ') || 'Participant'}</span>
-                            </div>
-                            <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Unit Bisnis</span>
-                                <span className="text-sm font-semibold text-neutral-800 uppercase">{user.business_unit || 'N/A'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Classification Anchor Section */}
-                    <div className="w-full lg:w-72 bg-neutral-900 p-6 md:p-8 flex flex-col justify-center relative overflow-hidden group">
-                        {/* Decorative background element */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.03] rotate-45 translate-x-16 -translate-y-16 group-hover:opacity-[0.06] transition-opacity"></div>
-                        
-                        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 mb-2">Klasifikasi</span>
-                        <div className="flex flex-col">
-                            <h4 className="text-2xl font-bold text-white tracking-tighter leading-tight uppercase">
-                                {user.class_name || 'Standard'}
-                            </h4>
-                            <div className="mt-4 h-1 w-12 bg-accent-gold"></div>
+                            {/* Show export buttons only if the logged-in user is superadmin */}
+                            {isSuperadmin && (
+                                <div className="flex gap-2 flex-wrap">
+                                    <button
+                                        onClick={handleExportParticipant}
+                                        disabled={exporting}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
+                                    >
+                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span className="hidden sm:inline">{exporting ? 'Mengekspor...' : 'Ekspor CSV'}</span>
+                                        <span className="sm:hidden">CSV</span>
+                                    </button>
+                                    <button
+                                        onClick={handleExportDOCX}
+                                        disabled={docxExporting}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] text-sm"
+                                    >
+                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="hidden sm:inline">{docxExporting ? 'Membuat...' : 'Ekspor DOCX'}</span>
+                                        <span className="sm:hidden">DOCX</span>
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`/participants/${id}/decision`)}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors min-h-[44px] text-sm"
+                                    >
+                                        <span>Selanjutnya</span>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Secondary Specs Grid */}
-                <div className="bg-white border-t-2 border-neutral-900 p-6 md:p-8 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Username</label>
-                        <p className="font-mono text-sm font-bold text-neutral-700 select-all">@{user.username}</p>
+                {/* Profile Header - Industrial Utilitarian Aesthetic */}
+                <div className="bg-white border-2 border-neutral-900 rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-neutral-900">
+                        {/* Primary Identity Section */}
+                        <div className="flex-1 p-6 md:p-8 bg-neutral-50">
+                            <div className="flex items-start justify-between mb-4">
+                                <div>
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400 mb-1 block">Profil Peserta</span>
+                                    <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 tracking-tight leading-none group flex items-baseline gap-3">
+                                        {user.full_name || user.username}
+                                        <span className="text-sm font-mono text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200 uppercase">
+                                            ID-{user.id?.toString().padStart(4, '0')}
+                                        </span>
+                                    </h2>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-6">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Jabatan</span>
+                                    <span className="text-sm font-semibold text-neutral-800 uppercase">{user.position || 'N/A'}</span>
+                                </div>
+                                <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Departemen</span>
+                                    <span className="text-sm font-semibold text-neutral-800 uppercase">{user.department || 'N/A'}</span>
+                                </div>
+                                <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Unit Bisnis</span>
+                                    <span className="text-sm font-semibold text-neutral-800 uppercase">{user.business_unit || 'N/A'}</span>
+                                </div>
+                                <div className="w-px h-8 bg-neutral-200 hidden md:block"></div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Level</span>
+                                    <span className="text-sm font-bold text-indigo-600 uppercase tracking-tighter">{user.level || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Classification Anchor Section */}
+                        <div className="w-full lg:w-72 bg-neutral-900 p-6 md:p-8 flex flex-col justify-center relative overflow-hidden group">
+                            {/* Decorative background element */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.03] rotate-45 translate-x-16 -translate-y-16 group-hover:opacity-[0.06] transition-opacity"></div>
+
+                            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 mb-2">Klasifikasi</span>
+                            <div className="flex flex-col">
+                                <h4 className="text-2xl font-bold text-white tracking-tighter leading-tight uppercase">
+                                    {user.class_name || 'Standard'}
+                                </h4>
+                                <div className="mt-4 h-1 w-12 bg-accent-gold"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Jenis Kelamin</label>
-                        <p className="text-sm font-bold text-neutral-900 uppercase">
-                            {user.gender === 'Male' ? 'Laki-laki' : (user.gender === 'Female' ? 'Perempuan' : (user.gender || '–'))}
-                        </p>
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Usia</label>
-                        <p className="text-sm font-bold text-neutral-900">{user.age ? `${user.age} Tahun` : '–'}</p>
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Pendidikan Terakhir</label>
-                        <p className="text-sm font-bold text-neutral-900 uppercase">{user.education || '–'}</p>
+
+                    {/* Secondary Specs Grid */}
+                    <div className="bg-white border-t-2 border-neutral-900 p-6 md:p-8 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Username</label>
+                            <p className="font-mono text-sm font-bold text-neutral-700 select-all">@{user.username}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Jenis Kelamin</label>
+                            <p className="text-sm font-bold text-neutral-900 uppercase">
+                                {user.gender === 'Male' ? 'Laki-laki' : (user.gender === 'Female' ? 'Perempuan' : (user.gender || '–'))}
+                            </p>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Usia</label>
+                            <p className="text-sm font-bold text-neutral-900">{user.age ? `${user.age} Tahun` : '–'}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Pendidikan Terakhir</label>
+                            <p className="text-sm font-bold text-neutral-900 uppercase">{user.education || '–'}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -342,7 +354,7 @@ function ParticipantProfilePage() {
                         <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Audit log aktivitas pengerjaan tes</span>
                     </div>
                 </div>
-                
+
                 <div className="bg-white border-2 border-neutral-900 overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,0.05)]">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse min-w-[900px]">
@@ -362,7 +374,7 @@ function ParticipantProfilePage() {
                                     const completed_at = result?.completed_at;
                                     const device = result?.details?.session?.device || (a.status === 'completed' ? 'Desktop' : '–');
                                     const exit_count = a.exit_count || 0;
-                                    
+
                                     const formatIndoDate = (dateStr) => {
                                         if (!dateStr) return null;
                                         return new Date(dateStr).toLocaleString('id-ID', {
@@ -372,7 +384,7 @@ function ParticipantProfilePage() {
 
                                     const startStr = formatIndoDate(started_at);
                                     const endStr = formatIndoDate(completed_at);
-                                    
+
                                     return (
                                         <tr key={a.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50'} hover:bg-neutral-100/50 transition-colors`}>
                                             <td className="px-5 py-3 border-r border-neutral-100">
@@ -380,9 +392,8 @@ function ParticipantProfilePage() {
                                             </td>
                                             <td className="px-5 py-3 border-r border-neutral-100">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${
-                                                        a.status === 'completed' ? 'bg-success' : 'bg-neutral-300'
-                                                    }`}></div>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${a.status === 'completed' ? 'bg-success' : 'bg-neutral-300'
+                                                        }`}></div>
                                                     <span className="text-[10px] font-black text-neutral-600 uppercase">
                                                         {a.status === 'completed' ? 'Selesai' : 'Belum Mulai'}
                                                     </span>
@@ -411,11 +422,10 @@ function ParticipantProfilePage() {
                                             </td>
                                             <td className="px-5 py-3 text-center">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <span className={`text-[10px] font-black px-2 py-0.5 border ${
-                                                        exit_count > 5 ? 'bg-error text-white border-neutral-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 
+                                                    <span className={`text-[10px] font-black px-2 py-0.5 border ${exit_count > 5 ? 'bg-error text-white border-neutral-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' :
                                                         exit_count > 0 ? 'bg-warning-light text-warning-dark border-warning/30' :
-                                                        'bg-neutral-50 text-neutral-400 border-neutral-200'
-                                                    }`}>
+                                                            'bg-neutral-50 text-neutral-400 border-neutral-200'
+                                                        }`}>
                                                         {exit_count} GANGGUAN
                                                     </span>
                                                     {exit_count > 5 && (
@@ -1044,17 +1054,16 @@ function ParticipantProfilePage() {
                                                 {/* Global Risk Box */}
                                                 <div className="bg-neutral-50 p-8 border-2 border-neutral-900 relative">
                                                     <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
-                                                        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                                        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" /></svg>
                                                     </div>
                                                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-4">Overall Integrity Risk</span>
                                                     <div className="flex items-end gap-4">
                                                         <span className="text-5xl font-black text-neutral-900 leading-none font-mono tracking-tighter">{r.details.overall_concern?.score || 0}</span>
                                                         <div className="flex flex-col gap-1 pb-1">
-                                                            <span className={`text-[10px] font-black px-2 py-0.5 border-2 uppercase tracking-widest ${
-                                                                r.details.overall_concern?.level === 'White' ? 'bg-white text-neutral-400 border-neutral-300' :
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 border-2 uppercase tracking-widest ${r.details.overall_concern?.level === 'White' ? 'bg-white text-neutral-400 border-neutral-300' :
                                                                 r.details.overall_concern?.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' :
-                                                                'bg-neutral-900 text-white border-neutral-900'
-                                                            }`}>
+                                                                    'bg-neutral-900 text-white border-neutral-900'
+                                                                }`}>
                                                                 {r.details.overall_concern?.level === 'White' ? 'Low Risk' : r.details.overall_concern?.level === 'Light Blue' ? 'Moderate' : 'High Risk'}
                                                             </span>
                                                         </div>
@@ -1070,11 +1079,10 @@ function ParticipantProfilePage() {
                                                     <div className="flex items-center gap-6">
                                                         <span className="text-4xl font-black text-neutral-800 font-mono italic">{r.details.good_impression?.score || 0}</span>
                                                         <div className="flex flex-col">
-                                                            <span className={`text-[10px] font-black px-2 py-0.5 border uppercase tracking-widest mb-1 ${
-                                                                r.details.good_impression?.level === 'White' ? 'border-success text-success' : 
-                                                                r.details.good_impression?.level === 'Light Blue' ? 'border-warning text-warning' : 
-                                                                'border-error text-error'
-                                                            }`}>
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 border uppercase tracking-widest mb-1 ${r.details.good_impression?.level === 'White' ? 'border-success text-success' :
+                                                                r.details.good_impression?.level === 'Light Blue' ? 'border-warning text-warning' :
+                                                                    'border-error text-error'
+                                                                }`}>
                                                                 {r.details.good_impression?.level}
                                                             </span>
                                                             <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">Response Integrity Index</span>
@@ -1096,11 +1104,10 @@ function ParticipantProfilePage() {
                                                                 <span className="text-xs font-black uppercase tracking-tighter leading-tight max-w-[140px]">{trait}</span>
                                                                 <span className="font-mono text-lg font-black">{data.score}</span>
                                                             </div>
-                                                            <div className={`text-[10px] font-black uppercase tracking-widest inline-block px-1.5 py-0.5 border ${
-                                                                data.level === 'White' ? 'bg-white text-neutral-900' : 
-                                                                data.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' : 
-                                                                'bg-error text-white border-error'
-                                                            }`}>
+                                                            <div className={`text-[10px] font-black uppercase tracking-widest inline-block px-1.5 py-0.5 border ${data.level === 'White' ? 'bg-white text-neutral-900' :
+                                                                data.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' :
+                                                                    'bg-error text-white border-error'
+                                                                }`}>
                                                                 {data.level === 'White' ? 'Safe' : 'Concern'}
                                                             </div>
                                                             <p className="mt-4 text-[11px] font-bold leading-tight text-neutral-600">

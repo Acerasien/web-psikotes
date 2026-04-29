@@ -148,6 +148,7 @@ export const api = {
   getCompletionStats: () => apiClient.get('/admin/stats/completion'),
   getSecurityEvents: (limit = 10) =>
     apiClient.get(`/admin/stats/security-events?limit=${limit}`),
+  getParticipantSummary: (id) => apiClient.get(`/admin/participant/${id}/summary`),
 
   // Export/Download methods (blob responses)
   exportResults: (params) => apiClient.get('/admin/export/results', { params, responseType: 'blob' }),

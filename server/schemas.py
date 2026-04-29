@@ -41,6 +41,7 @@ class UserCreate(BaseModel):
     business_unit: Optional[str] = None
     class_id: Optional[int] = None
     level: Optional[str] = None
+    report_decisions: Optional[dict] = None
 
 
 class TestSubmission(BaseModel):
@@ -96,4 +97,5 @@ class UserUpdate(BaseModel):
     position: Optional[str] = None
     business_unit: Optional[str] = None
     class_id: Optional[int] = None
-    level: Optional[str] = None
+    level: Optional[str] = None
+    report_decisions: Optional[dict] = None

@@ -9,6 +9,7 @@ import ParticipantProfilePage from './pages/ParticipantProfilePage';
 import SecurityDashboard from './pages/SecurityDashboard';
 import ManageAdmins from './pages/ManageAdmins';
 import Dashboard from './pages/Dashboard';
+import ReportDecisionPage from './pages/ReportDecisionPage';
 
 function AdminLayout({ onLogout }) {
     const { user, isSuperadmin } = useAuth();
@@ -140,6 +141,7 @@ function AdminLayout({ onLogout }) {
                         <Route path="/admins/new" element={<AddAdminPage />} />
                         <Route path="/results" element={<ResultsPage />} />
                         <Route path="/security" element={<SecurityDashboard />} />
+                        <Route path="/participants/:id/decision" element={<ReportDecisionPage />} />
                     </Routes>
                 </main>
             </div>
