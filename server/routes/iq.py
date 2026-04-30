@@ -395,12 +395,13 @@ def submit_all(
         user_id=current_user.id,
         test_id=assignment.test_id,
         assignment_id=assignment_id,
-        score=scoring_result["scaled_score"],
+        score=scoring_result["raw_score"],
         time_taken=0,  # Phase-based, not tracked globally
         completed_at=datetime.utcnow(),
         details={
             "device": submission.device_info or "Unknown",
             "raw_score": scoring_result["raw_score"],
+            "scaled_score": scoring_result["scaled_score"],
             "max_score": scoring_result["max_score"],
             "iq": scoring_result["iq"],
             "classification": scoring_result["classification"],
