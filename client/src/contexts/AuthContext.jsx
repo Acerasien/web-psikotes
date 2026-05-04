@@ -72,8 +72,11 @@ export function AuthProvider({ children }) {
     
     // Computed
     isAdmin: user?.role === 'admin',
+    isAssessor: user?.role === 'assessor',
     isSuperadmin: user?.role === 'superadmin',
     isParticipant: user?.role === 'participant',
+    isStaff: user?.role === 'admin' || user?.role === 'assessor' || user?.role === 'superadmin',
+    canSeeResults: user?.role === 'assessor' || user?.role === 'superadmin',
     
     // Methods
     login,

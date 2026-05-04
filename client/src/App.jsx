@@ -25,7 +25,7 @@ function AppContent() {
   if (!token || !user) return <Login />
 
   // Routing Logic
-  if (user.role === 'admin' || user.role === 'superadmin') {
+  if (user.role === 'admin' || user.role === 'superadmin' || user.role === 'assessor') {
     return (
       <Router>
         <Routes>

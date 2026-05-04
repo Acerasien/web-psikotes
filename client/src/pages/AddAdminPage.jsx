@@ -17,10 +17,10 @@ function AddAdminPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 font-display">
-                                Tambah Admin Baru
+                                Tambah Pengelola Baru
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                Daftarkan pengelola sistem baru di platform
+                                Daftarkan admin (koordinator) atau assessor (psikolog) baru
                             </p>
                         </div>
                         <button
@@ -48,7 +48,7 @@ function AddAdminPage() {
                                 <p className="font-semibold mb-1">Panduan Pengisian:</p>
                                 <ul className="list-disc list-inside space-y-1 text-primary-700">
                                     <li>Pastikan username belum pernah digunakan sebelumnya</li>
-                                    <li>Role otomatis diset menjadi <strong>Admin</strong></li>
+                                    <li>Pilih peran yang sesuai: <strong>Admin</strong> untuk operasional data, atau <strong>Assessor</strong> untuk akses klinis/psikologis</li>
                                     <li>Gunakan kata sandi yang kuat (minimal 6 karakter)</li>
                                     <li>Lengkapi data organisasi untuk mempermudah manajemen</li>
                                 </ul>

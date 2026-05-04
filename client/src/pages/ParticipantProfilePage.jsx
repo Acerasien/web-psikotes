@@ -72,9 +72,22 @@ const CBI_INTERPRETATION = {
 };
 
 function ParticipantProfilePage() {
+    const { token, canSeeResults, isSuperadmin, isStaff } = useAuth();
     const { id } = useParams();
     const navigate = useNavigate();
-    const { token, isSuperadmin } = useAuth();
+
+    // Route Protection: Admins (Coordinators) cannot see details
+    useEffect(() => {
+        if (token && !canSeeResults) {
+            Swal.fire({
+                title: "Akses Ditolak",
+                text: "Anda tidak memiliki izin untuk melihat detail psikologis peserta.",
+                icon: "error"
+            });
+            navigate('/');
+        }
+    }, [canSeeResults, navigate, token]);
+
     const [user, setUser] = useState(null);
     const [assignments, setAssignments] = useState([]);
     const [results, setResults] = useState([]);
@@ -227,8 +240,8 @@ function ParticipantProfilePage() {
                                 </button>
                                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Profil Peserta</h1>
                             </div>
-                            {/* Show export buttons only if the logged-in user is superadmin */}
-                            {isSuperadmin && (
+                            {/* Show export and decision buttons only if the logged-in user can see results (Assessor or Superadmin) */}
+                            {canSeeResults && (
                                 <div className="flex gap-2 flex-wrap">
                                     <button
                                         onClick={handleExportParticipant}

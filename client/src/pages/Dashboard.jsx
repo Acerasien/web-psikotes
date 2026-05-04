@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PageWrapper from '../components/PageWrapper';
 
 function Dashboard() {
-    const { token, user } = useAuth();
+    const { token, user, canSeeResults } = useAuth();
     const [summary, setSummary] = useState(null);
     const [completionStats, setCompletionStats] = useState(null);
     const [securityEvents, setSecurityEvents] = useState([]);
@@ -21,34 +21,38 @@ function Dashboard() {
     const fetchData = async () => {
         try {
             setError(null);
-            const [summaryRes, completionRes, securityRes, recentRes] = await Promise.all([
+            
+            // Core stats and security events available to all admin roles
+            const [summaryRes, completionRes, securityRes] = await Promise.all([
                 api.getStatsSummary(),
                 api.getCompletionStats(),
-                api.getSecurityEvents(10),
-                api.getStatsRecent(10)
+                api.getSecurityEvents(10)
             ]);
 
-            const summaryData = summaryRes?.data || null;
-            const completionData = completionRes?.data || null;
-            const securityData = securityRes?.data || [];
-            const recentData = recentRes?.data || null;
+            setSummary(summaryRes.data);
+            setCompletionStats(completionRes.data);
+            setSecurityEvents(securityRes?.data || []);
 
-            setSummary(summaryData);
-            setCompletionStats(completionData);
-            setSecurityEvents(securityData);
-            setRecent(recentData);
+            // Clinical data restricted to Assessor/Superadmin
+            if (canSeeResults) {
+                try {
+                    const recentRes = await api.getStatsRecent(10);
+                    setRecent(recentRes?.data || []);
+                } catch (roleErr) {
+                    console.warn('Failed to load clinical recent results', roleErr);
+                    setRecent([]);
+                }
+            } else {
+                setRecent([]);
+            }
 
-            // Check if any data is missing
-            if (!summaryData || !completionData || !recentData) {
-                throw new Error('Incomplete data received from server');
+            // Check core data
+            if (!summaryRes?.data || !completionRes?.data) {
+                throw new Error('Data dasbor tidak lengkap dari server');
             }
         } catch (err) {
             console.error('Failed to load dashboard stats', err);
             setError(err.message || 'Gagal memuat data dasbor');
-            setSummary(null);
-            setCompletionStats(null);
-            setSecurityEvents([]);
-            setRecent([]);
         } finally {
             setLoading(false);
         }
@@ -82,7 +86,7 @@ function Dashboard() {
         >
             <div className="space-y-6">
                 {/* Key Metrics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${canSeeResults ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
                     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 border-l-[6px] border-l-primary-500">
                         <div className="text-sm text-neutral-500 font-medium mb-1">Total Peserta</div>
                         <div className="text-3xl font-bold font-display text-neutral-900">{summary.total_participants}</div>
@@ -95,10 +99,12 @@ function Dashboard() {
                         <div className="text-sm text-neutral-500 font-medium mb-1">Tingkat Penyelesaian</div>
                         <div className="text-3xl font-bold font-display text-neutral-900">{summary.completion_rate}%</div>
                     </div>
-                    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 border-l-[6px] border-l-primary-700">
-                        <div className="text-sm text-neutral-500 font-medium mb-1">Rata-rata Skor (mentah)</div>
-                        <div className="text-3xl font-bold font-display text-neutral-900">{summary.average_score}</div>
-                    </div>
+                    {canSeeResults && (
+                        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 border-l-[6px] border-l-primary-700">
+                            <div className="text-sm text-neutral-500 font-medium mb-1">Rata-rata Skor (mentah)</div>
+                            <div className="text-3xl font-bold font-display text-neutral-900">{summary.average_score}</div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Completion Status & Alerts */}
@@ -197,8 +203,8 @@ function Dashboard() {
                     </div>
                 </div>
 
-                {/* Recent Activity - Superadmin Only */}
-                {isSuperadmin && (
+                {/* Recent Activity - Assessors & Superadmins */}
+                {canSeeResults && (
                     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 mt-6">
                         <h3 className="text-xl font-bold font-display text-neutral-900 mb-6">🕒 Penyelesaian Tes Terbaru</h3>
                         <div className="overflow-x-auto rounded-xl border border-neutral-200">

@@ -27,7 +27,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(data={"sub": user.username})
+    
+    # Generate a unique session ID to prevent double login
+    import uuid
+    session_id = str(uuid.uuid4())
+    user.current_session_id = session_id
+    db.commit()
+
+    access_token = create_access_token(data={"sub": user.username, "sid": session_id})
     return {"access_token": access_token, "token_type": "bearer"}
 
 

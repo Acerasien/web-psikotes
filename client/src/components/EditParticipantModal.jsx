@@ -5,7 +5,7 @@ import { api } from '../utils/api';
 import Swal from 'sweetalert2';
 
 function EditParticipantModal({ user, onClose, onSaved }) {
-    const { token } = useAuth();
+    const { token, isSuperadmin } = useAuth();
     const [classes, setClasses] = useState([]);
     const [formData, setFormData] = useState({
         username: '',
@@ -126,15 +126,25 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Role</label>
-                                    <select
-                                        name="role"
-                                        value={formData.role}
-                                        onChange={handleChange}
-                                        className="mt-1 block w-full border border-neutral-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-primary-500"
-                                    >
-                                        <option value="participant">Peserta</option>
-                                        <option value="admin">Admin</option>
-                                    </select>
+                                    {isSuperadmin ? (
+                                        <select
+                                            name="role"
+                                            value={formData.role}
+                                            onChange={handleChange}
+                                            className="mt-1 block w-full border border-neutral-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-primary-500"
+                                        >
+                                            <option value="participant">Peserta</option>
+                                            <option value="admin">Admin (Koordinator)</option>
+                                            <option value="assessor">Assessor (Psikolog)</option>
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={formData.role === 'admin' ? 'Admin' : (formData.role === 'assessor' ? 'Assessor' : 'Peserta')}
+                                            className="mt-1 block w-full border border-neutral-200 bg-neutral-50 rounded-md shadow-sm py-2 px-3 text-neutral-500 cursor-not-allowed"
+                                            disabled
+                                        />
+                                    )}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Kata sandi (kosongkan jika tidak ingin mengubah)</label>

@@ -9,7 +9,7 @@ from datetime import datetime, date
 import csv
 import io
 
-from auth import require_admin, require_superadmin, get_current_user, hash_password
+from auth import require_admin, require_superadmin, require_assessor_or_higher, get_current_user, hash_password
 from database import get_db
 from models import User, Test, Assignment, Result, Question, Option, ExitLog, Response, ClassConfig
 from schemas import TestSubmission
@@ -519,9 +519,9 @@ def lock_assignment(
 def unlock_assignment(
     assignment_id: int,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    assessor: User = Depends(require_assessor_or_higher)
 ):
-    """Unlock an assignment (superadmin only)"""
+    """Unlock an assignment (assessor or superadmin only)"""
     assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")

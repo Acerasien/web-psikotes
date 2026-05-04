@@ -4,7 +4,7 @@ import { api } from '../utils/api';
 import ResultsTable from '../components/ResultsTable';
 
 function ResultsPage() {
-    const { token, isSuperadmin: currentUserRole } = useAuth();
+    const { token, canSeeResults } = useAuth();
     const [tests, setTests] = useState([]);
     const [filters, setFilters] = useState({
         testId: '',
@@ -58,7 +58,7 @@ function ResultsPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Hasil Tes</h2>
-                {currentUserRole === 'superadmin' && (
+                {canSeeResults && (
                     <button
                         onClick={handleExport}
                         disabled={exporting}

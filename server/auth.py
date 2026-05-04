@@ -43,6 +43,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        token_sid: str = payload.get("sid")
         if username is None:
             raise credentials_exception
     except JWTError:
@@ -51,13 +52,31 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
+    
+    # Session ID validation (Double Login Prevention)
+    # Note: If token_sid is missing (legacy tokens), we allow it once but it will fail on next login
+    if user.current_session_id and token_sid != user.current_session_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or logged in on another device",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
     return user
 
 def require_admin(current_user: User = Depends(get_current_user)):
-    if current_user.role not in ["admin", "superadmin"]:
+    if current_user.role not in ["admin", "assessor", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can perform this action"
+            detail="Only admins or assessors can perform this action"
+        )
+    return current_user
+
+def require_assessor_or_higher(current_user: User = Depends(get_current_user)):
+    if current_user.role not in ["assessor", "superadmin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only assessors or superadmins can access clinical results"
         )
     return current_user
 

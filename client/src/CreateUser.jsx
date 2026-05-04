@@ -40,8 +40,8 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
   }, []);
 
   // Determine which roles are allowed based on current user's role
-  const allowedRoles = currentUserRole === 'superadmin'
-    ? ['participant', 'admin']
+  const allowedRoles = currentUserRole
+    ? ['participant', 'admin', 'assessor']
     : ['participant'];
 
   const validateForm = () => {
@@ -125,7 +125,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
       Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
-        text: `${formData.role === 'admin' ? 'Admin' : 'Peserta'} berhasil dibuat!`,
+        text: `${formData.role === 'admin' ? 'Admin' : (formData.role === 'assessor' ? 'Assessor' : 'Peserta')} berhasil dibuat!`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -200,7 +200,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="mb-6">
         <h3 className="text-xl font-bold text-gray-900">
-          {formData.role === 'admin' ? 'Tambah Admin Baru' : 'Tambah Peserta Baru'}
+          {formData.role === 'admin' ? 'Tambah Admin Baru' : (formData.role === 'assessor' ? 'Tambah Assessor Baru' : 'Tambah Peserta Baru')}
         </h3>
         <p className="text-sm text-gray-500 mt-1">
           Isi informasi di bawah ini. Kolom bertanda * wajib diisi.
@@ -250,6 +250,27 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
             </div>
+
+            {/* Role dropdown – only if multiple roles allowed */}
+            {allowedRoles.length > 1 && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Peran <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-neutral-50 font-semibold text-neutral-800"
+                >
+                  {allowedRoles.map(role => (
+                    <option key={role} value={role}>
+                      {role === 'participant' ? 'Peserta' : (role === 'admin' ? 'Admin (Koordinator)' : 'Assessor (Psikolog)')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
@@ -429,24 +450,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
               </div>
             )}
 
-            {/* Role dropdown – only if multiple roles allowed */}
-            {allowedRoles.length > 1 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Peran</label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {allowedRoles.map(role => (
-                    <option key={role} value={role}>
-                      {role === 'participant' ? 'Peserta' : 'Admin'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+
 
             {/* Assign All Tests Checkbox - Only for participants */}
             {formData.role === 'participant' && (
@@ -497,7 +501,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                {formData.role === 'admin' ? 'Buat Admin' : 'Tambah Peserta'}
+                {formData.role === 'admin' ? 'Buat Admin' : (formData.role === 'assessor' ? 'Buat Assessor' : 'Tambah Peserta')}
               </>
             )}
           </button>

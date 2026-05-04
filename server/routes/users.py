@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from auth import hash_password, verify_password, require_admin, require_superadmin, get_current_user
+from auth import hash_password, verify_password, require_admin, require_superadmin, require_assessor_or_higher, get_current_user
 from database import get_db
 from models import User, ExitLog, Result, Assignment, ClassConfig
 from schemas import UserCreate, UserUpdate, ClassConfigOut
@@ -59,10 +59,10 @@ def create_user(
 ):
     """Create a new user"""
     # If current user is not superadmin, they cannot create admin/superadmin
-    if current_user.role != "superadmin" and user.role in ["admin", "superadmin"]:
+    if current_user.role != "superadmin" and user.role in ["admin", "superadmin", "assessor"]:
         raise HTTPException(
             status_code=403,
-            detail="Only superadmin can create admin users"
+            detail="Only superadmin can create administrative users"
         )
 
     db_user = db.query(User).filter(User.username == user.username).first()
@@ -100,7 +100,7 @@ def create_user(
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_assessor_or_higher)
 ):
     """Get single user by ID (superadmin only)"""
     user = db.query(User).filter(User.id == user_id).first()
@@ -145,10 +145,10 @@ def update_user(
         )
 
     # Also prevent a non-superadmin from elevating someone to admin/superadmin
-    if current_user.role != "superadmin" and user_update.role in ["admin", "superadmin"]:
+    if current_user.role != "superadmin" and user_update.role in ["admin", "superadmin", "assessor"]:
         raise HTTPException(
             status_code=403,
-            detail="Only superadmin can assign admin or superadmin roles"
+            detail="Only superadmin can assign administrative roles"
         )
 
     # Update fields
@@ -188,6 +188,11 @@ def update_user(
     if user_update.password is not None and user_update.password != "":
         user.password_hash = hash_password(user_update.password)
     if user_update.report_decisions is not None:
+        if current_user.role not in ["assessor", "superadmin"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Only assessors or superadmins can update clinical decisions"
+            )
         user.report_decisions = user_update.report_decisions
 
     db.commit()
@@ -199,7 +204,7 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    current_user: User = Depends(require_admin)
 ):
     """Delete user - cascade delete handles related data (superadmin only)"""
     user = db.query(User).filter(User.id == user_id).first()

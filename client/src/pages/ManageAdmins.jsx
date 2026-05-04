@@ -16,8 +16,8 @@ function ManageAdmins() {
     const fetchAdmins = async () => {
         try {
             const res = await api.getUsers();
-            // Filter only admin and superadmin
-            const admins = res.data.filter(u => u.role === 'admin' || u.role === 'superadmin');
+            // Filter only admin, superadmin, and assessor
+            const admins = res.data.filter(u => u.role === 'admin' || u.role === 'superadmin' || u.role === 'assessor');
             setUsers(admins);
         } catch (err) {
             console.error('Failed to fetch users', err);
@@ -112,7 +112,10 @@ function ManageAdmins() {
                                         <p className="font-medium text-sm text-gray-900 truncate" title={u.username}>{u.username}</p>
                                         <p className="text-xs text-gray-500 mt-0.5 truncate" title={u.full_name || '-'}>{u.full_name || '-'}</p>
                                     </div>
-                                    <span className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium ${u.role === 'superadmin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                                    <span className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium ${
+                                        u.role === 'superadmin' ? 'bg-purple-100 text-purple-800' : 
+                                        u.role === 'assessor' ? 'bg-green-100 text-green-800' : 
+                                        'bg-blue-100 text-blue-800'}`}>
                                         {u.role}
                                     </span>
                                 </div>
@@ -179,7 +182,10 @@ function ManageAdmins() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.username}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.full_name || '-'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${u.role === 'superadmin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                            u.role === 'superadmin' ? 'bg-purple-100 text-purple-800' : 
+                                            u.role === 'assessor' ? 'bg-green-100 text-green-800' : 
+                                            'bg-blue-100 text-blue-800'
                                             }`}>
                                             {u.role}
                                         </span>

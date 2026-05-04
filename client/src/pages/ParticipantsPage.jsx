@@ -18,7 +18,7 @@ const SortIcon = ({ direction }) => {
 };
 
 function ParticipantsPage() {
-    const { token, isSuperadmin } = useAuth();
+    const { token, isSuperadmin, isStaff, canSeeResults } = useAuth();
     const [usersList, setUsersList] = useState([]);
     const [tests, setTests] = useState([]);
     const [assignments, setAssignments] = useState([]);
@@ -549,7 +549,10 @@ function ParticipantsPage() {
                                 >
                                     {/* Header with checkbox and avatar */}
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3 flex-1" onClick={() => navigate(`/participants/${u.id}`)}>
+                                        <div 
+                                            className={`flex items-center gap-3 flex-1 ${canSeeResults ? 'cursor-pointer' : 'cursor-default'}`} 
+                                            onClick={() => canSeeResults && navigate(`/participants/${u.id}`)}
+                                        >
                                             {isSelectMode && (
                                                 <input
                                                     type="checkbox"
@@ -568,7 +571,7 @@ function ParticipantsPage() {
                                                 <p className="text-[10px] text-gray-400 truncate uppercase mt-0.5">{u.business_unit || 'No Unit'}</p>
                                             </div>
                                         </div>
-                                        {isSuperadmin && (
+                                        {isStaff && (
                                             <div className="flex gap-1">
                                                 <button
                                                     onClick={(e) => {
@@ -611,7 +614,7 @@ function ParticipantsPage() {
                                                         title={a.test_name}
                                                     >
                                                         {a.test_name}
-                                                        {a.status === 'locked' && isSuperadmin && (
+                                                        {a.status === 'locked' && canSeeResults && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -778,8 +781,8 @@ function ParticipantsPage() {
                                         return (
                                             <tr
                                                 key={u.id}
-                                                className={`hover:bg-neutral-50/80 cursor-pointer transition-colors border-l-4 ${rowBorderColor}`}
-                                                onClick={() => navigate(`/participants/${u.id}`)}
+                                                className={`hover:bg-neutral-50/80 transition-colors border-l-4 ${rowBorderColor} ${canSeeResults ? 'cursor-pointer' : 'cursor-default'}`}
+                                                onClick={() => canSeeResults && navigate(`/participants/${u.id}`)}
                                             >
                                                 <td className={`px-6 py-4 ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
                                                     <input
@@ -856,7 +859,7 @@ function ParticipantsPage() {
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                                                         {/* Unlock button (if locked) */}
-                                                        {isSuperadmin && hasLocked && (
+                                                        {canSeeResults && hasLocked && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -908,8 +911,8 @@ function ParticipantsPage() {
                                                             </button>
                                                         </div>
 
-                                                        {/* Edit & Delete icons, only for superadmin */}
-                                                        {isSuperadmin && (
+                                                        {/* Edit & Delete icons, for all staff */}
+                                                        {isStaff && (
                                                             <div className="flex items-center gap-2 ml-2 pl-3 border-l border-neutral-200">
                                                                 <button
                                                                     onClick={(e) => {

@@ -10,7 +10,7 @@ from datetime import datetime, date
 import csv
 import io
 
-from auth import require_superadmin, get_current_user
+from auth import require_assessor_or_higher, get_current_user
 from database import get_db
 from models import User, Test, Assignment, Result, Question, ExitLog
 from utils import get_max_score
@@ -27,7 +27,7 @@ def get_results(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    assessor: User = Depends(require_assessor_or_higher)
 ):
     """Get results with filters (superadmin only)"""
     query = db.query(Result).options(joinedload(Result.assignment), joinedload(Result.test), joinedload(Result.user))
@@ -81,7 +81,7 @@ def export_results(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    assessor: User = Depends(require_assessor_or_higher)
 ):
     """Export results as CSV (superadmin only)"""
     query = db.query(Result).join(User).join(Test)
@@ -132,7 +132,7 @@ def export_results(
 def export_participant_results(
     user_id: int,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    assessor: User = Depends(require_assessor_or_higher)
 ):
     """Export single participant results as CSV (superadmin only)"""
     user = db.query(User).filter(User.id == user_id).first()
@@ -184,7 +184,7 @@ from services.word_report import generate_participant_docx
 def export_participant_docx(
     user_id: int,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    assessor: User = Depends(require_assessor_or_higher)
 ):
     """Export single participant results as DOCX (superadmin only)"""
     user = db.query(User).filter(User.id == user_id).first()

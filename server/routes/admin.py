@@ -11,7 +11,7 @@ import io
 import secrets
 import string
 
-from auth import require_admin, require_superadmin, hash_password
+from auth import require_admin, require_superadmin, require_assessor_or_higher, hash_password
 from database import get_db
 from models import User, Test, Assignment, Result, ExitLog, Question, ClassConfig
 from utils import get_max_score
@@ -30,6 +30,16 @@ def get_stats_summary(db: Session = Depends(get_db), admin: User = Depends(requi
     completed_assignments = db.query(Assignment).filter(Assignment.status == "completed").count()
     completion_rate = (completed_assignments / total_assignments * 100) if total_assignments else 0
     avg_score = db.query(func.avg(Result.score)).scalar() or 0
+
+    # If not assessor/superadmin, strip the average score
+    if admin.role not in ["assessor", "superadmin"]:
+        return {
+            "total_participants": total_participants,
+            "total_assignments": total_assignments,
+            "completed_assignments": completed_assignments,
+            "completion_rate": round(completion_rate, 2),
+            "average_score": "HIDDEN"
+        }
 
     return {
         "total_participants": total_participants,
@@ -50,12 +60,16 @@ def get_test_stats(db: Session = Depends(get_db), admin: User = Depends(require_
             Assignment.test_id == test.id,
             Assignment.status == "completed"
         ).count()
+        
+        # Calculate avg_score but hide it for non-clinical staff
         avg_score = db.query(func.avg(Result.score)).filter(Result.test_id == test.id).scalar() or 0
+        display_avg_score = round(avg_score, 2) if admin.role in ["assessor", "superadmin"] else "HIDDEN"
+        
         result.append({
             "test_id": test.id,
             "test_name": test.name,
             "completed_count": completed_count,
-            "avg_score": round(avg_score, 2),
+            "avg_score": display_avg_score,
             "max_score": get_max_score(test.code)
         })
     return result
@@ -65,7 +79,7 @@ def get_test_stats(db: Session = Depends(get_db), admin: User = Depends(require_
 def get_recent_activity(
     limit: int = 10,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_assessor_or_higher)
 ):
     """Get recent test completions (admin and superadmin)"""
     recent_results = db.query(Result).order_by(desc(Result.completed_at)).limit(limit).all()
@@ -160,8 +174,8 @@ def get_security_events(
 # ==================== SECURITY & LOGS ====================
 
 @router.get("/admin/locked-assignments")
-def get_locked_assignments(db: Session = Depends(get_db), superadmin: User = Depends(require_superadmin)):
-    """Get all locked assignments (superadmin only)"""
+def get_locked_assignments(db: Session = Depends(get_db), assessor: User = Depends(require_assessor_or_higher)):
+    """Get all locked assignments (assessor or superadmin only)"""
     assignments = db.query(Assignment).filter(Assignment.status == "locked").all()
     result = []
     for a in assignments:
@@ -178,7 +192,7 @@ def get_locked_assignments(db: Session = Depends(get_db), superadmin: User = Dep
 
 
 @router.get("/admin/participant/{user_id}/summary")
-def get_participant_summary(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_participant_summary(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_assessor_or_higher)):
     """Get calculated summary data for a participant (for decision page)"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
