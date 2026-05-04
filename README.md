@@ -26,10 +26,10 @@ graph TD
     User((Participant / Admin)) -->|React Router| Frontend[Vite + React Frontend]
     Frontend -->|JWT Auth / API| Backend[FastAPI Backend]
     Backend -->|SQLAlchemy| DB[(PostgreSQL Database)]
-    Backend -->|WeasyPrint| PDF[PDF Report Engine]
+    Backend -->|python-docx| DOCX[DOCX Report Engine]
     
     subgraph Scoring Modules
-        Backend --> DISC[DISC Module]
+        Backend --> DISC[Dynamic DISC Module]
         Backend --> IQ[IQ/Pattern Module]
         Backend --> WPT[WPT/Logic Module]
         Backend --> CBI[CBI/Risk Module]
@@ -44,19 +44,19 @@ graph TD
 - **Comprehensive Management**: Full-page workflows for creating and managing Admins and Participants.
 - **Persistent Intelligence**: URL-synchronized filters for the participant list (status, search, etc.) that survive navigation and refreshes.
 - **Bulk Operations**: High-speed participant import via CSV/Excel supporting custom fields (Department, Business Unit, position).
-- **Audit Logs**: Tracking test attempts and completion status in real-time.
+- **Security & Integrity**: Real-time Audit Logs tracking exit events (tab switching) and device/browser fingerprints.
 
 ### 🧠 Advanced Assessment Suite
-- **DISC Personality Profiling**: Detailed natural vs. under-pressure behavioral analysis.
-- **WPT (Wonderlic Personnel Test) Standard**: 50-item logic & arithmetic assessment mapped to 12 cognitive tiers including Estimated IQ and Career Recommendations.
-- **CBI (Counterproductive Behavior Index)**: Specialized integrity screening with static, always-visible trait interpretations.
-- **Memory (MEM)**: Digit and recall performance tracking with accuracy metrics.
-- **Speed & Accuracy**: High-pressure performance testing with visualizers.
+- **Dynamic DISC Profiling**: Automated multi-paragraph interpretations based on Graph I, II, and III results.
+- **WPT (Wonderlic) Standard**: 50-item logic assessment mapped to 12 cognitive tiers including Career Recommendations.
+- **Manual Decision Interface**: Specialized "Report Decision" page for psychologists to override or finalize status (Recommended/Considered/Not Recommended).
+- **CBI (Counterproductive Behavior Index)**: Specialized integrity screening with behavioral concern markers.
+- **Memory, Speed & Accuracy**: High-pressure performance testing with visualizers.
 - **Temperament & PAPI**: Multi-axial behavioral orientation tests.
 
 ### 📊 Professional Reporting
 - **Industrial Dashboard**: High-contrast, data-dense participant profiles with specialized visualizers for every test module.
-- **Automated PDFs**: One-click generation of comprehensive psychological reports with professional banding and standardized interpretations.
+- **Microsoft Word Export (DOCX)**: Professional 3-page automated reports with high-quality tables, charts, and dynamic psychological conclusions.
 
 ---
 
@@ -80,6 +80,7 @@ The "Industrial Utilitarian" aesthetic prioritizes clarity and professional weig
 2. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
+   pip install python-docx
    ```
 3. **Database & Seeding**:
    ```bash
@@ -108,7 +109,7 @@ The "Industrial Utilitarian" aesthetic prioritizes clarity and professional weig
 
 ## 🛠️ Tech Stack
 - **Frontend**: React 18, Vite, Tailwind CSS, Headless UI, Heroicons.
-- **Backend**: FastAPI, SQLAlchemy, Pydantic, WeasyPrint.
+- **Backend**: FastAPI, SQLAlchemy, Pydantic, python-docx.
 - **Database**: PostgreSQL.
 - **Language**: Python 3.9+, Javascript (ES6+).
 
