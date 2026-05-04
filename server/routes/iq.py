@@ -399,7 +399,11 @@ def submit_all(
         time_taken=0,  # Phase-based, not tracked globally
         completed_at=datetime.utcnow(),
         details={
-            "device": submission.device_info or "Unknown",
+            "session": {
+                "device": submission.device_info or "Unknown",
+                "completed_at": datetime.utcnow().isoformat(),
+                "is_auto": False
+            },
             "raw_score": scoring_result["raw_score"],
             "scaled_score": scoring_result["scaled_score"],
             "max_score": scoring_result["max_score"],

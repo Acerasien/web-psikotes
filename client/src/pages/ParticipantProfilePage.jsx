@@ -372,7 +372,7 @@ function ParticipantProfilePage() {
                                     const result = results.find(r => r.assignment_id === a.id);
                                     const started_at = a.started_at || result?.started_at;
                                     const completed_at = result?.completed_at;
-                                    const device = result?.details?.session?.device || (a.status === 'completed' ? 'Desktop' : '–');
+                                    const device = result?.details?.session?.device || result?.details?.device || (a.status === 'completed' ? 'Desktop' : '–');
                                     const exit_count = a.exit_count || 0;
 
                                     const formatIndoDate = (dateStr) => {
