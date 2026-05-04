@@ -412,11 +412,15 @@ function ParticipantProfilePage() {
                                                 </div>
                                             </td>
                                             <td className="px-5 py-3 border-r border-neutral-100 text-center font-mono text-[10px]">
-                                                {result?.time_taken ? (
-                                                    <span className="font-bold text-neutral-900">
-                                                        {Math.floor(result.time_taken / 60)}m {result.time_taken % 60}s
-                                                    </span>
-                                                ) : '–'}
+                                                {(() => {
+                                                    const duration = result?.time_taken || (started_at && completed_at ? Math.floor((new Date(completed_at) - new Date(started_at)) / 1000) : 0);
+                                                    if (!duration) return '–';
+                                                    return (
+                                                        <span className="font-bold text-neutral-900">
+                                                            {Math.floor(duration / 60)}m {duration % 60}s
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="px-5 py-3 border-r border-neutral-100 text-center">
                                                 <div className="flex justify-center items-center gap-2 text-neutral-500">

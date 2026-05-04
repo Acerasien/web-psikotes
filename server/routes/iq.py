@@ -390,13 +390,18 @@ def submit_all(
     from scoring.iq import score_iq
     scoring_result = score_iq(answers_list, questions)
 
+    # Calculate total wall-clock duration
+    total_duration = 0
+    if assignment.started_at:
+        total_duration = int((datetime.utcnow() - assignment.started_at).total_seconds())
+
     # Create Result
     result = Result(
         user_id=current_user.id,
         test_id=assignment.test_id,
         assignment_id=assignment_id,
         score=scoring_result["raw_score"],
-        time_taken=0,  # Phase-based, not tracked globally
+        time_taken=total_duration,
         completed_at=datetime.utcnow(),
         details={
             "session": {
