@@ -6,6 +6,8 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+import re
+from scoring.iq import SCORE_TO_IQ, classify_iq
 
 # Industrial Blue: #1E3A8A (30, 58, 138)
 COLOR_BLUE_BG = "1E3A8A"
@@ -127,58 +129,254 @@ def add_section_heading(doc, text, size=Pt(11)):
     run.font.color.rgb = COLOR_BLUE_TEXT
     return p
 
+# --- DISC INTERPRETATION CONTENT ---
+DISC_INTERPRETATIONS = {
+    "graph_i": {
+        "D": {
+            "Tinggi": "Sangat aktif mengambil inisiatif, kompetitif, dan berani menghadapi tantangan di tempat kerja. Tidak segan bersaing dan mendorong diri untuk menjadi yang terdepan.",
+            "Sedang": "Cukup asertif dan mampu mengambil inisiatif, namun tetap mempertimbangkan situasi sebelum bertindak.",
+            "Rendah": "Lebih memilih mengikuti arahan, menghindari konfrontasi, dan tidak menonjolkan diri dalam lingkungan kerja."
+        },
+        "I": {
+            "Tinggi": "Aktif membangun relasi, mudah bergaul, dan antusias dalam berkolaborasi dengan orang lain di lingkungan kerja.",
+            "Sedang": "Mampu berinteraksi dengan baik namun tidak selalu proaktif dalam membangun hubungan baru.",
+            "Rendah": "Cenderung menjaga jarak sosial, lebih fokus pada tugas dibandingkan membangun relasi di tempat kerja."
+        },
+        "S": {
+            "Tinggi": "Sangat kooperatif, sabar, dan menjaga stabilitas dalam bekerja. Menjadi perekat tim dan menghindari konflik.",
+            "Sedang": "Cukup kooperatif dan stabil, namun bisa menyesuaikan diri saat lingkungan menuntut kecepatan atau perubahan.",
+            "Rendah": "Kurang menyukai rutinitas, lebih dinamis dan mudah beradaptasi dengan perubahan lingkungan kerja."
+        },
+        "C": {
+            "Tinggi": "Sangat patuh pada aturan dan prosedur kerja, teliti, dan mengutamakan akurasi dalam setiap pekerjaan.",
+            "Sedang": "Cukup mengikuti aturan namun masih fleksibel ketika situasi membutuhkan penyesuaian.",
+            "Rendah": "Kurang terikat pada prosedur dan aturan, lebih suka cara kerja yang bebas dan fleksibel."
+        }
+    },
+    "graph_ii": {
+        "D": {
+            "Tinggi": "Saat tertekan, semakin agresif, dominan, dan berusaha keras mengendalikan situasi. Bisa terlihat keras kepala atau terlalu memaksakan kehendak.",
+            "Sedang": "Merespons tekanan dengan cukup tegas namun tetap terbuka terhadap masukan orang lain.",
+            "Rendah": "Saat tertekan cenderung pasif, mengalah, dan menghindari konflik meski situasi membutuhkan ketegasan."
+        },
+        "I": {
+            "Tinggi": "Saat tertekan, mencari dukungan sosial, lebih banyak bicara, dan berusaha mendapatkan simpati dari orang sekitar.",
+            "Sedang": "Tetap mampu berinteraksi secara normal meski sedang dalam tekanan, tidak terlalu reaktif secara sosial.",
+            "Rendah": "Saat tertekan cenderung menarik diri, menutup diri dari orang lain, dan memilih menyelesaikan masalah sendiri."
+        },
+        "S": {
+            "Tinggi": "Saat tertekan tetap tenang, sabar, dan stabil. Tidak mudah panik dan berusaha menjaga keharmonisan di sekitarnya.",
+            "Sedang": "Cukup tenang dalam menghadapi tekanan namun bisa mulai terganggu jika tekanan terus-menerus berlanjut.",
+            "Rendah": "Saat tertekan mudah gelisah, tidak sabar, dan cenderung reaktif terhadap perubahan situasi."
+        },
+        "C": {
+            "Tinggi": "Saat tertekan menjadi sangat berhati-hati, kaku pada aturan, dan sangat analitis sebelum mengambil tindakan apapun.",
+            "Sedang": "Tetap memperhatikan prosedur namun masih bisa bertindak cepat jika situasi mendesak.",
+            "Rendah": "Saat tertekan cenderung mengabaikan prosedur dan bertindak lebih spontan tanpa terlalu memikirkan aturan."
+        }
+    },
+    "graph_iii": {
+        "D": {
+            "Tinggi": "Pada dasarnya individu yang tegas, percaya diri tinggi, dan memiliki dorongan kuat untuk memimpin serta menguasai situasi.",
+            "Sedang": "Memiliki ketegasan yang cukup, namun tidak selalu merasa perlu untuk mendominasi atau mengambil kendali.",
+            "Rendah": "Secara alami individu yang rendah hati, kooperatif, dan tidak memiliki kebutuhan untuk berkuasa atau mendominasi orang lain."
+        },
+        "I": {
+            "Tinggi": "Secara alami adalah pribadi yang hangat, ekspresif, optimis, dan sangat menikmati interaksi sosial.",
+            "Sedang": "Cukup terbuka dan ramah, namun tidak selalu merasa perlu menjadi pusat perhatian dalam situasi sosial.",
+            "Rendah": "Secara alami lebih tertutup, pemilih dalam bergaul, dan tidak membutuhkan banyak interaksi sosial untuk merasa nyaman."
+        },
+        "S": {
+            "Tinggi": "Secara alami individu yang setia, penuh pengertian, dan sangat menghargai keamanan serta konsistensi dalam hidupnya.",
+            "Sedang": "Cukup stabil dan kooperatif secara alami, namun tetap terbuka terhadap perubahan jika diperlukan.",
+            "Rendah": "Secara alami menyukai variasi dan perubahan, tidak terlalu terikat pada kebiasaan atau rutinitas yang monoton."
+        },
+        "C": {
+            "Tinggi": "Secara alami sangat perfeksionis, kritis, dan selalu berusaha memenuhi standar kualitas yang tinggi dalam segala hal.",
+            "Sedang": "Cukup teliti dan terstandar secara alami, namun tidak sampai pada level perfeksionisme yang berlebihan.",
+            "Rendah": "Secara alami tidak terlalu peduli pada detail atau standar yang kaku, lebih mengutamakan fleksibilitas dan kebebasan."
+        }
+    }
+}
+
+DISC_GENERAL_DESCS = {
+    "graph_i": {
+        "D": "Cenderung berorientasi pada hasil dan pencapaian target. Mereka tegas, cepat dalam mengambil keputusan, menyukai tantangan, dan senang memimpin. Biasanya berperan mendorong tim agar tetap bergerak maju dan produktif.",
+        "I": "Energik, persuasif, dan mudah membangun hubungan. Mereka menyukai interaksi sosial, mampu memotivasi orang lain, serta menciptakan suasana kerja yang positif dan penuh semangat.",
+        "S": "Stabil, sabar, dan pendengar yang baik. Mereka berfokus pada kerja sama tim, menjaga keharmonisan, serta lebih nyaman bekerja di lingkungan yang teratur dan konsisten.",
+        "C": "Teliti, logis, dan analitis. Mereka bekerja dengan standar tinggi, mengikuti aturan, serta fokus pada detail dan kualitas hasil."
+    },
+    "graph_ii": {
+        "D": "Cenderung menjadi lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain (Dominance - D).",
+        "I": "Bisa menjadi terlalu emosional, kurang fokus, dan mudah terdistraksi. Mereka sering mencari dukungan dari orang lain untuk merasa aman (Influence - I).",
+        "S": "Menjadi lebih pasif, menghindari konflik, dan membutuhkan arahan yang jelas. Mereka bisa merasa kewalahan jika perubahan terlalu cepat (Steadiness - S).",
+        "C": "Cenderung perfeksionis, terlalu banyak menganalisis, dan takut membuat kesalahan. Hal ini dapat memperlambat pengambilan keputusan (Conscientiousness - C)."
+    },
+    "graph_iii": {
+        "D": "Secara natural, mereka percaya diri, berorientasi pada pencapaian, dan menyukai tantangan baru. Mereka senang berada dalam posisi yang memberi pengaruh besar terhadap hasil.",
+        "I": "Alami sebagai pribadi yang hangat, optimis, terbuka, dan mudah membangun jaringan sosial. Mereka lebih termotivasi ketika bisa berinteraksi dengan orang lain.",
+        "S": "Sifat alaminya adalah sabar, konsisten, dan setia. Mereka menghargai kestabilan, serta lebih suka bekerja dalam lingkungan yang harmonis dan minim konflik.",
+        "C": "Alami sebagai individu yang teliti, berhati-hati, dan mengutamakan akurasi. Mereka nyaman bekerja dengan aturan yang jelas serta standar kerja yang tinggi."
+    }
+}
+
 # --- SHARED SUMMARY LOGIC ---
 def get_summary_data(code, d):
     if not d: return ("-", "-", "-")
+    
     if code == "DISC":
         g3 = d.get('graph_iii', {})
+        levels = d.get('levels', {}).get('graph_iii', {})
         dom = max(g3, key=g3.get) if g3 else "D"
-        val = g3.get(dom, 0)
+        lvl = levels.get(dom, "Sedang")
+        
+        # Get description for dominant trait from Graph III
+        interp = DISC_INTERPRETATIONS["graph_iii"][dom][lvl]
+        
         dom_map = {"D":"Dominance","I":"Influence","S":"Steadiness","C":"Compliance"}
-        return (f"{dom[0]} - {dom_map.get(dom, dom)} (G-III: {val})", "Tegas & Berorientasi Hasil", "SESUAI")
+        return (f"{dom} - {dom_map.get(dom, dom)} ({lvl})", interp, "SESUAI")
+    
     if code == "TEMP":
         prim = d.get('primary', '-')
-        # Mapping back to trait keys
         rev_map = {"Sanguine":"S", "Choleric":"C", "Melancholic":"M", "Phlegmatic":"P"}
         score = d.get('raw_scores', {}).get(rev_map.get(prim, ""), 0)
-        return (f"{prim} Dominan ({score}/30)", "Analitis & Detail", "SESUAI")
-    if code == "IQ":
-        iq = d.get('iq', 0)
-        cls = "Rata-rata"
-        if iq >= 110: cls = "Di Atas Rata-rata"
-        if iq >= 120: cls = "Unggul"
-        if iq <= 90: cls = "Rata-rata Bawah"
-        return (f"IQ {iq} - {cls}", "Kemampuan Kognitif Baik", "SESUAI")
-    if code == "LOGIC":
-        iq = d.get('est_iq', 0)
+        
+        temp_descs = {
+            "Sanguine": "Individu yang periang, mudah bergaul, dan penuh semangat. Sangat antusias, kreatif, namun terkadang kurang fokus dan mudah terdistraksi.",
+            "Melancholic": "Individu yang analitis, perfeksionis, dan sangat memperhatikan kualitas. Cenderung serius, terorganisir, namun bisa terlalu kritis terhadap diri sendiri maupun orang lain.",
+            "Choleric": "Individu yang tegas, ambisius, dan berorientasi pada tujuan. Memiliki jiwa kepemimpinan kuat, namun terkadang kurang sabar dan cenderung mendominasi.",
+            "Phlegmatic": "Individu yang tenang, sabar, dan penuh empati. Sangat kooperatif dan stabil secara emosi, namun terkadang kurang inisiatif dan cenderung menghindari konflik."
+        }
+        interp = temp_descs.get(prim, "Analitis & Detail")
+        return (f"{prim} Dominan ({score}/30)", interp, "SESUAI")
+    
+    if code == "IQ" or code == "LOGIC":
+        if not d: return ("-", "Data tidak tersedia", "TIDAK LULUS")
+        
+        raw_iq = d.get('iq' if code == "IQ" else 'est_iq', 0)
+        
+        # Parse numeric iq for threshold comparisons
+        iq_num = 0
+        try:
+            if isinstance(raw_iq, (int, float)):
+                iq_num = int(raw_iq)
+            elif isinstance(raw_iq, str):
+                match = re.search(r'\d+', raw_iq)
+                if match:
+                    iq_num = int(match.group())
+                if ">" in raw_iq:
+                    iq_num = max(iq_num, 150)
+            else:
+                iq_num = int(raw_iq)
+        except:
+            iq_num = 0
+            
         cls = d.get('classification', 'Rata-rata')
-        return (f"IQ {iq} - {cls}", "Logika Numerik Baik", "SESUAI")
+        if code == "IQ":
+            if iq_num >= 110: cls = "Di Atas Rata-rata"
+            if iq_num >= 120: cls = "Unggul"
+            if iq_num <= 90: cls = "Rata-rata Bawah"
+            
+        if iq_num >= 170: interp = "Kemampuan berpikir dan penalaran jauh melampaui rata-rata. Sangat unggul dalam segala aspek intelektual."
+        elif iq_num >= 140: interp = "Sangat cepat dalam memahami konsep kompleks, menganalisis masalah, dan menemukan solusi kreatif."
+        elif iq_num >= 120: interp = "Di atas rata-rata dalam kemampuan berpikir logis, belajar cepat, dan memahami informasi baru."
+        elif iq_num >= 110: interp = "Sedikit di atas rata-rata, mampu bekerja efektif pada tugas yang membutuhkan penalaran cukup tinggi."
+        elif iq_num >= 90: interp = "Kemampuan intelektual cukup memadai untuk menyelesaikan pekerjaan sehari-hari secara efektif."
+        elif iq_num >= 80: interp = "Sedikit di bawah rata-rata, masih bisa bekerja namun membutuhkan waktu lebih dalam memahami hal baru."
+        elif iq_num >= 70: interp = "Kemampuan penalaran terbatas, membutuhkan pendampingan dalam pekerjaan yang memerlukan analisis."
+        else: interp = "Sangat terbatas dalam kemampuan berpikir abstrak dan memecahkan masalah — membutuhkan dukungan intensif."
+        
+        return (f"IQ {raw_iq} - {cls}", interp, "SESUAI")
+        
     if code == "SPEED":
-        score = d.get('score', 0)
+        try:
+            score = int(d.get('score', 0))
+        except (ValueError, TypeError):
+            score = 0
+            
         band = d.get('band', '-')
-        # Mapping common band names to professional labels
         band_map = {"Excellent": "Tahan Tekanan", "Good": "Baik", "Average": "Cukup", "Needs Improvement": "Perlu Ditingkatkan"}
         clean_band = band_map.get(band, band)
-        return (f"Skor {score} - {clean_band}", "Mampu dalam Kondisi Tekanan", "SESUAI")
+        
+        if score > 90: interp = "Luar biasa dalam mengelola tekanan — tetap fokus, efisien, dan efektif meski dalam kondisi yang sangat menantang."
+        elif score > 80: interp = "Sangat stabil dan produktif bahkan dalam kondisi kerja yang penuh tekanan dan tenggat waktu ketat."
+        elif score > 60: interp = "Mampu bekerja dengan baik meski di bawah tekanan. Performa tidak mudah menurun saat situasi menuntut."
+        elif score > 30: interp = "Mampu bertahan dalam tekanan ringan hingga sedang, namun masih perlu dikembangkan untuk situasi kerja yang intens."
+        else: interp = "Mudah kewalahan saat bekerja di bawah tekanan. Perlu penguatan mental dan manajemen stres."
+        
+        return (f"Skor {score} - {clean_band}", interp, "SESUAI")
+        
     if code == "CBI":
         lvl_map = {"White": "Rendah", "Light Blue": "Sedang", "Dark Blue": "Tinggi", "-": "-"}
-        lvl = lvl_map.get(d.get('overall_level', '-'), d.get('overall_level', '-'))
-        return (f"Risiko {lvl} di Semua Aspek", "Minim Perilaku Kontraproduktif", "AMAN")
+        oc = d.get('overall_concern', {})
+        raw_lvl = oc.get('level', '-')
+        lvl = lvl_map.get(raw_lvl, raw_lvl)
+        
+        # Color coded rule
+        if raw_lvl == "White":
+            interp = "Individu memiliki risiko perilaku kontraproduktif yang rendah, menunjukkan integritas dan kedisiplinan yang baik."
+        elif raw_lvl == "Light Blue":
+            interp = "Terdapat beberapa indikasi risiko perilaku yang perlu diperhatikan dan diawasi secara berkala."
+        elif raw_lvl == "Dark Blue":
+            interp = "Terdapat risiko perilaku kontraproduktif yang cukup signifikan, memerlukan evaluasi mendalam."
+        else:
+            interp = "Minim Perilaku Kontraproduktif"
+            
+        return (f"Risiko {lvl} di Semua Aspek", interp, "AMAN")
+        
     if code == "LEAD":
-        top_list = d.get('top_factors', [("N",0)])
-        if not top_list: return ("-", "-", "-")
-        top1_norm = top_list[0][0]
-        val = d.get('stanines', {}).get(top1_norm, 0)
-        # Short map for PAPI names
+        prim = d.get('primary_trait', '-')
+        # Parse out the norm code if it's in "L (Description)" format
+        match = re.match(r'^([A-Z]+)', str(prim))
+        prim_code = match.group(1) if match else "-"
+        
+        val = d.get('stanines', {}).get(prim_code, 0)
         papi_names = {"N":"Need to Lead","G":"Work Vigor","A":"Achievement","X":"Change","P":"Notice"}
-        return (f"Top: {papi_names.get(top1_norm, top1_norm)} ({top1_norm}={val})", "Potensi Kepemimpinan Kuat", "UNGGUL")
+        
+        papi_descs = {
+            "A": "Sangat ambisius, dorongan berprestasi tinggi, selalu ingin menjadi yang terbaik.",
+            "N": "Pantang meninggalkan pekerjaan sebelum selesai, sangat tuntas dan terselesaikan.",
+            "G": "Pekerja keras, bersemangat, dan bersedia mengorbankan waktu untuk pekerjaan.",
+            "C": "Sangat terstruktur, sistematis, dan selalu merencanakan pekerjaan dengan rapi.",
+            "D": "Sangat teliti, memperhatikan setiap detail kecil, dan tidak suka hal yang ambigu.",
+            "R": "Suka menganalisis, berbasis data/konsep, dan berpikir mendalam sebelum bertindak.",
+            "T": "Bekerja dengan cepat dan dinamis, mampu menyelesaikan banyak hal dalam waktu singkat.",
+            "V": "Penuh energi, aktif bergerak, dan tidak mudah lelah secara fisik maupun mental.",
+            "W": "Sangat membutuhkan panduan dan aturan yang jelas — tidak nyaman bekerja tanpa prosedur.",
+            "F": "Sangat hormat dan patuh pada atasan, mendukung keputusan pimpinan sepenuhnya.",
+            "L": "Senang menjadi pemimpin, percaya diri tampil di depan, dan suka mengambil peran utama.",
+            "P": "Suka mengarahkan, mendelegasikan, dan mengontrol pekerjaan orang lain.",
+            "I": "Cepat dan percaya diri dalam mengambil keputusan, bahkan dalam situasi tidak pasti.",
+            "S": "Sangat suka bersosialisasi, mudah berteman, dan aktif membangun jaringan.",
+            "B": "Sangat butuh merasa diterima dan menjadi bagian dari kelompok atau tim.",
+            "O": "Sangat butuh hubungan yang intim, dekat, dan penuh kepercayaan dengan orang lain.",
+            "X": "Sangat ingin diakui, diapresiasi, dan menjadi pusat perhatian.",
+            "E": "Sangat tahan banting secara emosi, tidak mudah terpengaruh kritik atau tekanan.",
+            "K": "Sangat tegas, berbicara lugas, dan tidak segan mempertahankan pendapatnya.",
+            "Z": "Sangat suka perubahan, variasi, dan hal-hal baru — mudah bosan dengan rutinitas."
+        }
+        interp = papi_descs.get(prim_code, "Potensi Kepemimpinan Kuat")
+        return (f"Top: {prim_code} (Stanine: {val})", interp, "UNGGUL")
+        
     if code == "MEM":
         acc = d.get('accuracy', 0)
-        score = d.get('correct_count', 0)
+        try:
+            score = int(d.get('correct_count', 0))
+        except (ValueError, TypeError):
+            score = 0
+            
         total = d.get('total_answered', 0)
         band = "Sangat Baik" if acc >= 80 else "Baik" if acc >= 60 else "Rata-rata"
         if acc < 40: band = "Perlu Ditingkatkan"
-        return (f"{score}/{total} ({acc}%) - {band}", "Kemampuan Mengingat Tinggi", "SESUAI")
+        
+        if score > 40: interp = "Daya ingat sangat kuat. Mampu menyerap, menyimpan, dan memanggil kembali informasi dengan sangat efektif."
+        elif score > 30: interp = "Daya ingat di atas rata-rata. Mampu mengingat informasi dengan baik dalam berbagai kondisi kerja."
+        elif score > 20: interp = "Daya ingat cukup memadai untuk kebutuhan kerja sehari-hari yang tidak terlalu kompleks."
+        elif score > 10: interp = "Daya ingat di bawah rata-rata. Perlu mencatat atau mengulang informasi agar dapat diingat dengan baik."
+        else: interp = "Daya ingat sangat terbatas. Akan mengalami kesulitan signifikan dalam pekerjaan yang menuntut mengingat banyak informasi."
+        
+        return (f"{score}/{total} ({acc}%) - {band}", interp, "SESUAI")
+        
     return ("-", "-", "-")
 
 SUMMARY_CONFIGS = [
@@ -430,42 +628,20 @@ def generate_participant_docx(user, results):
         g3 = disc_details.get("graph_iii", {})
         primary_trait = max(g3, key=g3.get) if g3 else "D"
         trait_names = {"D": "Dominance", "I": "Influence", "S": "Steadiness", "C": "Compliance"}
-        trait_desc = {
-            "D": "Percaya diri, menyukai tantangan, berorientasi pada pencapaian, senang memberi pengaruh besar dalam hasil.",
-            "I": "Hangat, optimis, terbuka, mudah membangun jaringan sosial, dan termotivasi lewat interaksi.",
-            "S": "Sabar, konsisten, setia, menghargai kestabilan, dan nyaman di lingkungan harmonis.",
-            "C": "Teliti, berhati-hati, mengutamakan akurasi, nyaman dengan aturan jelas dan standar tinggi."
-        }
+        # Dynamic Interpretations from levels
+        lvls = disc_details.get("levels", {})
         
-        # Dictionaries for interpretations
-        desc_i = {
-            "D": "Cenderung berorientasi pada hasil dan pencapaian target. Mereka tegas, cepat dalam mengambil keputusan, menyukai tantangan, dan senang memimpin. Biasanya berperan mendorong tim agar tetap bergerak maju dan produktif.",
-            "I": "Energik, persuasif, dan mudah membangun hubungan. Mereka menyukai interaksi sosial, mampu memotivasi orang lain, serta menciptakan suasana kerja yang positif dan penuh semangat.",
-            "S": "Stabil, sabar, dan pendengar yang baik. Mereka berfokus pada kerja sama tim, menjaga keharmonisan, serta lebih nyaman bekerja di lingkungan yang teratur dan konsisten.",
-            "C": "Teliti, logis, dan analitis. Mereka bekerja dengan standar tinggi, mengikuti aturan, serta fokus pada detail dan kualitas hasil."
-        }
-        desc_ii = {
-            "D": "Cenderung menjadi lebih keras, tidak sabar, bahkan mendominasi. Mereka ingin segera menyelesaikan masalah dengan cepat, meskipun kadang mengabaikan detail atau perasaan orang lain (Dominance - D).",
-            "I": "Bisa menjadi terlalu emosional, kurang fokus, dan mudah terdistraksi. Mereka sering mencari dukungan dari orang lain untuk merasa aman (Influence - I).",
-            "S": "Menjadi lebih pasif, menghindari konflik, dan membutuhkan arahan yang jelas. Mereka bisa merasa kewalahan jika perubahan terlalu cepat (Steadiness - S).",
-            "C": "Cenderung perfeksionis, terlalu banyak menganalisis, dan takut membuat kesalahan. Hal ini dapat memperlambat pengambilan keputusan (Conscientiousness - C)."
-        }
-        desc_iii = {
-            "D": "Secara natural, mereka percaya diri, berorientasi pada pencapaian, dan menyukai tantangan baru. Mereka senang berada dalam posisi yang memberi pengaruh besar terhadap hasil.",
-            "I": "Alami sebagai pribadi yang hangat, optimis, terbuka, dan mudah membangun jaringan sosial. Mereka lebih termotivasi ketika bisa berinteraksi dengan orang lain.",
-            "S": "Sifat alaminya adalah sabar, konsisten, dan setia. Mereka menghargai kestabilan, serta lebih suka bekerja dalam lingkungan yang harmonis dan minim konflik.",
-            "C": "Alami sebagai individu yang teliti, berhati-hati, dan mengutamakan akurasi. Mereka nyaman bekerja dengan aturan yang jelas serta standar kerja yang tinggi."
-        }
+        p1 = max(disc_details.get("graph_i", {}), key=disc_details.get("graph_i", {}).get) if disc_details.get("graph_i") else "D"
+        # For Graph II (Least), the dominant behavior is the one with the LOWEST 'Least' score
+        p2 = min(disc_details.get("graph_ii", {}), key=disc_details.get("graph_ii", {}).get) if disc_details.get("graph_ii") else "D"
+        p3 = max(disc_details.get("graph_iii", {}), key=disc_details.get("graph_iii", {}).get) if disc_details.get("graph_iii") else "D"
 
-        g1 = disc_details.get("graph_i", {})
-        g2 = disc_details.get("graph_ii", {})
-        g3 = disc_details.get("graph_iii", {})
-        
-        p1 = max(g1, key=g1.get) if g1 else "D"
-        p2 = max(g2, key=g2.get) if g2 else "D"
-        p3 = max(g3, key=g3.get) if g3 else "D"
+        # General descriptions from disc_result_ench for the summary box
+        text1 = DISC_GENERAL_DESCS["graph_i"].get(p1, "")
+        text2 = DISC_GENERAL_DESCS["graph_ii"].get(p2, "")
+        text3 = DISC_GENERAL_DESCS["graph_iii"].get(p3, "")
 
-        kesimpulan_text = f"Kesimpulan: {desc_i.get(p1, '')} {desc_ii.get(p2, '')} {desc_iii.get(p3, '')}"
+        kesimpulan_text = f"Kesimpulan: {text1} {text2} {text3}"
 
         # 1st Paragraph: Kesimpulan (Dynamic)
         p_kes1 = cell_kes.paragraphs[0]
@@ -490,7 +666,7 @@ def generate_participant_docx(user, results):
         r_trait.font.size = Pt(8)
         r_trait.font.color.rgb = RGBColor.from_string(bar_colors.get(primary_trait, "DC2626"))
         
-        p_kes2.add_run(f" → {trait_desc.get(primary_trait, '')}").font.size = Pt(8)
+        p_kes2.add_run(f" → {text3}").font.size = Pt(8)
         
         # Gap after DISC (Safe here as TEMP follows)
         doc.add_paragraph()
@@ -616,11 +792,14 @@ def generate_participant_docx(user, results):
             # Total raw score across all phases
             raw_score = det.get("raw_score", res_iq.score)
             
-            # Logic from scoring/iq.py
-            scaled = round(raw_score / 2)
-            from scoring.iq import SCORE_TO_IQ, classify_iq
-            iq_val = SCORE_TO_IQ.get(scaled, 0)
-            category = classify_iq(iq_val)
+            try:
+                # Logic from scoring/iq.py
+                scaled = round(raw_score / 2)
+                iq_val = SCORE_TO_IQ.get(scaled, 0)
+                category = classify_iq(iq_val)
+            except (TypeError, ValueError):
+                iq_val = 0
+                category = "Rata-rata"
 
             # Skor Mentah (Total Phase 1-8)
             set_cell_text(cfit_row.cells[2], str(raw_score), bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -690,9 +869,6 @@ def generate_participant_docx(user, results):
         p_ref.paragraph_format.keep_with_next = False 
         # Actually, let's make sure the WPT row keeps with next
         wpt_row.cells[0].paragraphs[0].paragraph_format.keep_with_next = True
-
-    # --- PAGE BREAK ---
-    doc.add_page_break()
 
     # --- 5. SPEED ---
     if "SPEED" in res_dict:
@@ -1091,9 +1267,6 @@ def generate_participant_docx(user, results):
         
         for cell in row.cells: cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
-    # --- PAGE BREAK ---
-    doc.add_page_break()
-
     # --- SUMMARY PAGE ---
     add_section_heading(doc, "RINGKASAN & KESIMPULAN HASIL PSIKOTES", size=Pt(12))
 
@@ -1120,7 +1293,7 @@ def generate_participant_docx(user, results):
         
     for i, (code, name) in enumerate(SUMMARY_CONFIGS):
         row = table_sum.rows[i+1]
-        row.height = Cm(0.7)
+        row.height = Cm(1.1) # Increased from 0.7 to reduce cramped look
         
         # Col 0: No (Center)
         set_cell_text(row.cells[0], str(i+1), size=Pt(7.5), align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -1157,7 +1330,12 @@ def generate_participant_docx(user, results):
         if final_rec in ["Tidak Lanjut", "TIDAK LANJUT", "TIDAK LULUS"]: rec_color = RGBColor(220, 38, 38) # Red
         set_cell_text(row.cells[5], final_rec, bold=True, color=rec_color, size=Pt(7.5), align=WD_ALIGN_PARAGRAPH.CENTER)
         
-        for cell in row.cells: cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        # Apply vertical centering and padding for all cells in this row
+        for cell in row.cells:
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            for p in cell.paragraphs:
+                p.paragraph_format.space_before = Pt(3)
+                p.paragraph_format.space_after = Pt(3)
 
     # Final Recommendation Row
     row_final = table_sum.rows[-1]

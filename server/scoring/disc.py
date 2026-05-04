@@ -68,18 +68,25 @@ def score_disc(answers, questions):
     # <5: Low stress (authentic), 5-10: Moderate stress, >10: High stress
     stress_gap = max(abs(graph_i[t] - (max_possible - graph_ii[t])) for t in traits)
 
-    # Intensity Zones: Classify each trait based on Graph III percentage
-    # High (>70%): Prominent trait, Medium (30-70%): Moderate, Low (<30%): Minimal
-    intensity_zones = {}
-    for t in traits:
-        p = percentages[t]
-        if p > 70:
-            zone = "High"
-        elif p < 30:
-            zone = "Low"
-        else:
-            zone = "Medium"
-        intensity_zones[t] = zone
+    # --- Interval Classification Logic ---
+    def get_level_most_least(val):
+        if val >= 17: return "Tinggi"
+        if val >= 8: return "Sedang"
+        return "Rendah"
+
+    def get_level_integrated(val):
+        if val >= 9: return "Tinggi"
+        if val >= -8: return "Sedang"
+        return "Rendah"
+
+    levels = {
+        "graph_i": {t: get_level_most_least(graph_i[t]) for t in traits},
+        "graph_ii": {t: get_level_most_least(24 - graph_ii[t]) for t in traits}, # Inverted: High Least = Low Intensity
+        "graph_iii": {t: get_level_integrated(graph_iii[t]) for t in traits}
+    }
+
+    # Intensity Zones (legacy compatibility, maps to Graph III levels)
+    intensity_zones = {t: levels["graph_iii"][t] for t in traits}
 
     return {
         "graph_i": graph_i,
@@ -88,5 +95,6 @@ def score_disc(answers, questions):
         "percentages": percentages,
         "stress_gap": stress_gap,
         "intensity_zones": intensity_zones,
+        "levels": levels,
         "is_valid": is_valid
     }
