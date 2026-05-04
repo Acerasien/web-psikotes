@@ -363,6 +363,7 @@ function ParticipantProfilePage() {
                                     <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 w-1/4">Nama Pengujian</th>
                                     <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[120px]">Status</th>
                                     <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700">Sesi Pengerjaan (WIB)</th>
+                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[100px]">Durasi</th>
                                     <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[130px]">Perangkat</th>
                                     <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-center">Indikasi Kecurangan</th>
                                 </tr>
@@ -409,6 +410,13 @@ function ParticipantProfilePage() {
                                                         {endStr ? `${endStr} WIB` : '––/–– ––:––'}
                                                     </span>
                                                 </div>
+                                            </td>
+                                            <td className="px-5 py-3 border-r border-neutral-100 text-center font-mono text-[10px]">
+                                                {result?.time_taken ? (
+                                                    <span className="font-bold text-neutral-900">
+                                                        {Math.floor(result.time_taken / 60)}m {result.time_taken % 60}s
+                                                    </span>
+                                                ) : '–'}
                                             </td>
                                             <td className="px-5 py-3 border-r border-neutral-100 text-center">
                                                 <div className="flex justify-center items-center gap-2 text-neutral-500">
