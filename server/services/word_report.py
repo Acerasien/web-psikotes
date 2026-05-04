@@ -1267,6 +1267,9 @@ def generate_participant_docx(user, results):
         
         for cell in row.cells: cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
+    # --- PAGE BREAK ---
+    doc.add_page_break()
+
     # --- SUMMARY PAGE ---
     add_section_heading(doc, "RINGKASAN & KESIMPULAN HASIL PSIKOTES", size=Pt(12))
 
