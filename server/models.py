@@ -83,6 +83,20 @@ class Phase(Base):
     test = relationship("Test", back_populates="phases")
     questions = relationship("Question", back_populates="phase")
 
+# 1c. The Exam Session Model (For scheduling waves)
+class ExamSession(Base):
+    __tablename__ = "exam_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True) # e.g., "Recruitment Wave A"
+    start_time = Column(DateTime, nullable=False, index=True)
+    end_time = Column(DateTime, nullable=True, index=True)
+    is_unlocked = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    assignments = relationship("Assignment", back_populates="session")
+
 # 2. The Question Model
 class Question(Base):
     __tablename__ = "questions"
@@ -121,6 +135,7 @@ class Assignment(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     test_id = Column(Integer, ForeignKey("tests.id"), index=True)
+    session_id = Column(Integer, ForeignKey("exam_sessions.id"), nullable=True, index=True)
     status = Column(String, default="pending", index=True) # pending, in_progress, completed, locked
     pretest_completed = Column(Boolean, default=False) # The Tutorial flag
     assigned_at = Column(DateTime, default=datetime.utcnow, index=True) # Needs import: from datetime import datetime
@@ -129,6 +144,7 @@ class Assignment(Base):
     # Relationships
     user = relationship("User", back_populates="assignments")
     test = relationship("Test", back_populates="assignments")
+    session = relationship("ExamSession", back_populates="assignments")
     responses = relationship("Response", back_populates="assignment", cascade="all, delete-orphan")
     results = relationship("Result", back_populates="assignment", cascade="all, delete-orphan")
     exit_logs = relationship("ExitLog", back_populates="assignment", cascade="all, delete-orphan")

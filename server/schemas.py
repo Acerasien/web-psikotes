@@ -99,3 +99,40 @@ class UserUpdate(BaseModel):
     class_id: Optional[int] = None
     level: Optional[str] = None
     report_decisions: Optional[dict] = None
+
+# Exam Session schemas
+from datetime import datetime
+
+class ExamSessionBase(BaseModel):
+    name: str
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    is_unlocked: bool = False
+
+class ExamSessionCreate(ExamSessionBase):
+    participant_ids: List[int]
+
+class ExamSessionOut(ExamSessionBase):
+    id: int
+    created_at: Optional[datetime] = None
+    participant_count: int = 0
+    participant_ids: List[int] = []
+
+    class Config:
+        from_attributes = True
+
+class ExamSessionUpdate(BaseModel):
+    name: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    is_unlocked: Optional[bool] = None
+    participant_ids: Optional[List[int]] = None
+
+class ExamSessionStatus(BaseModel):
+    id: int
+    name: str
+    is_open: bool
+    is_unlocked: bool
+    seconds_until_start: int
+    start_time: datetime
+    end_time: Optional[datetime] = None

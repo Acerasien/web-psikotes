@@ -124,6 +124,61 @@ def get_completion_stats(db: Session = Depends(get_db), admin: User = Depends(re
     }
 
 
+@router.get("/admin/stats/live")
+def get_live_stats(db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
+    """Get detailed stats for currently active (started) assignments (superadmin only)"""
+    # Only show assignments that have actually started
+    active_assignments = db.query(Assignment).filter(
+        Assignment.status == "in_progress",
+        Assignment.started_at.isnot(None)
+    ).all()
+    
+    result = []
+    now = datetime.now()
+    
+    for a in active_assignments:
+        # Get answered questions count
+        answered_count = db.query(Result).filter(
+            Result.user_id == a.user_id,
+            Result.test_id == a.test_id
+        ).first()
+        
+        progress_percent = 0
+        total_q = db.query(Question).filter(Question.test_id == a.test_id).count()
+        answered_q = 0
+        
+        if answered_count and answered_count.details and isinstance(answered_count.details, dict):
+            answers = answered_count.details.get("answers", {})
+            answered_q = len(answers)
+            if total_q > 0:
+                progress_percent = round((answered_q / total_q) * 100, 1)
+        
+        latest_exit = db.query(ExitLog).filter(
+            ExitLog.assignment_id == a.id
+        ).order_by(desc(ExitLog.timestamp)).first()
+        
+        # Get time limit for the test (or class override)
+        time_limit = a.test.time_limit # This is in seconds already in the DB
+        
+        result.append({
+            "id": a.id,
+            "user_id": a.user_id,
+            "participant_name": a.user.full_name or a.user.username,
+            "test_name": a.test.name,
+            "level": a.user.level,
+            "progress_percent": progress_percent,
+            "answered_count": answered_q,
+            "total_questions": total_q,
+            "last_event": "Exit attempt detected" if latest_exit else "Testing...",
+            "last_event_time": latest_exit.timestamp.isoformat() if latest_exit else None,
+            "started_at": a.started_at.isoformat(),
+            "time_limit_seconds": time_limit,
+            "time_elapsed_seconds": (now - a.started_at).total_seconds()
+        })
+        
+    return result
+
+
 @router.get("/admin/stats/security-events")
 def get_security_events(
     limit: int = 10,

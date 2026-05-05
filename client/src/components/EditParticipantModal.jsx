@@ -1,5 +1,6 @@
 // client/src/components/EditParticipantModal.jsx
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
 import Swal from 'sweetalert2';
@@ -77,10 +78,11 @@ function EditParticipantModal({ user, onClose, onSaved }) {
 
     if (!user) return null;
 
-    return (
-        <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm z-50 flex justify-end">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] overflow-hidden flex justify-end">
+            <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={onClose}></div>
             <div
-                className="w-full max-w-xl bg-white shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300"
+                className="relative w-full max-w-xl bg-white shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300 border-l border-neutral-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header - Sticky */}
@@ -256,12 +258,14 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                                         <option value="">Pilih Unit Bisnis</option>
                                         <option value="PT. Long Daliq Primacoal Site BP">PT. Long Daliq Primacoal Site BP</option>
                                         <option value="PT. Long Daliq Primacoal Site SPGA">PT. Long Daliq Primacoal Site SPGA</option>
+                                        <option value="PT. Long  Daliq Primacoal - Head Office">PT. Long  Daliq Primacoal - Head Office</option>
                                         <option value="PT. Muncul Kilau Persada">PT. Muncul Kilau Persada</option>
                                         <option value="PT. Batubara Lahat">PT. Batubara Lahat</option>
                                         <option value="PT. Andamas Global Energi">PT. Andamas Global Energi</option>
                                         <option value="PT. Long Daliq Logistik">PT. Long Daliq Logistik</option>
                                         <option value="PT. Andamas Properti Indo">PT. Andamas Properti Indo</option>
                                         <option value="PT. Bukit Artha Persada Site Arsy Nusantara">PT. Bukit Artha Persada Site Arsy Nusantara</option>
+                                        <option value="PT. Bukit Artha Persada Arsy Nusantara - Head Office">PT. Bukit Artha Persada Arsy Nusantara - Head Office</option>
                                     </select>
                                 </div>
                                 <div className="md:col-span-2">
@@ -318,7 +322,8 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

@@ -4,6 +4,7 @@ import { useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { api } from './utils/api';
 import Tutorial from './components/Tutorial';
+import WaitingRoom from './components/WaitingRoom';
 
 function ParticipantDashboard({ onLogout }) {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ function ParticipantDashboard({ onLogout }) {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tutorialAssignment, setTutorialAssignment] = useState(null);
+  const [waitingAssignment, setWaitingAssignment] = useState(null);
 
   const fetchAssignments = async () => {
     try {
@@ -46,7 +48,18 @@ function ParticipantDashboard({ onLogout }) {
     }
   };
 
-  const handleStartTest = (assignment) => {
+  const handleStartTest = async (assignment) => {
+    // Check for session lock first
+    try {
+      const sessionRes = await api.getSessionStatus(assignment.id);
+      if (!sessionRes.data.is_open) {
+        setWaitingAssignment(assignment);
+        return;
+      }
+    } catch (e) {
+      console.error("Failed to check session status", e);
+    }
+
     // If test is pending and tutorial not completed, show tutorial first
     if (assignment.status === 'pending' && !assignment.pretest_completed) {
       setTutorialAssignment(assignment);
@@ -66,6 +79,30 @@ function ParticipantDashboard({ onLogout }) {
   useEffect(() => {
     fetchAssignments();
   }, []);
+
+  // Show Waiting Room if session is locked
+  if (waitingAssignment) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl p-6 md:p-12 border border-neutral-200">
+          <WaitingRoom 
+            assignmentId={waitingAssignment.id} 
+            onUnlock={() => {
+                const target = waitingAssignment;
+                setWaitingAssignment(null);
+                handleStartTest(target);
+            }} 
+          />
+          <button 
+            onClick={() => setWaitingAssignment(null)}
+            className="mt-6 w-full text-neutral-400 font-bold hover:text-neutral-600 transition-colors"
+          >
+            Kembali ke Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Show tutorial if one is pending
   if (tutorialAssignment) {

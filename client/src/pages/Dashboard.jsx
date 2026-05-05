@@ -85,8 +85,38 @@ function Dashboard() {
             errorMessage="Tidak dapat memuat statistik dasbor. Silakan coba lagi."
         >
             <div className="space-y-6">
+                {/* System Status Header */}
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-neutral-900 leading-tight">Status Sistem</h2>
+                            <p className="text-sm text-neutral-500 font-medium">Semua sistem operasional dan berjalan normal</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-6 pr-2">
+                        <div className="flex items-center gap-3 bg-success-light/30 px-4 py-2 rounded-full border border-success/10">
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
+                            </span>
+                            <span className="text-sm font-bold text-success-dark">
+                                {completionStats.in_progress} Peserta Aktif
+                            </span>
+                        </div>
+                        <div className="hidden md:flex items-center gap-2 text-neutral-400">
+                            <div className="w-1 h-1 rounded-full bg-neutral-300"></div>
+                            <span className="text-xs font-medium uppercase tracking-wider">Live Monitoring</span>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Key Metrics Cards */}
-                <div className={`grid grid-cols-1 md:grid-cols-2 ${canSeeResults ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 border-l-[6px] border-l-primary-500">
                         <div className="text-sm text-neutral-500 font-medium mb-1">Total Peserta</div>
                         <div className="text-3xl font-bold font-display text-neutral-900">{summary.total_participants}</div>
@@ -99,12 +129,6 @@ function Dashboard() {
                         <div className="text-sm text-neutral-500 font-medium mb-1">Tingkat Penyelesaian</div>
                         <div className="text-3xl font-bold font-display text-neutral-900">{summary.completion_rate}%</div>
                     </div>
-                    {canSeeResults && (
-                        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 border-l-[6px] border-l-primary-700">
-                            <div className="text-sm text-neutral-500 font-medium mb-1">Rata-rata Skor (mentah)</div>
-                            <div className="text-3xl font-bold font-display text-neutral-900">{summary.average_score}</div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Completion Status & Alerts */}

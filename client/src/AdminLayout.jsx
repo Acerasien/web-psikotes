@@ -10,6 +10,8 @@ import SecurityDashboard from './pages/SecurityDashboard';
 import ManageAdmins from './pages/ManageAdmins';
 import Dashboard from './pages/Dashboard';
 import ReportDecisionPage from './pages/ReportDecisionPage';
+import LiveMonitor from './pages/LiveMonitor';
+import SchedulePage from './pages/SchedulePage';
 
 function AdminLayout({ onLogout }) {
     const { user, isSuperadmin, canSeeResults } = useAuth();
@@ -35,12 +37,16 @@ function AdminLayout({ onLogout }) {
 
     if (isSuperadmin) {
         navLinks.push(
-            { to: '/admins', label: 'Admin', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' }
+            { to: '/admins', label: 'Admin', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+            { to: '/schedule', label: 'Penjadwalan', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+            { to: '/live-monitor', label: 'Live Monitor', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' }
         );
     }
 
     const getPageTitle = (pathname) => {
         if (pathname === '/') return 'Dashboard';
+        if (pathname === '/live-monitor') return 'Live Monitor';
+        if (pathname === '/schedule') return 'Penjadwalan Tes';
         if (pathname.startsWith('/participants')) return 'Kelola Peserta';
         if (pathname === '/admins') return 'Kelola Admin';
         if (pathname === '/results') return 'Hasil Tes';
@@ -139,6 +145,8 @@ function AdminLayout({ onLogout }) {
                 <main className="flex-1 p-4 lg:p-6 overflow-y-auto overflow-x-hidden">
                     <Routes>
                         <Route path="/" element={<Dashboard />} />
+                        <Route path="/live-monitor" element={<LiveMonitor />} />
+                        <Route path="/schedule" element={<SchedulePage />} />
                         <Route path="/participants" element={<ParticipantsPage />} />
                         <Route path="/participants/new" element={<AddParticipantPage />} />
                         <Route path="/participants/:id" element={<ParticipantProfilePage />} />

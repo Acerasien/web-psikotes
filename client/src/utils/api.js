@@ -146,9 +146,19 @@ export const api = {
   getStatsRecent: (limit = 10) =>
     apiClient.get(`/admin/stats/recent?limit=${limit}`),
   getCompletionStats: () => apiClient.get('/admin/stats/completion'),
+  getLiveStats: () => apiClient.get('/admin/stats/live'),
   getSecurityEvents: (limit = 10) =>
     apiClient.get(`/admin/stats/security-events?limit=${limit}`),
   getParticipantSummary: (id) => apiClient.get(`/admin/participant/${id}/summary`),
+
+  // Sessions
+  getSessions: () => apiClient.get('/admin/sessions/'),
+  getSession: (id) => apiClient.get(`/admin/sessions/${id}`),
+  createSession: (data) => apiClient.post('/admin/sessions/', data),
+  updateSession: (id, data) => apiClient.put(`/admin/sessions/${id}`, data),
+  toggleSessionUnlock: (id) => apiClient.post(`/admin/sessions/${id}/unlock`),
+  deleteSession: (id) => apiClient.delete(`/admin/sessions/${id}`),
+  getSessionStatus: (assignmentId) => apiClient.get(`/admin/sessions/status/${assignmentId}`),
 
   // Export/Download methods (blob responses)
   exportResults: (params) => apiClient.get('/admin/export/results', { params, responseType: 'blob' }),

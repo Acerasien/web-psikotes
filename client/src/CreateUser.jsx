@@ -91,7 +91,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       // Scroll to first error
       const firstErrorField = Object.keys(errors)[0];
@@ -121,7 +121,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
 
     try {
       const res = await api.createUser(payload);
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
@@ -146,7 +146,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
         class_id: ''
       });
       setErrors({});
-      
+
       if (onUserCreated) onUserCreated();
 
       // If assign all tests is checked, do it now
@@ -172,7 +172,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
     } catch (err) {
       const detail = err.response?.data?.detail;
       let errorMessage = 'Failed to create user';
-      
+
       if (typeof detail === 'string') {
         errorMessage = detail;
       } else if (Array.isArray(detail)) {
@@ -213,7 +213,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
           <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
             Informasi Akun
           </h4>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -279,7 +279,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
           <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
             Informasi Personal
           </h4>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -348,7 +348,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
           <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b pb-2">
             Informasi Pekerjaan
           </h4>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -402,14 +402,16 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Pilih Unit Bisnis</option>
-                <option value="PT. Long Daliq Primacoal BP">PT. Long Daliq Primacoal BP</option>
-                <option value="PT. Long Daliq Primacoal SPGA">PT. Long Daliq Primacoal SPGA</option>
+                <option value="PT. Long Daliq Primacoal - BP">PT. Long Daliq Primacoal - BP</option>
+                <option value="PT. Long Daliq Primacoal - SPGA">PT. Long Daliq Primacoal - SPGA</option>
+                <option value="PT. Long Daliq Primacoal - Head Office">PT. Long Daliq Primacoal - Head Office</option>
                 <option value="PT. Muncul Kilau Persada">PT. Muncul Kilau Persada</option>
                 <option value="PT. Batubara Lahat">PT. Batubara Lahat</option>
                 <option value="PT. Andamas Global Energi">PT. Andamas Global Energi</option>
                 <option value="PT. Long Daliq Logistik">PT. Long Daliq Logistik</option>
                 <option value="PT. Andamas Properti Indo">PT. Andamas Properti Indo</option>
-                <option value="PT. Bukit Artha Persada Site Arsy Nusantara">PT. Bukit Artha Persada Site Arsy Nusantara</option>
+                <option value="PT. Bukit Artha Persada Arsy Nusantara - Site">PT. Bukit Artha Persada Arsy Nusantara - Site</option>
+                <option value="PT. Bukit Artha Persada Arsy Nusantara - Head Office">PT. Bukit Artha Persada Arsy Nusantara - Head Office</option>
               </select>
             </div>
 

@@ -19,7 +19,7 @@ from models import Response as DBResponse
 from schemas import TestSubmission, Token, UserCreate, UserUpdate
 
 # Import route modules
-from routes import auth, users, tests, assignments, results, admin, iq
+from routes import auth, users, tests, assignments, results, admin, iq, sessions
 
 # Import scoring modules (used by assignments route)
 from scoring.disc import score_disc
@@ -62,6 +62,7 @@ app.include_router(assignments.router)
 app.include_router(results.router)
 app.include_router(admin.router)
 app.include_router(iq.router)
+app.include_router(sessions.router)
 
 # =============================================================================
 # Root Endpoint
