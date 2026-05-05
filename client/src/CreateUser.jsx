@@ -407,9 +407,11 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 <option value="PT. Long Daliq Primacoal - Head Office">PT. Long Daliq Primacoal - Head Office</option>
                 <option value="PT. Muncul Kilau Persada">PT. Muncul Kilau Persada</option>
                 <option value="PT. Batubara Lahat">PT. Batubara Lahat</option>
+                <option value="PT. Batubara Lahat - Head Office">PT. Batubara Lahat - Head Office</option>
                 <option value="PT. Andamas Global Energi">PT. Andamas Global Energi</option>
+                <option value="PT. Andamas Global Energi - Head Office">PT. Andamas Global Energi - Head Office</option>
                 <option value="PT. Long Daliq Logistik">PT. Long Daliq Logistik</option>
-                <option value="PT. Andamas Properti Indo">PT. Andamas Properti Indo</option>
+                <option value="PT. Andamas Propertindo">PT. Andamas Propertindo</option>
                 <option value="PT. Bukit Artha Persada Arsy Nusantara - Site">PT. Bukit Artha Persada Arsy Nusantara - Site</option>
                 <option value="PT. Bukit Artha Persada Arsy Nusantara - Head Office">PT. Bukit Artha Persada Arsy Nusantara - Head Office</option>
               </select>

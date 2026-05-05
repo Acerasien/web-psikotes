@@ -93,20 +93,37 @@ function LiveMonitor() {
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Active Participants */}
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200">
-                        <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Peserta Aktif</p>
-                        <p className="text-3xl font-bold text-neutral-900">{sessions.length}</p>
+                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Peserta Aktif</p>
+                        <p className="text-2xl font-black text-neutral-900">{sessions.length}</p>
                     </div>
+
+                    {/* Average Progress */}
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200">
-                        <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Total Pertanyaan Dijawab</p>
-                        <p className="text-3xl font-bold text-primary-600">
-                            {sessions.reduce((acc, curr) => acc + (curr.answered_count || 0), 0)}
+                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Rata-rata Progres</p>
+                        <p className="text-2xl font-black text-primary-600">
+                            {sessions.length > 0 
+                                ? Math.round(sessions.reduce((acc, s) => acc + (s.progress_percent || 0), 0) / sessions.length) 
+                                : 0}%
                         </p>
                     </div>
+
+                    {/* Security Alerts */}
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200">
-                        <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Pembaruan Terakhir</p>
-                        <p className="text-3xl font-bold text-neutral-900">{lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Peringatan Keamanan</p>
+                        <p className={`text-2xl font-black ${sessions.filter(s => s.last_event?.includes('Exit')).length > 0 ? 'text-error animate-pulse' : 'text-success'}`}>
+                            {sessions.filter(s => s.last_event?.includes('Exit')).length}
+                        </p>
+                    </div>
+
+                    {/* Last Update */}
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200">
+                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Pembaruan Terakhir</p>
+                        <p className="text-2xl font-black text-neutral-900">
+                            {lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </p>
                     </div>
                 </div>
 

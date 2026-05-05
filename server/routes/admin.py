@@ -13,7 +13,7 @@ import string
 
 from auth import require_admin, require_superadmin, require_assessor_or_higher, hash_password
 from database import get_db
-from models import User, Test, Assignment, Result, ExitLog, Question, ClassConfig
+from models import User, Test, Assignment, Result, ExitLog, Question, ClassConfig, Response
 from utils import get_max_score
 from services.word_report import SUMMARY_CONFIGS, get_summary_data
 
@@ -138,27 +138,27 @@ def get_live_stats(db: Session = Depends(get_db), admin: User = Depends(require_
     
     for a in active_assignments:
         # Get answered questions count
-        answered_count = db.query(Result).filter(
-            Result.user_id == a.user_id,
-            Result.test_id == a.test_id
-        ).first()
+        # Get answered questions count from live responses
+        answered_q = db.query(Response).filter(
+            Response.assignment_id == a.id
+        ).distinct(Response.question_id).count()
         
-        progress_percent = 0
         total_q = db.query(Question).filter(Question.test_id == a.test_id).count()
-        answered_q = 0
+        progress_percent = 0
         
-        if answered_count and answered_count.details and isinstance(answered_count.details, dict):
-            answers = answered_count.details.get("answers", {})
-            answered_q = len(answers)
-            if total_q > 0:
-                progress_percent = round((answered_q / total_q) * 100, 1)
+        if total_q > 0:
+            progress_percent = round((answered_q / total_q) * 100, 1)
         
         latest_exit = db.query(ExitLog).filter(
             ExitLog.assignment_id == a.id
         ).order_by(desc(ExitLog.timestamp)).first()
         
-        # Get time limit for the test (or class override)
-        time_limit = a.test.time_limit # This is in seconds already in the DB
+        # Get time limit (check for class overrides first)
+        time_limit = a.test.time_limit
+        if a.user.class_id:
+            class_conf = db.query(ClassConfig).filter(ClassConfig.id == a.user.class_id).first()
+            if class_conf and class_conf.config:
+                time_limit = class_conf.config.get("time_overrides", {}).get(a.test.code, time_limit)
         
         result.append({
             "id": a.id,

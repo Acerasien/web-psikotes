@@ -56,7 +56,7 @@ export function SpeedTest({ assignmentId }) {
     }));
 
     // Call the original submit with formatted answers, skipping confirmation modal
-    await submitTestSession(true, formattedAnswers);
+    await submitTestSession(false, formattedAnswers);
   }, [submitTestSession, answers]);
 
   // Use local confirm state to avoid conflict with hook
