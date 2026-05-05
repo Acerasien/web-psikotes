@@ -55,8 +55,18 @@ function SchedulePage() {
 
     const openEditDrawer = (session) => {
         setEditSessionId(session.id);
+        
+        // Helper to ensure server dates (which are UTC) are treated as UTC by the browser
+        const ensureUTC = (dateStr) => {
+            if (!dateStr) return '';
+            return dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
+        };
+
         // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
-        const formatForInput = (isoString) => isoString ? new Date(isoString).toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16) : '';
+        const formatForInput = (isoString) => {
+            if (!isoString) return '';
+            return new Date(ensureUTC(isoString)).toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16);
+        };
         
         setFormData({
             name: session.name,
@@ -233,13 +243,13 @@ function SchedulePage() {
                                         <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100">
                                             <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Waktu Mulai</p>
                                             <p className="text-sm font-bold text-neutral-700">
-                                                {new Date(session.start_time).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                {new Date((session.start_time?.endsWith('Z') ? session.start_time : session.start_time + 'Z')).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
                                             </p>
                                         </div>
                                         <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100">
                                             <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Waktu Selesai</p>
                                             <p className="text-sm font-bold text-neutral-700">
-                                                {session.end_time ? new Date(session.end_time).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : 'Tidak Dibatasi'}
+                                                {session.end_time ? new Date((session.end_time.endsWith('Z') ? session.end_time : session.end_time + 'Z')).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : 'Tidak Dibatasi'}
                                             </p>
                                         </div>
                                     </div>
