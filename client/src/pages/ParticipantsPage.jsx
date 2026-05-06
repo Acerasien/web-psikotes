@@ -67,7 +67,7 @@ function ParticipantsPage() {
     };
     
     // Sorting state
-    const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     
     // Batch selection state
     const [selectedUsers, setSelectedUsers] = useState(new Set());
@@ -165,6 +165,9 @@ function ParticipantsPage() {
             };
             aValue = getStatusPriority(aHasLocked, aHasInProgress, aAssignments);
             bValue = getStatusPriority(bHasLocked, bHasInProgress, bAssignments);
+        } else if (key === 'created_at') {
+            aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
+            bValue = b.created_at ? new Date(b.created_at).getTime() : 0;
         }
         
         if (aValue < bValue) return direction === 'asc' ? -1 : 1;
@@ -683,8 +686,8 @@ function ParticipantsPage() {
                 {/* Desktop Table View - hidden on mobile */}
                 <div className="hidden lg:block bg-white rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-neutral-200 overflow-hidden">
                     {/* Table */}
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-neutral-200">
+                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-300">
+                        <table className="w-full divide-y divide-neutral-200">
                             <thead className="bg-neutral-50/80">
                                 <tr>
                                     <th className={`px-6 py-5 text-left ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
@@ -698,7 +701,7 @@ function ParticipantsPage() {
                                         />
                                     </th>
                                     <th
-                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
+                                        className="px-4 xl:px-6 py-4 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group w-[30%]"
                                         onClick={() => handleSort('full_name')}
                                         title="Klik untuk mengurutkan berdasarkan nama"
                                     >
@@ -711,7 +714,7 @@ function ParticipantsPage() {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
+                                        className="px-4 xl:px-6 py-4 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group w-[20%]"
                                         onClick={() => handleSort('department')}
                                         title="Klik untuk mengurutkan berdasarkan departemen"
                                     >
@@ -724,7 +727,7 @@ function ParticipantsPage() {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
+                                        className="px-4 xl:px-6 py-4 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
                                         onClick={() => handleSort('tests_count')}
                                         title="Klik untuk mengurutkan berdasarkan jumlah tes"
                                     >
@@ -732,22 +735,35 @@ function ParticipantsPage() {
                                             <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                             </svg>
-                                            <span>Tes Ditungaskan</span>
+                                            <span className="truncate whitespace-nowrap">Tes</span>
                                             <SortIcon direction={getSortDirection('tests_count')} />
                                         </div>
                                     </th>
                                     <th
-                                        className="px-6 py-5 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
+                                        className="px-4 xl:px-6 py-4 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
                                         onClick={() => handleSort('status')}
-                                        title="Klik untuk mengurutkan berdasarkan status (terkunci dulu)"
+                                        title="Klik untuk mengurutkan berdasarkan status"
                                     >
                                         <div className="flex items-center gap-2">
                                             <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
-                                            <span>Aksi</span>
+                                            <span className="truncate">Aksi</span>
                                             <SortIcon direction={getSortDirection('status')} />
+                                        </div>
+                                    </th>
+                                    <th
+                                        className="px-4 xl:px-6 py-4 text-left text-[11px] font-bold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors select-none group"
+                                        onClick={() => handleSort('created_at')}
+                                        title="Klik untuk mengurutkan berdasarkan tanggal"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span className="truncate">Terdaftar</span>
+                                            <SortIcon direction={getSortDirection('created_at')} />
                                         </div>
                                     </th>
                                 </tr>
@@ -781,10 +797,10 @@ function ParticipantsPage() {
                                         return (
                                             <tr
                                                 key={u.id}
-                                                className={`hover:bg-neutral-50/80 transition-colors border-l-4 ${rowBorderColor} ${canSeeResults ? 'cursor-pointer' : 'cursor-default'}`}
+                                                className={`hover:bg-neutral-50/80 transition-colors ${canSeeResults ? 'cursor-pointer' : 'cursor-default'}`}
                                                 onClick={() => canSeeResults && navigate(`/participants/${u.id}`)}
                                             >
-                                                <td className={`px-6 py-4 ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
+                                                <td className={`px-4 xl:px-6 py-4 border-l-4 ${rowBorderColor} ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
                                                     <input
                                                         type="checkbox"
                                                         checked={selectedUsers.has(u.id)}
@@ -796,22 +812,22 @@ function ParticipantsPage() {
                                                         className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                                                     />
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center">
+                                                <td className={`px-4 xl:px-6 py-4 ${(!isSelectMode && selectedUsers.size === 0) ? `border-l-4 ${rowBorderColor}` : ''}`}>
+                                                    <div className="flex items-center min-w-0">
                                                         <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-tr from-primary-700 to-[#d3c0aa] rounded-full flex items-center justify-center text-white font-bold shadow-sm">
                                                             {(u.full_name || u.username).charAt(0).toUpperCase()}
                                                         </div>
-                                                        <div className="ml-4 min-w-0 flex-1">
-                                                            <div className="text-sm font-bold font-display tracking-tight text-neutral-900 truncate max-w-[200px]" title={u.full_name || u.username}>
+                                                        <div className="ml-4 min-w-0">
+                                                            <div className="text-sm font-bold font-display tracking-tight text-neutral-900 truncate max-w-[120px] xl:max-w-[250px]" title={u.full_name || u.username}>
                                                                 {u.full_name || u.username}
                                                             </div>
-                                                            <div className="text-sm text-neutral-500 truncate max-w-[200px]" title={`@${u.username}`}>
+                                                            <div className="text-sm text-neutral-500 truncate max-w-[120px] xl:max-w-[250px]" title={`@${u.username}`}>
                                                                 @{u.username}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 xl:px-6 py-4">
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-2">
                                                             <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -824,7 +840,7 @@ function ParticipantsPage() {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 xl:px-6 py-4">
                                                     {userAssignments.length > 0 ? (
                                                         <div className="flex flex-wrap gap-2">
                                                             {userAssignments.slice(0, 3).map(a => {
@@ -834,7 +850,7 @@ function ParticipantsPage() {
                                                                 return (
                                                                     <span
                                                                         key={a.id}
-                                                                        className={`inline-flex items-center px-2 py-1 rounded-[6px] text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ring-1 ring-inset shadow-sm ${bgColor}`}
+                                                                        className={`inline-flex items-center px-2 py-1 rounded-[6px] text-[10px] font-bold uppercase tracking-wider ring-1 ring-inset shadow-sm ${bgColor}`}
                                                                         title={a.test_name}
                                                                     >
                                                                         {a.test_name}
@@ -856,7 +872,7 @@ function ParticipantsPage() {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 xl:px-6 py-4">
                                                     <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                                                         {/* Unlock button (if locked) */}
                                                         {canSeeResults && hasLocked && (
@@ -941,6 +957,11 @@ function ParticipantsPage() {
                                                                 </button>
                                                             </div>
                                                         )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 xl:px-6 py-4">
+                                                    <div className="text-xs text-neutral-500 font-medium">
+                                                        {u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                                                     </div>
                                                 </td>
                                             </tr>

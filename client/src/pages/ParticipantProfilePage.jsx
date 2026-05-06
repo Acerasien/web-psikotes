@@ -369,16 +369,16 @@ function ParticipantProfilePage() {
                 </div>
 
                 <div className="bg-white border-2 border-neutral-900 overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,0.05)]">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[900px]">
+                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-300">
+                        <table className="w-full text-left border-collapse min-w-[700px] lg:min-w-full">
                             <thead>
                                 <tr className="bg-neutral-900 text-white border-b-2 border-neutral-900">
-                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 w-1/4">Nama Pengujian</th>
-                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[120px]">Status</th>
-                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700">Sesi Pengerjaan (WIB)</th>
-                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[100px]">Durasi</th>
-                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[130px]">Perangkat</th>
-                                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-center">Indikasi Kecurangan</th>
+                                    <th className="px-3 md:px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 w-auto md:w-1/4">Nama Pengujian</th>
+                                    <th className="px-3 md:px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[80px] md:w-[120px]">Status</th>
+                                    <th className="px-3 md:px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 min-w-[180px]">Sesi Pengerjaan (WIB)</th>
+                                    <th className="px-3 md:px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[80px] md:w-[100px]">Durasi</th>
+                                    <th className="px-3 md:px-5 py-3 text-[10px] font-black uppercase tracking-widest border-r border-neutral-700 text-center w-[100px] md:w-[130px]">Perangkat</th>
+                                    <th className="px-3 md:px-5 py-3 text-[10px] font-black uppercase tracking-widest text-center min-w-[120px]">Indikasi Kecurangan</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-200">
@@ -401,25 +401,25 @@ function ParticipantProfilePage() {
 
                                     return (
                                         <tr key={a.id} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50'} hover:bg-neutral-100/50 transition-colors`}>
-                                            <td className="px-5 py-3 border-r border-neutral-100">
-                                                <span className="text-xs font-black text-neutral-900 uppercase tracking-tighter">{a.test_name}</span>
+                                            <td className="px-3 md:px-5 py-3 border-r border-neutral-100">
+                                                <span className="text-[11px] md:text-xs font-black text-neutral-900 uppercase tracking-tighter block truncate max-w-[150px] md:max-w-none" title={a.test_name}>{a.test_name}</span>
                                             </td>
-                                            <td className="px-5 py-3 border-r border-neutral-100">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${a.status === 'completed' ? 'bg-success' : 'bg-neutral-300'
+                                            <td className="px-3 md:px-5 py-3 border-r border-neutral-100">
+                                                <div className="flex items-center justify-center gap-1.5 md:gap-2">
+                                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${a.status === 'completed' ? 'bg-success' : 'bg-neutral-300'
                                                         }`}></div>
-                                                    <span className="text-[10px] font-black text-neutral-600 uppercase">
+                                                    <span className="text-[9px] md:text-[10px] font-black text-neutral-600 uppercase whitespace-nowrap">
                                                         {a.status === 'completed' ? 'Selesai' : 'Belum Mulai'}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-3 border-r border-neutral-100">
-                                                <div className="flex items-center gap-2 font-mono text-[10px]">
-                                                    <span className={startStr ? 'text-neutral-900 font-bold' : 'text-neutral-300'}>
+                                            <td className="px-3 md:px-5 py-3 border-r border-neutral-100">
+                                                <div className="flex flex-col xl:flex-row xl:items-center gap-1 xl:gap-2 font-mono text-[9px] md:text-[10px]">
+                                                    <span className={startStr ? 'text-neutral-900 font-bold whitespace-nowrap' : 'text-neutral-300'}>
                                                         {startStr ? `${startStr} WIB` : '––/–– ––:––'}
                                                     </span>
-                                                    <span className="text-neutral-300">→</span>
-                                                    <span className={endStr ? 'text-neutral-900 font-bold' : 'text-neutral-300'}>
+                                                    <span className="text-neutral-300 hidden xl:inline">→</span>
+                                                    <span className={endStr ? 'text-neutral-900 font-bold whitespace-nowrap' : 'text-neutral-300'}>
                                                         {endStr ? `${endStr} WIB` : '––/–– ––:––'}
                                                     </span>
                                                 </div>

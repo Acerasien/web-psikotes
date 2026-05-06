@@ -30,17 +30,21 @@ function SchedulePage() {
         participant_ids: []
     });
     const [searchTerm, setSearchTerm] = useState('');
+    const [classFilter, setClassFilter] = useState('');
+    const [classes, setClasses] = useState([]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [sessionRes, userRes] = await Promise.all([
+            const [sessionRes, userRes, classRes] = await Promise.all([
                 api.getSessions(),
-                api.getUsers()
+                api.getUsers(),
+                api.getClasses()
             ]);
             setSessions(sessionRes.data || []);
             // Only participants for the picker
             setParticipants(userRes.data.filter(u => u.role === 'participant') || []);
+            setClasses(classRes.data || []);
         } catch (err) {
             console.error('Failed to fetch schedule data', err);
             setError('Gagal memuat data penjadwalan');
@@ -152,10 +156,18 @@ function SchedulePage() {
         }));
     };
 
-    const filteredParticipants = participants.filter(p => 
-        (p.full_name || p.username).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.department || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredParticipants = participants
+        .filter(p => {
+            const nameMatch = (p.full_name || p.username).toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             (p.department || '').toLowerCase().includes(searchTerm.toLowerCase());
+            const classMatch = !classFilter || String(p.class_id) === String(classFilter);
+            return nameMatch && classMatch;
+        })
+        .sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return dateB - dateA; // Newest first
+        });
 
     const getStatusColor = (session) => {
         const now = new Date();
@@ -365,17 +377,29 @@ function SchedulePage() {
                         <div className="space-y-4 pt-4 border-t border-neutral-100">
                             <div className="flex items-center justify-between">
                                 <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Pilih Peserta ({formData.participant_ids.length})</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Cari nama/dept..."
-                                        className="pl-8 pr-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs w-48 focus:ring-2 focus:ring-primary-500 outline-none"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
+                                <div className="flex items-center gap-2">
+                                    <select
+                                        className="bg-white border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-500 uppercase tracking-tight px-2 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none cursor-pointer"
+                                        value={classFilter}
+                                        onChange={(e) => setClassFilter(e.target.value)}
+                                    >
+                                        <option value="">Semua Kelas</option>
+                                        {classes.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Cari nama..."
+                                            className="pl-8 pr-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs w-32 focus:ring-2 focus:ring-primary-500 outline-none"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
 

@@ -44,7 +44,8 @@ def get_users(
             "education": u.education,
             "class_id": u.class_id,
             "level": u.level,
-            "class_name": u.class_config.name if u.class_config else None
+            "class_name": u.class_config.name if u.class_config else None,
+            "created_at": u.created_at
 
         }
         for u in users
@@ -120,7 +121,8 @@ def get_user(
         "class_id": user.class_id,
         "level": user.level,
         "report_decisions": user.report_decisions,
-        "class_name": user.class_config.name if user.class_config else None
+        "class_name": user.class_config.name if user.class_config else None,
+        "created_at": user.created_at
 
     }
 

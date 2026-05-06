@@ -44,6 +44,7 @@ class User(Base):
     level = Column(String, nullable=True)  # e.g., "Supervisor / Section Head"
     current_session_id = Column(String, nullable=True)
     report_decisions = Column(JSON, nullable=True, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
     # Relationships with cascade delete
