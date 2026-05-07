@@ -22,6 +22,7 @@ from scoring.memory import score_memory
 from scoring.logic import score_logic
 from scoring.papi_kostick import score_papi_kostick
 from scoring.cbi import score_cbi_test
+from scoring.iq import score_iq
 
 # Import helper
 from utils import get_max_score
@@ -424,6 +425,10 @@ def process_test_submission(assignment, db: Session, submission_data: Optional[T
         elif test_code == "CBI":
             details = score_cbi_test(answers_to_score, questions)
             score = details["score"]
+            answered_count = len(answers_to_score)
+        elif test_code == "IQ":
+            details = score_iq(answers_to_score, questions)
+            score = details["raw_score"]
             answered_count = len(answers_to_score)
         else:
             for ans in answers_to_score:

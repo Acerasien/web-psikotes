@@ -409,7 +409,9 @@ function ParticipantProfilePage() {
                                                     <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${a.status === 'completed' ? 'bg-success' : 'bg-neutral-300'
                                                         }`}></div>
                                                     <span className="text-[9px] md:text-[10px] font-black text-neutral-600 uppercase whitespace-nowrap">
-                                                        {a.status === 'completed' ? 'Selesai' : 'Belum Mulai'}
+                                                        {a.status === 'completed' ? (
+                                                            result?.details?.is_complete === false ? 'Selesai (Parsial)' : 'Selesai'
+                                                        ) : a.status === 'in_progress' ? 'Proses' : a.status === 'locked' ? 'Terkunci' : 'Belum Mulai'}
                                                     </span>
                                                 </div>
                                             </td>
@@ -781,16 +783,26 @@ function ParticipantProfilePage() {
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                 <div className="bg-neutral-900 p-6 shadow-[4px_4px_0px_0px_rgba(49,97,119,1)]">
                                                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">IQ Quotient</span>
-                                                    <span className="text-4xl font-black text-white font-mono leading-none">{r.details.iq || '?'}</span>
-                                                    <span className="text-[10px] font-black text-accent-gold uppercase tracking-tighter block mt-2">{r.details.classification}</span>
+                                                    <span className="text-4xl font-black text-white font-mono leading-none">{r.details.iq || (r.details.scoring_error ? 'ERR' : '?')}</span>
+                                                    <span className="text-[10px] font-black text-accent-gold uppercase tracking-tighter block mt-2">{r.details.classification || (r.details.scoring_error ? 'Scoring Error' : 'Pending Calculation')}</span>
                                                 </div>
                                                 <div className="bg-neutral-50 p-6 border-2 border-neutral-900 flex flex-col justify-center">
                                                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">Raw Score Summary</span>
-                                                    <span className="text-2xl font-black text-neutral-900 font-mono">{r.details.raw_score || '?'}<span className="text-neutral-300"> / {r.details.max_score || '?'}</span></span>
+                                                    <span className="text-2xl font-black text-neutral-900 font-mono">
+                                                        {r.details.raw_score !== undefined ? r.details.raw_score : (r.score || '?')}
+                                                        <span className="text-neutral-300"> / {r.details.max_score || r.max_score || '?'}</span>
+                                                    </span>
                                                 </div>
                                                 <div className="bg-neutral-50 p-6 border-2 border-neutral-900 flex flex-col justify-center">
                                                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 block">Accuracy Matrix</span>
-                                                    <span className="text-2xl font-black text-neutral-900 font-mono">{Math.round((r.details.raw_score / r.details.max_score) * 100)}%</span>
+                                                    <span className="text-2xl font-black text-neutral-900 font-mono">
+                                                        {(() => {
+                                                            const raw = r.details.raw_score !== undefined ? r.details.raw_score : r.score;
+                                                            const max = r.details.max_score || r.max_score;
+                                                            if (max && max > 0) return Math.round((raw / max) * 100) + '%';
+                                                            return '–';
+                                                        })()}
+                                                    </span>
                                                 </div>
                                             </div>
 
