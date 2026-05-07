@@ -140,12 +140,15 @@ function ParticipantProfilePage() {
         try {
             setLoading(true);
             const userRes = await api.getUser(id);
+            console.log('[DEBUG] Participant User:', userRes.data);
             setUser(userRes.data);
 
             const assignRes = await api.getAssignments(id);
+            console.log('[DEBUG] Assignments:', assignRes.data);
             setAssignments(assignRes.data);
 
             const resultsRes = await api.getResults({ user_id: id });
+            console.log('[DEBUG] Results:', resultsRes.data);
             setResults(resultsRes.data);
         } catch (err) {
             console.error('Error loading participant data:', err);

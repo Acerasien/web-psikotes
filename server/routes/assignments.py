@@ -38,12 +38,16 @@ def get_assignments(
     admin: User = Depends(require_admin)
 ):
     """Get assignments with optional user_id filter"""
-    query = db.query(Assignment)
+    query = db.query(Assignment).options(joinedload(Assignment.user), joinedload(Assignment.test))
     if user_id is not None:
+        print(f"[DEBUG] Fetching assignments for user_id: {user_id}")
         query = query.filter(Assignment.user_id == user_id)
+    else:
+        print(f"[DEBUG] Fetching all assignments")
     
     # Load all assignments first to avoid cursor issues during auto-submit
     assignments = query.all()
+    print(f"[DEBUG] Found {len(assignments)} assignments")
     
     # Lazy auto-submit check for admin view
     for a in assignments:

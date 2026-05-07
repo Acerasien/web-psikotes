@@ -33,6 +33,7 @@ def get_results(
     query = db.query(Result).options(joinedload(Result.assignment), joinedload(Result.test), joinedload(Result.user))
 
     if user_id is not None:
+        print(f"[DEBUG] Fetching results for user_id: {user_id}")
         query = query.filter(Result.user_id == user_id)
     if test_id is not None:
         query = query.filter(Result.test_id == test_id)
@@ -46,6 +47,7 @@ def get_results(
         )
 
     results = query.all()
+    print(f"[DEBUG] Found {len(results)} results")
     output = []
     for r in results:
         total_questions = db.query(Question).filter(Question.test_id == r.test_id).count()
