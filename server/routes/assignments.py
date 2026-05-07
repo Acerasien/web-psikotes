@@ -49,33 +49,9 @@ def get_assignments(
     assignments = query.all()
     print(f"[DEBUG] Found {len(assignments)} assignments")
     
-    # Lazy auto-submit check for admin view
-    for a in assignments:
-        if a.status == "in_progress" and a.started_at:
-            # Determine time limit (simple fetch for admin view)
-            time_limit = a.test.time_limit
-            # Check for class overrides
-            if a.user.class_id:
-                class_config = db.query(ClassConfig).filter(ClassConfig.id == a.user.class_id).first()
-                if class_config:
-                    override = class_config.config.get("time_overrides", {}).get(a.test.code)
-                    if override:
-                        if isinstance(override, dict):
-                            if "encoding" in override and "recall" in override:
-                                time_limit = override["encoding"] + override["recall"]
-                            elif "phases" in override and isinstance(override["phases"], list):
-                                time_limit = sum(override["phases"])
-                        else:
-                            time_limit = override
-            
-            if time_limit > 0:
-                elapsed = (datetime.now() - a.started_at).total_seconds()
-                if elapsed > (time_limit + 30):
-                    try:
-                        process_test_submission(a, db, is_auto=True)
-                        db.refresh(a)
-                    except Exception as e:
-                        print(f"Admin lazy-submit failed for {a.id}: {e}")
+    # We removed the lazy auto-submit loop from here because it was causing 500 errors 
+    # when database transactions failed during a GET request.
+    # Assignments will now be returned with their current database status.
 
     result = []
     for a in assignments:
@@ -488,9 +464,14 @@ def process_test_submission(assignment, db: Session, submission_data: Optional[T
         details=details,
         completed_at=datetime.now()
     )
-    db.add(result)
-    assignment.status = "completed"
-    db.commit()
+    try:
+        db.add(result)
+        assignment.status = "completed"
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"CRITICAL: Failed to commit test submission for assignment {assignment.id}: {e}")
+        raise e
     return {"score": score, "test_type": test_code}
 
 
@@ -512,8 +493,12 @@ def submit_test(
     if db.query(Result).filter(Result.assignment_id == assignment_id).first():
         raise HTTPException(status_code=400, detail="Already submitted")
 
-    res = process_test_submission(assignment, db, submission_data=submission)
-    return {"message": "Test submitted successfully", **res}
+    try:
+        res = process_test_submission(assignment, db, submission_data=submission)
+        return {"message": "Test submitted successfully", **res}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/assignments/{assignment_id}/lock")
