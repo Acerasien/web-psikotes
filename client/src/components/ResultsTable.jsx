@@ -6,31 +6,33 @@ import { Link } from 'react-router-dom';
 import { formatLocalDateTime } from '../utils/dateUtils';
 
 /** Compute primary_trait from result details (fallback for old results) */
-function computePrimaryTrait(details) {
-    if (!details) return null;
-    if (details.primary_trait) return details.primary_trait;
-    
-    const percentages = details.percentages;
-    if (!percentages) return null;
-    
-    const entries = Object.entries(percentages);
-    if (entries.length === 0) return null;
-    
-    // Find the maximum percentage
-    const maxPct = Math.max(...entries.map(([, v]) => v));
-    
-    // If max percentage is 0 or all scores are tied and there are many of them, 
-    // it's better not to list them all as "primary".
-    if (maxPct === 0) return null;
+function computePrimaryTrait(result) {
+    if (!result || !result.details) return null;
+    const d = result.details;
 
-    const topNorms = entries.filter(([, v]) => v === maxPct).map(([k]) => k);
-    
-    // If more than 3 traits are tied, just call it "Balanced" or return null for fallback
-    if (topNorms.length > 3) {
-        return "Multiple"; 
+    // DISC
+    if (result.test_name.includes('DISC')) {
+        const g3 = d.graph_iii;
+        if (!g3) return null;
+        return Object.entries(g3).reduce((a, b) => a[1] > b[1] ? a : b)[0];
     }
     
-    return topNorms.length === 1 ? topNorms[0] : topNorms.join(' & ');
+    // IQ
+    if (result.test_name.includes('CFIT') || result.test_name.includes('IQ Pola')) {
+        return `IQ ${d.iq || 0}`;
+    }
+
+    // Logic / WPT
+    if (result.test_name.includes('WPT') || result.test_name.includes('Aritmatika')) {
+        return `IQ ${d.iq || d.est_iq || 0}`;
+    }
+
+    // Temperament
+    if (result.test_name.includes('Temperament')) {
+        return d.primary || null;
+    }
+
+    return null;
 }
 
 function ResultsTable({ filters, onFilterChange, tests }) {
@@ -40,7 +42,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
     const [sortConfig, setSortConfig] = useState({ key: 'completed_at', direction: 'desc' });
     const [expandedRows, setExpandedRows] = useState(new Set());
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10); // Show 10 items per page
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     // Fetch results when filters change
     useEffect(() => {
@@ -55,7 +57,7 @@ function ResultsTable({ filters, onFilterChange, tests }) {
 
                 const res = await api.getResults(params);
                 setResults(res.data);
-                setCurrentPage(1); // Reset to first page when filters change
+                setCurrentPage(1); 
             } catch (err) {
                 console.error(err);
             } finally {
@@ -65,38 +67,19 @@ function ResultsTable({ filters, onFilterChange, tests }) {
         fetchResults();
     }, [filters]);
 
-    const parseDate = (d) => {
-        if (!d) return 0;
-        const normalized = d.endsWith('Z') ? d : d + 'Z';
-        return new Date(normalized).getTime();
-    };
-
-    // Sorting function
     const sortedResults = [...results].sort((a, b) => {
         if (sortConfig.key === 'completed_at') {
-            const dateA = parseDate(a.completed_at);
-            const dateB = parseDate(b.completed_at);
+            const dateA = new Date(a.completed_at);
+            const dateB = new Date(b.completed_at);
             return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
-        }
-        if (sortConfig.key === 'score') {
-            return sortConfig.direction === 'asc'
-                ? a.score - b.score
-                : b.score - a.score;
-        }
-        if (sortConfig.key === 'time_taken') {
-            return sortConfig.direction === 'asc'
-                ? a.time_taken - b.time_taken
-                : b.time_taken - a.time_taken;
-        }
-        if (sortConfig.key === 'participant') {
-            const nameA = a.full_name || a.username;
-            const nameB = b.full_name || b.username;
-            if (nameA < nameB) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (nameA > nameB) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
         }
         return 0;
     });
+
+    const paginatedResults = sortedResults.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const handleSort = (key) => {
         setSortConfig(prev => ({
@@ -107,449 +90,263 @@ function ResultsTable({ filters, onFilterChange, tests }) {
 
     const toggleRow = (id) => {
         const newExpanded = new Set(expandedRows);
-        if (newExpanded.has(id)) {
-            newExpanded.delete(id);
-        } else {
-            newExpanded.add(id);
-        }
+        if (newExpanded.has(id)) newExpanded.delete(id);
+        else newExpanded.add(id);
         setExpandedRows(newExpanded);
     };
 
-    // Pagination logic
-    const totalPages = Math.ceil(sortedResults.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedResults = sortedResults.slice(startIndex, endIndex);
-
-    const goToPage = (page) => {
-        if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
-        }
-    };
-
-    const renderPageNumbers = () => {
-        const pages = [];
-        const maxVisible = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-
-        if (endPage - startPage + 1 < maxVisible) {
-            startPage = Math.max(1, endPage - maxVisible + 1);
-        }
-
-        if (startPage > 1) {
-            pages.push(
-                <button key={1} onClick={() => goToPage(1)} className="px-3 py-1 rounded hover:bg-gray-200">1</button>
-            );
-            if (startPage > 2) {
-                pages.push(<span key="start-ellipsis" className="px-2">...</span>);
-            }
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pages.push(
-                <button
-                    key={i}
-                    onClick={() => goToPage(i)}
-                    className={`px-3 py-1 rounded ${currentPage === i ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'}`}
-                >
-                    {i}
-                </button>
-            );
-        }
-
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                pages.push(<span key="end-ellipsis" className="px-2">...</span>);
-            }
-            pages.push(
-                <button key={totalPages} onClick={() => goToPage(totalPages)} className="px-3 py-1 rounded hover:bg-gray-200">{totalPages}</button>
-            );
-        }
-
-        return pages;
-    };
-
     const renderDetails = (result) => {
-        // ... (unchanged, same as before)
-        if (!result.details) return null;
+        const d = result.details;
+        if (!d) return <div className="text-neutral-400 text-xs italic">Tidak ada detail tersedia.</div>;
+
+        // 1. IQ TEST (CFIT)
+        if (result.test_name.includes('CFIT') || result.test_name.includes('IQ Pola')) {
+            return (
+                <div className="bg-white border border-neutral-200 shadow-sm rounded-3xl p-6 text-neutral-900 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Skor IQ</span>
+                            <div className="text-3xl font-black text-primary-600">{d.iq || 0}</div>
+                        </div>
+                        <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Klasifikasi</span>
+                            <div className="text-xl font-black uppercase text-neutral-800">{d.classification || 'Average'}</div>
+                        </div>
+                        <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Skor Mentah</span>
+                            <div className="text-xl font-black text-neutral-800">{d.raw_score || 0} / 100</div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Analisis Per-Fase</h4>
+                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map(phase => {
+                                const ps = d.phase_scores?.[phase] || { correct: 0, answered: 0 };
+                                return (
+                                    <div key={phase} className="bg-white p-2 rounded-xl text-center border border-neutral-100 shadow-sm">
+                                        <div className="text-[9px] font-black text-neutral-400 mb-1">F{phase}</div>
+                                        <div className="text-xs font-black text-neutral-700">{ps.correct}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 2. DISC PERSONALITY
         if (result.test_name.includes('DISC')) {
-            const d = result.details;
             return (
-                <div className="p-2 bg-gray-50 rounded">
-                    <div className="grid grid-cols-4 gap-2 text-center mb-2">
-                        {['D', 'I', 'S', 'C'].map(trait => (
-                            <div key={trait}>
-                                <span className="font-bold">{trait}</span>
-                                <div>{Math.round(d.percentages?.[trait] || 0)}%</div>
-                                <span className={`text-xs px-1 rounded ${d.intensity_zones?.[trait] === 'High' ? 'bg-green-200' :
-                                    d.intensity_zones?.[trait] === 'Low' ? 'bg-red-200' : 'bg-yellow-200'
-                                    }`}>
-                                    {d.intensity_zones?.[trait] || 'Medium'}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="text-sm">
-                        <span className="font-medium">Stress Gap:</span> {Math.round(d.stress_gap || 0)}
+                <div className="bg-white border border-neutral-200 shadow-sm rounded-3xl p-6 text-neutral-900 space-y-6">
+                    <div className="grid grid-cols-4 gap-4">
+                        {['D', 'I', 'S', 'C'].map(trait => {
+                            const val = d.percentages?.[trait] || 0;
+                            const zone = d.intensity_zones?.[trait] || 'Medium';
+                            return (
+                                <div key={trait} className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 text-center">
+                                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">{trait}</span>
+                                    <div className="text-2xl font-black text-neutral-800">{Math.round(val)}%</div>
+                                    <div className={`mt-2 text-[9px] font-black px-2 py-1 rounded-lg uppercase inline-block ${zone === 'High' ? 'bg-success-light text-success-dark' : zone === 'Low' ? 'bg-error-light text-error-dark' : 'bg-warning-light text-warning-dark'}`}>
+                                        {zone}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             );
         }
-        if (result.test_name.includes('Speed')) {
-            const d = result.details;
-            return (
-                <div className="p-2 bg-gray-50 rounded text-sm">
-                    <div><span className="font-medium">Akurasi:</span> {d.accuracy}%</div>
-                    <div><span className="font-medium">Kategori:</span> {d.band}</div>
-                    {d.flag && <div className="text-red-600">⚠️ {d.flag}</div>}
-                </div>
-            );
-        }
+
+        // 3. TEMPERAMENT
         if (result.test_name.includes('Temperament')) {
-            const d = result.details;
-            if (!d) return null;
             return (
-                <div className="p-2 bg-gray-50 rounded text-sm">
-                    <div><span className="font-medium">Utama:</span> {d.primary}</div>
-                    <div><span className="font-medium">Sekunder:</span> {d.secondary}</div>
-                    <div className="mt-1">
-                        <span className="font-medium">Persentase:</span>
-                        <div className="grid grid-cols-2 gap-1 mt-1">
-                            {Object.entries(d.percentages || {}).map(([trait, pct]) => (
-                                <div key={trait} className="flex justify-between">
-                                    <span>{trait}:</span>
-                                    <span>{Math.round(pct)}%</span>
-                                </div>
-                            ))}
+                <div className="bg-white border border-neutral-200 shadow-sm rounded-3xl p-6 text-neutral-900">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Profil Dominan</h4>
+                            <div className="bg-primary-50 border border-primary-100 p-6 rounded-3xl">
+                                <div className="text-3xl font-black uppercase mb-1 text-primary-700">{d.primary}</div>
+                                <div className="text-xs font-bold text-primary-600/80">Karakteristik Utama</div>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Distribusi Persentase</h4>
+                            <div className="space-y-3">
+                                {Object.entries(d.percentages || {}).map(([trait, val]) => (
+                                    <div key={trait}>
+                                        <div className="flex justify-between text-[10px] font-black uppercase mb-1 text-neutral-600">
+                                            <span>{trait}</span>
+                                            <span>{Math.round(val)}%</span>
+                                        </div>
+                                        <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary-500 transition-all duration-1000" style={{ width: `${val}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                    {d.straight_line_flag && (
-                        <div className="mt-2 text-red-600">⚠️ Terdeteksi jawaban seragam</div>
+                </div>
+            );
+        }
+
+        // 4. SPEED / MEMORY / ACCURACY BASED
+        if (result.test_name.includes('Speed') || result.test_name.includes('Memory')) {
+            return (
+                <div className="bg-white border border-neutral-200 shadow-sm rounded-3xl p-6 text-neutral-900">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Akurasi</span>
+                            <div className="text-2xl font-black text-success-dark">{d.accuracy || d.score}%</div>
+                        </div>
+                        <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Kategori</span>
+                            <div className="text-lg font-black uppercase text-neutral-800">{d.band || 'Average'}</div>
+                        </div>
+                        <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Benar</span>
+                            <div className="text-lg font-black text-neutral-800">{d.correct_count || 0}</div>
+                        </div>
+                        <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                            <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Durasi</span>
+                            <div className="text-lg font-black uppercase text-neutral-800">{(result.time_taken / 60).toFixed(1)}m</div>
+                        </div>
+                    </div>
+                    {d.flag && (
+                        <div className="mt-6 p-4 bg-error-light/30 border border-error-light rounded-2xl flex items-center gap-3">
+                            <svg className="w-5 h-5 text-error-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            <span className="text-xs font-black uppercase tracking-tight text-error-dark">{d.flag}</span>
+                        </div>
                     )}
                 </div>
             );
         }
-        if (result.test_name.includes('Memory')) {
-            const d = result.details;
-            if (!d) return null;
-            return (
-                <div className="p-3 bg-gray-50 rounded text-sm">
-                    <div className="grid grid-cols-2 gap-2">
-                        <div><span className="font-medium">Skor:</span> {d.score} / 100</div>
-                        <div><span className="font-medium">Benar:</span> {d.correct_count} / 25</div>
-                        <div><span className="font-medium">Akurasi:</span> {d.accuracy}%</div>
-                        <div>
-                            <span className="font-medium">Kategori:</span>{' '}
-                            <span className={`ml-1 px-2 py-0.5 rounded ${d.band?.includes('Excellent') ? 'bg-green-100 text-green-800' :
-                                d.band?.includes('Good') ? 'bg-blue-100 text-blue-800' :
-                                    d.band?.includes('Average') ? 'bg-yellow-100 text-yellow-800' :
-                                        'bg-red-100 text-red-800'
-                                }`}>
-                                {d.band}
-                            </span>
+
+        // FALLBACK: Clean Key-Value Display
+        return (
+            <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm">
+                <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4">Metadata Hasil</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    {Object.entries(d).filter(([k]) => typeof d[k] !== 'object').map(([key, value]) => (
+                        <div key={key}>
+                            <span className="text-[9px] font-black text-neutral-400 uppercase block mb-1">{key.replace('_', ' ')}</span>
+                            <span className="text-xs font-bold text-neutral-800">{String(value)}</span>
                         </div>
-                    </div>
+                    ))}
                 </div>
-            );
-        }
-        // Legacy Leadership test results (deprecated, kept for backward compatibility)
-        if (result.test_name.includes('Leadership')) {
-            const d = result.details;
-            if (!d) return null;
-            return (
-                <div className="p-3 bg-gray-50 rounded text-sm">
-                    <div><span className="font-medium">Utama:</span> {d.primary}</div>
-                    <div><span className="font-medium">Sekunder:</span> {d.secondary}</div>
-                    <div className="mt-2">
-                        <span className="font-medium">Persentase:</span>
-                        <div className="grid grid-cols-2 gap-1 mt-1">
-                            {Object.entries(d.percentages || {}).map(([trait, pct]) => (
-                                <div key={trait} className="flex justify-between">
-                                    <span>{trait}:</span>
-                                    <span>{Math.round(pct)}%</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    {d.development_areas?.length > 0 && (
-                        <div className="mt-2 text-orange-600">⚠️ Area Pengembangan: {d.development_areas.join(', ')}</div>
-                    )}
-                </div>
-            );
-        }
-        return <div className="text-sm text-gray-500">Tidak ada detail tambahan</div>;
+            </div>
+        );
     };
+
+    const PaginationControls = () => {
+        const totalPages = Math.ceil(sortedResults.length / itemsPerPage);
+        return (
+            <div className="px-6 py-5 bg-white border-t border-neutral-100 flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Baris:</span>
+                    <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                        className="border-2 border-neutral-100 rounded-xl px-3 py-1.5 text-xs font-black focus:ring-0 focus:border-primary-500 bg-neutral-50"
+                    >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                    </select>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1} className="p-2 border-2 border-neutral-100 rounded-xl disabled:opacity-30 hover:bg-neutral-50"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg></button>
+                    <span className="text-xs font-black text-neutral-900 px-4">{currentPage} / {totalPages || 1}</span>
+                    <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="p-2 border-2 border-neutral-100 rounded-xl disabled:opacity-30 hover:bg-neutral-50"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg></button>
+                </div>
+            </div>
+        );
+    };
+
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+
+    // Debounce search term to prevent API spam on every keystroke
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (filters.search !== searchTerm) {
+                onFilterChange({ ...filters, search: searchTerm });
+            }
+        }, 500); // 500ms delay
+
+        return () => clearTimeout(handler);
+    }, [searchTerm, filters, onFilterChange]);
 
     return (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Hasil Tes</h3>
-            </div>
-
-            {/* Filters - Stack on mobile */}
-            <div className="p-4 bg-gray-50 border-b grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <input
-                    type="text"
-                    placeholder="Cari peserta..."
-                    value={filters.search}
-                    onChange={e => onFilterChange({ ...filters, search: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        <div className="bg-white">
+            <div className="p-6 bg-neutral-50/50 border-b border-neutral-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <input 
+                    type="text" 
+                    placeholder="Cari peserta..." 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)} 
+                    className="w-full px-4 py-3 bg-white border-2 border-neutral-100 focus:border-primary-500 rounded-2xl text-sm font-bold outline-none" 
                 />
-                <select
-                    value={filters.testId}
-                    onChange={e => onFilterChange({ ...filters, testId: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                >
-                    <option value="">Semua Tes</option>
-                    {tests.map(t => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
+                <select value={filters.testId} onChange={e => onFilterChange({ ...filters, testId: e.target.value })} className="w-full px-4 py-3 bg-white border-2 border-neutral-100 focus:border-primary-500 rounded-2xl text-sm font-bold outline-none cursor-pointer">
+                    <option value="">Semua Jenis Tes</option>
+                    {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
-                <input
-                    type="date"
-                    value={filters.fromDate}
-                    onChange={e => onFilterChange({ ...filters, fromDate: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="From"
-                />
-                <input
-                    type="date"
-                    value={filters.toDate}
-                    onChange={e => onFilterChange({ ...filters, toDate: e.target.value })}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="To"
-                />
+                <input type="date" value={filters.fromDate} onChange={e => onFilterChange({ ...filters, fromDate: e.target.value })} className="w-full px-4 py-3 bg-white border-2 border-neutral-100 focus:border-primary-500 rounded-2xl text-sm font-bold outline-none" />
+                <input type="date" value={filters.toDate} onChange={e => onFilterChange({ ...filters, toDate: e.target.value })} className="w-full px-4 py-3 bg-white border-2 border-neutral-100 focus:border-primary-500 rounded-2xl text-sm font-bold outline-none" />
             </div>
 
-            {/* Mobile Card View - shows on screens < lg */}
-            <div className="lg:hidden divide-y divide-gray-200">
-                {loading && (
-                    <div className="p-8 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                        <p className="text-gray-500 mt-2 text-sm">Memuat hasil...</p>
-                    </div>
-                )}
-
-                {!loading && paginatedResults.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">
-                        <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p>Tidak ada hasil ditemukan.</p>
-                    </div>
-                )}
-
-                {!loading && paginatedResults.map(result => (
-                    <div key={result.id} className="p-4 space-y-3">
-                        {/* Header */}
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                                <Link
-                                    to={`/participants/${result.user_id}`}
-                                    className="text-blue-600 hover:text-blue-800 font-medium text-sm block truncate max-w-[200px]"
-                                    title={result.full_name || result.username}
-                                >
-                                    {result.full_name || result.username}
-                                </Link>
-                                <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]" title={result.test_name}>{result.test_name}</p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                                <div className="text-lg font-bold text-green-600">
-                                    {computePrimaryTrait(result.details) ? (
-                                        <span className="text-sm">{computePrimaryTrait(result.details)}</span>
-                                    ) : result.details?.primary ? (
-                                        <span>{result.details.primary}</span>
-                                    ) : result.max_score ? (
-                                        <span>{result.score} / {result.max_score}</span>
-                                    ) : (
-                                        <span>{result.score}</span>
-                                    )}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                    {Math.floor(result.time_taken / 60)}m {result.time_taken % 60}s
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Date and actions */}
-                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                            <div className="text-xs text-gray-500 flex items-center gap-1">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                {formatLocalDateTime(result.completed_at, 'dd MMM yyyy')}
-                            </div>
-                            <button
-                                onClick={() => toggleRow(result.id)}
-                                className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 px-2 py-1 bg-blue-50 rounded"
-                            >
-                                {expandedRows.has(result.id) ? 'Sembunyikan' : 'Detail'}
-                                <svg className={`w-3.5 h-3.5 transition-transform ${expandedRows.has(result.id) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Expanded details */}
-                        {expandedRows.has(result.id) && (
-                            <div className="pt-2 bg-gray-50 rounded-lg p-3">
-                                {renderDetails(result)}
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-
-            {/* Pagination - Mobile */}
-            {!loading && paginatedResults.length > 0 && (
-                <div className="lg:hidden p-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm text-gray-700">
-                            Halaman {currentPage} dari {totalPages}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                            {startIndex + 1}-{Math.min(endIndex, sortedResults.length)} dari {sortedResults.length}
-                        </span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <button
-                            onClick={() => goToPage(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Sebelumnya
-                        </button>
-                        <div className="flex items-center gap-1">
-                            {renderPageNumbers()}
-                        </div>
-                        <button
-                            onClick={() => goToPage(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Selanjutnya
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Desktop Table View - hidden on mobile */}
-            <div className="hidden lg:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                onClick={() => handleSort('participant')}>
-                                Peserta {sortConfig.key === 'participant' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Tes
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                onClick={() => handleSort('score')}>
-                                Skor {sortConfig.key === 'score' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                onClick={() => handleSort('time_taken')}>
-                                Waktu {sortConfig.key === 'time_taken' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                onClick={() => handleSort('completed_at')}>
-                                Selesai {sortConfig.key === 'completed_at' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Aksi
-                            </th>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-neutral-50/30">
+                            <th className="px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Peserta</th>
+                            <th className="px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Pengujian</th>
+                            <th className="px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-widest text-center">Hasil Utama</th>
+                            <th className="px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-widest text-right">Tanggal</th>
+                            <th className="px-6 py-5 text-[10px] font-black text-neutral-400 uppercase tracking-widest text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {paginatedResults.length === 0 && (
-                            <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-500">Tidak ada hasil ditemukan.</td></tr>
-                        )}
-                        {paginatedResults.map(result => (
-                            <>
-                                <tr key={result.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap max-w-[200px]">
-                                        <Link 
-                                            to={`/participants/${result.user_id}`} 
-                                            className="text-blue-600 hover:underline truncate block"
-                                            title={result.full_name || result.username}
-                                        >
-                                            {result.full_name || result.username}
-                                        </Link>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-[150px] truncate" title={result.test_name}>
-                                        {result.test_name}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
-                                        {computePrimaryTrait(result.details) ? (
-                                            <span>{computePrimaryTrait(result.details)}</span>
-                                        ) : result.details?.primary ? (
-                                            <span>{result.details.primary}</span>
-                                        ) : result.max_score ? (
-                                            <span>{result.score} / {result.max_score}</span>
-                                        ) : (
-                                            <span>{result.score}</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {Math.floor(result.time_taken / 60)}m {result.time_taken % 60}s
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {formatLocalDateTime(result.completed_at, 'dd MMM yyyy')}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <button
-                                            onClick={() => toggleRow(result.id)}
-                                            className="text-blue-500 hover:text-blue-700 font-medium"
-                                        >
-                                            {expandedRows.has(result.id) ? 'Sembunyikan detail' : 'Tampilkan detail'}
-                                        </button>
-                                    </td>
-                                </tr>
-                                {expandedRows.has(result.id) && (
-                                    <tr>
-                                        <td colSpan="6" className="px-6 py-4 bg-gray-50">
-                                            {renderDetails(result)}
+                    <tbody className="divide-y divide-neutral-100">
+                            {paginatedResults.map(result => (
+                                <div key={result.id} style={{ display: 'contents' }}>
+                                    <tr className="group hover:bg-neutral-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <Link to={`/participants/${result.user_id}`} className="font-black text-neutral-900 uppercase text-xs tracking-tight hover:text-primary-600 transition-colors">
+                                                {result.full_name || result.username}
+                                            </Link>
+                                        </td>
+                                        <td className="px-6 py-4 text-[10px] font-bold text-neutral-500 uppercase">{result.test_name}</td>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-success-light text-success-dark font-black text-[11px] uppercase tracking-tighter">
+                                                {computePrimaryTrait(result) || result.score}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-[11px] font-bold text-neutral-600 uppercase">
+                                            {formatLocalDateTime(result.completed_at, 'dd MMM yyyy')}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <button onClick={() => toggleRow(result.id)} className={`p-2 rounded-xl transition-all ${expandedRows.has(result.id) ? 'bg-primary-600 text-white shadow-lg shadow-primary-200' : 'bg-neutral-100 text-neutral-400 hover:bg-neutral-200'}`}>
+                                                <svg className={`w-4 h-4 transition-transform ${expandedRows.has(result.id) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                                            </button>
                                         </td>
                                     </tr>
-                                )}
-                            </>
-                        ))}
+                                    {expandedRows.has(result.id) && (
+                                        <tr>
+                                            <td colSpan="5" className="px-6 py-6 bg-neutral-50/50">
+                                                <div className="max-w-4xl mx-auto">{renderDetails(result)}</div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </div>
+                            ))}
                     </tbody>
                 </table>
             </div>
-
-            {/* Pagination - Desktop */}
-            {!loading && paginatedResults.length > 0 && (
-                <div className="hidden lg:flex items-center justify-between px-6 py-4 border-t border-gray-200">
-                    <div className="text-sm text-gray-700">
-                        Menampilkan <span className="font-medium">{startIndex + 1}</span> hingga{' '}
-                        <span className="font-medium">{Math.min(endIndex, sortedResults.length)}</span> dari{' '}
-                        <span className="font-medium">{sortedResults.length}</span> hasil
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => goToPage(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-                        >
-                            Sebelumnya
-                        </button>
-                        <div className="flex items-center gap-1">
-                            {renderPageNumbers()}
-                        </div>
-                        <button
-                            onClick={() => goToPage(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-                        >
-                            Selanjutnya
-                        </button>
-                    </div>
-                </div>
-            )}
+            {!loading && <PaginationControls />}
         </div>
     );
 }

@@ -7,8 +7,8 @@ def score_speed(answers, questions):
     Returns a dict with:
         - score: number correct (out of total questions, skipped = wrong)
         - total_questions: total number of questions in the test
-        - accuracy: percentage correct (out of total questions)
-        - flag: "Likely Random Guessing" if attempts > 50 and accuracy < 50, else None
+        - accuracy: percentage correct (out of attempted questions)
+        - flag: "Likely Random Guessing" if attempts > 50 and accuracy < 35, else None
         - band: performance band (Excellent, Good, Average, Needs Improvement)
     """
     # Build a lookup for correct answers
@@ -39,15 +39,18 @@ def score_speed(answers, questions):
                 correct += 1
         # else: skipped = wrong (no points added)
 
-    accuracy = (correct / total_questions * 100) if total_questions > 0 else 0
+    # Calculate accuracy based on attempted questions (Accuracy Rate)
+    # This prevents penalizing slow but careful participants in the accuracy metric
+    accuracy = (correct / total_answered * 100) if total_answered > 0 else 0
 
-    # Determine flag (based on answered count vs accuracy)
-    total_answered = len(submitted_answers)
+    # Determine flag (Random Guessing detection)
+    # Trigger if participant answers a significant amount (>50) 
+    # but their accuracy is near or below the statistical guessing threshold (25% for 4 options)
     flag = None
-    if total_answered > 50 and accuracy < 50:
+    if total_answered > 50 and accuracy < 35:
         flag = "Likely Random Guessing"
 
-    # Determine band (based on score out of 100)
+    # Determine performance band (based on raw score relative to 100 questions)
     score = correct
 
     if score >= 80:

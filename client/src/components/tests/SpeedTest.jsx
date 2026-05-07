@@ -221,10 +221,7 @@ export function SpeedTest({ assignmentId }) {
             })}
           </div>
 
-          {/* Keyboard hint - desktop only */}
-          <div className="hidden sm:block mt-6 text-center text-xs text-gray-400">
-            Tekan <kbd className="px-2 py-1 bg-gray-100 rounded border">1</kbd>-<kbd className="px-2 py-1 bg-gray-100 rounded border">9</kbd> untuk memilih, <kbd className="px-2 py-1 bg-gray-100 rounded border">Enter</kbd> untuk mengirim
-          </div>
+
         </div>
       </div>
 

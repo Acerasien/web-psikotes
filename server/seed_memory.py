@@ -36,7 +36,9 @@ def generate_distractors(code):
             for rep in replacements[char]:
                 new_code = list(code_list)
                 new_code[i] = rep
-                distractors.add("".join(new_code))
+                candidate = "".join(new_code)
+                if candidate != code:
+                    distractors.add(candidate)
     
     # If not enough, mutate randomly
     chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -45,7 +47,9 @@ def generate_distractors(code):
         new_char = random.choice(chars)
         new_code = list(code_list)
         new_code[idx] = new_char
-        distractors.add("".join(new_code))
+        candidate = "".join(new_code)
+        if candidate != code:
+            distractors.add(candidate)
         
     res = list(distractors)
     random.shuffle(res)
