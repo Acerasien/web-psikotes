@@ -216,19 +216,6 @@ def submit_phase(
     if not phase:
         raise HTTPException(status_code=404, detail="Phase not found")
 
-    # Check if already submitted
-    existing = (
-        db.query(Response)
-        .join(Question, Response.question_id == Question.id)
-        .filter(
-            Response.assignment_id == assignment_id,
-            Question.phase_id == phase.id
-        )
-        .first()
-    )
-    if existing:
-        raise HTTPException(status_code=400, detail="This phase has already been submitted")
-
     # Get all questions for this phase with options
     questions = (
         db.query(Question)
@@ -238,6 +225,12 @@ def submit_phase(
         .all()
     )
     question_map = {q.id: q for q in questions}
+
+    # Delete existing responses for this phase to prevent duplicates from real-time syncing
+    db.query(Response).filter(
+        Response.assignment_id == assignment_id,
+        Response.question_id.in_([q.id for q in questions])
+    ).delete(synchronize_session=False)
 
     # Save responses
     if not request.answers:
