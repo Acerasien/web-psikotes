@@ -40,14 +40,10 @@ def get_assignments(
     """Get assignments with optional user_id filter"""
     query = db.query(Assignment).options(joinedload(Assignment.user), joinedload(Assignment.test))
     if user_id is not None:
-        print(f"[DEBUG] Fetching assignments for user_id: {user_id}")
         query = query.filter(Assignment.user_id == user_id)
-    else:
-        print(f"[DEBUG] Fetching all assignments")
     
     # Load all assignments first to avoid cursor issues during auto-submit
     assignments = query.all()
-    print(f"[DEBUG] Found {len(assignments)} assignments")
     
     # We removed the lazy auto-submit loop from here because it was causing 500 errors 
     # when database transactions failed during a GET request.
