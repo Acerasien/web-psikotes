@@ -31,11 +31,19 @@ function WaitingRoom({ assignmentId, onUnlock }) {
 
         const timer = setInterval(() => {
             setStatus(prev => {
-                if (prev.seconds_until_start <= 1) {
+                // Only auto-unlock if we are actually waiting for the start time
+                // Don't auto-unlock if we are already past the end_time (Expired)
+                const isPastEnd = prev.end_time && new Date() > new Date(prev.end_time);
+                
+                if (!isPastEnd && prev.seconds_until_start <= 1 && prev.seconds_until_start > 0) {
                     onUnlock();
                     return { ...prev, is_open: true, seconds_until_start: 0 };
                 }
-                return { ...prev, seconds_until_start: prev.seconds_until_start - 1 };
+                
+                if (prev.seconds_until_start > 0) {
+                    return { ...prev, seconds_until_start: prev.seconds_until_start - 1 };
+                }
+                return prev;
             });
         }, 1000);
 

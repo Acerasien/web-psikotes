@@ -148,6 +148,11 @@ def get_assignment_session_status(assignment_id: int, db: Session = Depends(get_
     now = get_now_jakarta()
     
     is_open = session.is_unlocked or (now >= session.start_time and (not session.end_time or now <= session.end_time))
+    
+    # Grace Rule: If test is already in progress, it's considered "open" for this specific user
+    if not is_open and assignment.status == "in_progress":
+        is_open = True
+        
     seconds_until_start = int((session.start_time - now).total_seconds()) if now < session.start_time else 0
     
     return {
