@@ -169,12 +169,18 @@ def start_test(
     if assignment.session_id:
         session = assignment.session
         now = get_now_jakarta()
-        if not session.is_unlocked and now < session.start_time:
-            remaining = int((session.start_time - now).total_seconds())
-            raise HTTPException(
-                status_code=403, 
-                detail=f"Tes ini dijadwalkan akan dimulai dalam {remaining} detik."
-            )
+        if not session.is_unlocked:
+            if now < session.start_time:
+                remaining = int((session.start_time - now).total_seconds())
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"Tes ini dijadwalkan akan dimulai dalam {remaining} detik."
+                )
+            if session.end_time and now > session.end_time and assignment.status == "pending":
+                raise HTTPException(
+                    status_code=403,
+                    detail="Sesi ujian ini telah berakhir dan tidak dapat dimulai lagi."
+                )
 
     if assignment.status == "pending":
         assignment.status = "in_progress"

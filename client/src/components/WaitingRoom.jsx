@@ -73,12 +73,14 @@ function WaitingRoom({ assignmentId, onUnlock }) {
                 <div className="absolute top-0 left-0 w-full h-1 bg-primary-500/20">
                     <div 
                         className="h-full bg-primary-500 transition-all duration-1000 ease-linear"
-                        style={{ width: `${(1 - (status?.seconds_until_start % 60) / 60) * 100}%` }}
+                        style={{ width: `${status?.is_open ? 100 : (1 - (status?.seconds_until_start % 60) / 60) * 100}%` }}
                     ></div>
                 </div>
-                <p className="text-primary-500 text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-2 md:mb-4">Waktu Tersisa</p>
+                <p className="text-primary-500 text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-2 md:mb-4">
+                    {status?.end_time && new Date() > new Date(status.end_time) ? 'Sesi Berakhir' : 'Waktu Tersisa'}
+                </p>
                 <p className="text-4xl md:text-6xl font-mono font-bold text-white tracking-widest">
-                    {formatTime(status?.seconds_until_start || 0)}
+                    {status?.end_time && new Date() > new Date(status.end_time) ? 'CLOSED' : formatTime(status?.seconds_until_start || 0)}
                 </p>
             </div>
 

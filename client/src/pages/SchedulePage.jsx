@@ -172,7 +172,10 @@ function SchedulePage() {
     const getStatusColor = (session) => {
         const now = new Date();
         const start = new Date(session.start_time);
+        const end = session.end_time ? new Date(session.end_time) : null;
+        
         if (session.is_unlocked) return 'bg-success text-white';
+        if (end && now > end) return 'bg-neutral-400 text-white';
         if (now >= start) return 'bg-primary-500 text-white';
         return 'bg-warning text-white';
     };
@@ -222,7 +225,11 @@ function SchedulePage() {
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h3 className="text-lg font-bold text-neutral-900">{session.name}</h3>
                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${getStatusColor(session)}`}>
-                                                    {session.is_unlocked ? 'Terbuka (Manual)' : (new Date() >= new Date(session.start_time) ? 'Berjalan' : 'Terjadwal')}
+                                                    {session.is_unlocked ? 'Terbuka (Manual)' : (
+                                                        session.end_time && new Date() > new Date(session.end_time) 
+                                                            ? 'Berakhir' 
+                                                            : (new Date() >= new Date(session.start_time) ? 'Berjalan' : 'Terjadwal')
+                                                    )}
                                                 </span>
                                             </div>
                                             <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">

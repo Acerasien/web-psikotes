@@ -147,7 +147,7 @@ def get_assignment_session_status(assignment_id: int, db: Session = Depends(get_
     session = assignment.session
     now = get_now_jakarta()
     
-    is_open = now >= session.start_time or session.is_unlocked
+    is_open = session.is_unlocked or (now >= session.start_time and (not session.end_time or now <= session.end_time))
     seconds_until_start = int((session.start_time - now).total_seconds()) if now < session.start_time else 0
     
     return {
