@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api } from '../utils/api';
 import { Info, ArrowLeft } from 'lucide-react';
 
 function WaitingRoom({ assignmentId, onUnlock, onBack }) {
