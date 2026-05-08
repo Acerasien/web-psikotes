@@ -8,6 +8,7 @@ from database import get_db
 from models import User, ExamSession, Assignment
 from schemas import ExamSessionCreate, ExamSessionOut, ExamSessionStatus, ExamSessionUpdate
 from auth import require_superadmin, get_current_user
+from utils import get_now_jakarta
 
 router = APIRouter(prefix="/admin/sessions", tags=["Exam Sessions"])
 
@@ -139,12 +140,12 @@ def get_assignment_session_status(assignment_id: int, db: Session = Depends(get_
             "is_open": True,
             "is_unlocked": True,
             "seconds_until_start": 0,
-            "start_time": datetime.now(),
+            "start_time": get_now_jakarta(),
             "end_time": None
         }
     
     session = assignment.session
-    now = datetime.now()
+    now = get_now_jakarta()
     
     is_open = now >= session.start_time or session.is_unlocked
     seconds_until_start = int((session.start_time - now).total_seconds()) if now < session.start_time else 0

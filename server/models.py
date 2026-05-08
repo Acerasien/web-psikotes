@@ -5,6 +5,7 @@ import enum
 from sqlalchemy import JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from utils import get_now_jakarta
 
 # Define the Role Enum
 class UserRole(enum.Enum):
@@ -44,7 +45,7 @@ class User(Base):
     level = Column(String, nullable=True)  # e.g., "Supervisor / Section Head"
     current_session_id = Column(String, nullable=True)
     report_decisions = Column(JSON, nullable=True, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=get_now_jakarta, index=True)
 
 
     # Relationships with cascade delete
@@ -93,7 +94,7 @@ class ExamSession(Base):
     start_time = Column(DateTime, nullable=False, index=True)
     end_time = Column(DateTime, nullable=True, index=True)
     is_unlocked = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_now_jakarta)
 
     # Relationships
     assignments = relationship("Assignment", back_populates="session")
@@ -139,7 +140,7 @@ class Assignment(Base):
     session_id = Column(Integer, ForeignKey("exam_sessions.id"), nullable=True, index=True)
     status = Column(String, default="pending", index=True) # pending, in_progress, completed, locked
     pretest_completed = Column(Boolean, default=False) # The Tutorial flag
-    assigned_at = Column(DateTime, default=datetime.utcnow, index=True) # Needs import: from datetime import datetime
+    assigned_at = Column(DateTime, default=get_now_jakarta, index=True) # Needs import: from datetime import datetime
     started_at = Column(DateTime, nullable=True, index=True)
 
     # Relationships
@@ -184,7 +185,7 @@ class Result(Base):
     assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False, index=True)
     score = Column(Integer, default=0, index=True)
     time_taken = Column(Integer) # in seconds
-    completed_at = Column(DateTime, default=datetime.utcnow, index=True)
+    completed_at = Column(DateTime, default=get_now_jakarta, index=True)
     details = Column(JSON, nullable=True)  # <-- ADD THIS LINE
 
     # Relationships
@@ -204,7 +205,7 @@ class ExitLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     assignment_id = Column(Integer, ForeignKey("assignments.id"), index=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    timestamp = Column(DateTime, default=get_now_jakarta, index=True)
 
     # Relationships
     user = relationship("User", back_populates="exit_logs")

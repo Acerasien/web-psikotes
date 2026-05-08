@@ -25,7 +25,7 @@ from scoring.cbi import score_cbi_test
 from scoring.iq import score_iq
 
 # Import helper
-from utils import get_max_score
+from utils import get_max_score, get_now_jakarta
 
 router = APIRouter(tags=["assignments"])
 
@@ -122,7 +122,7 @@ def get_my_assignments(db: Session = Depends(get_db), current_user: User = Depen
         
         # Check for auto-submit if in progress and timed out
         if a.status == "in_progress" and a.started_at and time_limit > 0:
-            elapsed = (datetime.now() - a.started_at).total_seconds()
+            elapsed = (get_now_jakarta() - a.started_at).total_seconds()
             if elapsed > (time_limit + 30): # 30s grace period
                 try:
                     # Auto-submit using background process logic
@@ -168,7 +168,7 @@ def start_test(
     # Session Time-Lock Check
     if assignment.session_id:
         session = assignment.session
-        now = datetime.now()
+        now = get_now_jakarta()
         if not session.is_unlocked and now < session.start_time:
             remaining = int((session.start_time - now).total_seconds())
             raise HTTPException(
@@ -178,7 +178,7 @@ def start_test(
 
     if assignment.status == "pending":
         assignment.status = "in_progress"
-        assignment.started_at = datetime.now()
+        assignment.started_at = get_now_jakarta()
         db.commit()
 
     # Determine time limit: check user's class override first, then fall back to test default
@@ -235,7 +235,7 @@ def start_test(
     # Calculate remaining time if the test is already in progress
     remaining_time = time_limit
     if assignment.status == "in_progress" and assignment.started_at:
-        elapsed = (datetime.now() - assignment.started_at).total_seconds()
+        elapsed = (get_now_jakarta() - assignment.started_at).total_seconds()
         if time_limit > 0:
             remaining_time = max(0, int(time_limit - elapsed))
 
@@ -446,7 +446,7 @@ def process_test_submission(assignment, db: Session, submission_data: Optional[T
     details["session"] = {
         "device": device_info,
         "started_at": assignment.started_at.isoformat() if assignment.started_at else None,
-        "completed_at": datetime.now().isoformat(),
+        "completed_at": get_now_jakarta().isoformat(),
         "is_auto": is_auto
     }
     details.update({"answered_count": answered_count, "total_questions": total_questions, "is_complete": is_complete})
@@ -454,7 +454,7 @@ def process_test_submission(assignment, db: Session, submission_data: Optional[T
     # Server-side time taken
     server_time_taken = time_taken
     if assignment.started_at:
-        server_time_taken = int((datetime.now() - assignment.started_at).total_seconds())
+        server_time_taken = int((get_now_jakarta() - assignment.started_at).total_seconds())
 
     result = Result(
         user_id=assignment.user_id,
@@ -463,7 +463,7 @@ def process_test_submission(assignment, db: Session, submission_data: Optional[T
         score=score,
         time_taken=server_time_taken,
         details=details,
-        completed_at=datetime.now()
+        completed_at=get_now_jakarta()
     )
     try:
         db.add(result)

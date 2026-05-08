@@ -14,7 +14,7 @@ import string
 from auth import require_admin, require_superadmin, require_assessor_or_higher, hash_password
 from database import get_db
 from models import User, Test, Assignment, Result, ExitLog, Question, ClassConfig, Response
-from utils import get_max_score
+from utils import get_max_score, get_now_jakarta
 from services.word_report import SUMMARY_CONFIGS, get_summary_data
 
 router = APIRouter(tags=["admin"])
@@ -134,7 +134,7 @@ def get_live_stats(db: Session = Depends(get_db), admin: User = Depends(require_
     ).all()
     
     result = []
-    now = datetime.now()
+    now = get_now_jakarta()
     
     for a in active_assignments:
         # Get answered questions count

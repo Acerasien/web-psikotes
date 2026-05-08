@@ -1,7 +1,14 @@
-"""
-Utility functions used across the application
-"""
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+
+
+def get_now_jakarta() -> datetime:
+    """
+    Get the current time in Jakarta (WIB, UTC+7).
+    Returns a naive datetime object (no timezone info) to remain compatible 
+    with existing naive DateTime columns in the database.
+    """
+    return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
 
 
 def get_max_score(test_code: str) -> Optional[int]:
