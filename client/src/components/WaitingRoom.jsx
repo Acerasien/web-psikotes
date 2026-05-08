@@ -1,8 +1,8 @@
-// client/src/components/WaitingRoom.jsx
-import { useState, useEffect } from 'react';
-import { api } from '../utils/api';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { Info, ArrowLeft } from 'lucide-react';
 
-function WaitingRoom({ assignmentId, onUnlock }) {
+function WaitingRoom({ assignmentId, onUnlock, onBack }) {
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -13,8 +13,8 @@ function WaitingRoom({ assignmentId, onUnlock }) {
             if (res.data.is_open) {
                 onUnlock();
             }
-        } catch (err) {
-            console.error('Failed to fetch session status', err);
+        } catch (error) {
+            console.error("Error fetching session status:", error);
         } finally {
             setLoading(false);
         }
@@ -22,8 +22,8 @@ function WaitingRoom({ assignmentId, onUnlock }) {
 
     useEffect(() => {
         fetchData();
-        const pollInterval = setInterval(fetchData, 10000);
-        return () => clearInterval(pollInterval);
+        const interval = setInterval(fetchData, 5000);
+        return () => clearInterval(interval);
     }, [assignmentId]);
 
     useEffect(() => {
@@ -54,7 +54,7 @@ function WaitingRoom({ assignmentId, onUnlock }) {
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         const s = seconds % 60;
-        return `${h > 0 ? h.toString().padStart(2, '0') + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
     if (loading) return (
@@ -64,6 +64,8 @@ function WaitingRoom({ assignmentId, onUnlock }) {
         </div>
     );
 
+    const isExpired = status?.end_time && new Date() > new Date(status.end_time);
+
     return (
         <div className="text-center py-4 md:py-8">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner">
@@ -72,9 +74,11 @@ function WaitingRoom({ assignmentId, onUnlock }) {
                 </svg>
             </div>
             
-            <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-1 md:mb-2 font-display px-2">Ruang Tunggu Ujian</h2>
-            <p className="text-sm md:text-base text-neutral-500 font-medium mb-6 md:mb-8 px-4">
-                {status?.name ? `Sesi: ${status.name}` : 'Harap tunggu hingga waktu ujian dimulai.'}
+            <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-2 md:mb-4">Ruang Tunggu Ujian</h1>
+            <p className="text-sm md:text-base text-neutral-500 mb-6 md:mb-10 max-w-md mx-auto px-4">
+                {isExpired 
+                    ? 'Sesi ujian ini telah berakhir dan tidak dapat dimasuki lagi.' 
+                    : 'Harap tunggu hingga waktu ujian dimulai.'}
             </p>
 
             <div className="bg-neutral-900 rounded-[2rem] p-6 md:p-10 shadow-2xl border-4 border-neutral-800 w-full max-w-[280px] md:max-w-sm mx-auto mb-6 md:mb-8 relative overflow-hidden">
@@ -85,24 +89,33 @@ function WaitingRoom({ assignmentId, onUnlock }) {
                     ></div>
                 </div>
                 <p className="text-primary-500 text-[8px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-2 md:mb-4">
-                    {status?.end_time && new Date() > new Date(status.end_time) ? 'Sesi Berakhir' : 'Waktu Tersisa'}
+                    {isExpired ? 'Sesi Berakhir' : 'Waktu Tersisa'}
                 </p>
                 <p className="text-4xl md:text-6xl font-mono font-bold text-white tracking-widest">
-                    {status?.end_time && new Date() > new Date(status.end_time) ? 'CLOSED' : formatTime(status?.seconds_until_start || 0)}
+                    {isExpired ? 'CLOSED' : formatTime(status?.seconds_until_start || 0)}
                 </p>
             </div>
 
-            <div className="space-y-3 md:space-y-4 text-xs md:text-sm text-neutral-500 max-w-md mx-auto px-4">
-                <div className="flex items-start gap-3 p-3 md:p-4 bg-primary-50 text-primary-800 rounded-xl border border-primary-100">
-                    <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-left leading-relaxed">
-                        Ujian akan terbuka secara otomatis saat hitungan mundur selesai. Jangan tutup halaman ini.
-                    </p>
+            <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 md:p-6 mb-6 md:mb-8 flex items-start gap-3 md:gap-4 text-left max-w-md mx-auto">
+                <div className="bg-primary-100 p-2 rounded-full mt-0.5 shrink-0">
+                    <Info className="w-4 h-4 text-primary-600" />
                 </div>
-                <p className="italic font-medium">Harap pastikan koneksi internet Anda stabil.</p>
+                <p className="text-xs md:text-sm text-primary-800 leading-relaxed">
+                    {isExpired
+                        ? 'Sesi ini sudah ditutup oleh sistem. Harap hubungi administrator jika Anda memerlukan akses tambahan.'
+                        : 'Ujian akan terbuka secara otomatis saat hitungan mundur selesai. Jangan tutup halaman ini.'}
+                </p>
             </div>
+
+            <p className="text-xs text-neutral-400 italic mb-10">Harap pastikan koneksi internet Anda stabil.</p>
+
+            <button 
+                onClick={onBack}
+                className="flex items-center gap-2 text-neutral-500 hover:text-primary-600 font-bold text-sm mx-auto transition-colors"
+            >
+                <ArrowLeft className="w-4 h-4" />
+                Kembali ke Dashboard
+            </button>
         </div>
     );
 }
