@@ -92,13 +92,8 @@ function ParticipantDashboard({ onLogout }) {
                 setWaitingAssignment(null);
                 handleStartTest(target);
             }} 
+            onBack={() => setWaitingAssignment(null)}
           />
-          <button 
-            onClick={() => setWaitingAssignment(null)}
-            className="mt-6 w-full text-neutral-400 font-bold hover:text-neutral-600 transition-colors"
-          >
-            Kembali ke Dashboard
-          </button>
         </div>
       </div>
     );
