@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
-import { Info, ArrowLeft } from 'lucide-react';
+
 
 function WaitingRoom({ assignmentId, onUnlock, onBack }) {
     const [status, setStatus] = useState(null);
@@ -98,7 +98,9 @@ function WaitingRoom({ assignmentId, onUnlock, onBack }) {
 
             <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 md:p-6 mb-6 md:mb-8 flex items-start gap-3 md:gap-4 text-left max-w-md mx-auto">
                 <div className="bg-primary-100 p-2 rounded-full mt-0.5 shrink-0">
-                    <Info className="w-4 h-4 text-primary-600" />
+                    <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
                 <p className="text-xs md:text-sm text-primary-800 leading-relaxed">
                     {isExpired
@@ -113,7 +115,9 @@ function WaitingRoom({ assignmentId, onUnlock, onBack }) {
                 onClick={onBack}
                 className="flex items-center gap-2 text-neutral-500 hover:text-primary-600 font-bold text-sm mx-auto transition-colors"
             >
-                <ArrowLeft className="w-4 h-4" />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
                 Kembali ke Dashboard
             </button>
         </div>
