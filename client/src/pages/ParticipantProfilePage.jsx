@@ -1098,8 +1098,8 @@ function ParticipantProfilePage() {
                                                         <span className="text-5xl font-black text-neutral-900 leading-none font-mono tracking-tighter">{r.details.overall_concern?.score || 0}</span>
                                                         <div className="flex flex-col gap-1 pb-1">
                                                             <span className={`text-[10px] font-black px-2 py-0.5 border-2 uppercase tracking-widest ${r.details.overall_concern?.level === 'White' ? 'bg-white text-neutral-400 border-neutral-300' :
-                                                                r.details.overall_concern?.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' :
-                                                                    'bg-neutral-900 text-white border-neutral-900'
+                                                                r.details.overall_concern?.level === 'Light Blue' ? 'bg-warning-light text-warning-dark border-warning' :
+                                                                    'bg-error-light text-error-dark border-error'
                                                                 }`}>
                                                                 {r.details.overall_concern?.level === 'White' ? 'Low Risk' : r.details.overall_concern?.level === 'Light Blue' ? 'Moderate' : 'High Risk'}
                                                             </span>
@@ -1120,13 +1120,13 @@ function ParticipantProfilePage() {
                                                                 r.details.good_impression?.level === 'Light Blue' ? 'border-warning text-warning' :
                                                                     'border-error text-error'
                                                                 }`}>
-                                                                {r.details.good_impression?.level}
+                                                                {r.details.good_impression?.level === 'White' ? 'Low Risk' : r.details.good_impression?.level === 'Light Blue' ? 'Moderate' : 'High Risk'}
                                                             </span>
                                                             <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-tighter">Response Integrity Index</span>
                                                         </div>
                                                     </div>
                                                     <div className="mt-8 h-1 w-full bg-neutral-200">
-                                                        <div className={`h-full ${r.details.good_impression?.level === 'White' ? 'bg-success' : 'bg-error'}`} style={{ width: `${(r.details.good_impression?.score / 15) * 100}%` }}></div>
+                                                        <div className={`h-full ${r.details.good_impression?.level === 'White' ? 'bg-success' : r.details.good_impression?.level === 'Light Blue' ? 'bg-warning' : 'bg-error'}`} style={{ width: `${(r.details.good_impression?.score / 15) * 100}%` }}></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1141,9 +1141,9 @@ function ParticipantProfilePage() {
                                                                 <span className="text-xs font-black uppercase tracking-tighter leading-tight max-w-[140px]">{trait}</span>
                                                                 <span className="font-mono text-lg font-black">{data.score}</span>
                                                             </div>
-                                                            <div className={`text-[10px] font-black uppercase tracking-widest inline-block px-1.5 py-0.5 border ${data.level === 'White' ? 'bg-white text-neutral-900' :
-                                                                data.level === 'Light Blue' ? 'bg-primary-500 text-white border-primary-500' :
-                                                                    'bg-error text-white border-error'
+                                                            <div className={`text-[10px] font-black uppercase tracking-widest inline-block px-1.5 py-0.5 border ${data.level === 'White' ? 'bg-white text-neutral-900 border-neutral-200' :
+                                                                data.level === 'Light Blue' ? 'bg-warning-light text-warning-dark border-warning' :
+                                                                    'bg-error-light text-error-dark border-error'
                                                                 }`}>
                                                                 {data.level === 'White' ? 'Safe' : 'Concern'}
                                                             </div>
