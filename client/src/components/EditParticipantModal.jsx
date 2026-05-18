@@ -224,7 +224,7 @@ function EditParticipantModal({ user, onClose, onSaved }) {
                                         <option value="Admin / Non - Staff">Admin / Non - Staff</option>
                                         <option value="Foreman / Officer">Foreman / Officer</option>
                                         <option value="Supervisor / Section Head">Supervisor / Section Head</option>
-                                        <option value="Superintendent / Dept. Head">Superintendent / Dept. Head</option>
+                                        <option value="Superintendent / Dept. Head / Management">Superintendent / Dept. Head / Management</option>
                                     </select>
                                 </div>
                                 <div>

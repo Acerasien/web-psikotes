@@ -395,7 +395,7 @@ def bulk_create_users(
         "Admin / Non - Staff", 
         "Foreman / Officer", 
         "Supervisor / Section Head", 
-        "Superintendent / Dept. Head"
+        "Superintendent / Dept. Head / Management"
     ]
     results = {
         "total": len(rows),

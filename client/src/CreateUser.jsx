@@ -365,7 +365,7 @@ function CreateUser({ onUserCreated, initialRole = 'participant' }) {
                 <option value="Admin / Non - Staff">Admin / Non - Staff</option>
                 <option value="Foreman / Officer">Foreman / Officer</option>
                 <option value="Supervisor / Section Head">Supervisor / Section Head</option>
-                <option value="Superintendent / Dept. Head">Superintendent / Dept. Head</option>
+                <option value="Superintendent / Dept. Head / Management">Superintendent / Dept. Head / Management</option>
               </select>
               {errors.level && (
                 <p className="mt-1 text-sm text-red-600">{errors.level}</p>

@@ -25,6 +25,11 @@ const RECOMMENDATION_LOGIC = {
         supporting: ["LOGIC", "MEM", "SPEED"],
         minSupporting: 2
     },
+    "Superintendent / Dept. Head / Management": {
+        must: ["CBI", "IQ", "DISC", "TEMP", "LEAD", "SPEED"],
+        supporting: ["LOGIC", "MEM"],
+        minSupporting: 1
+    },
     "Superintendent / Dept Head": {
         must: ["CBI", "IQ", "DISC", "TEMP", "LEAD", "SPEED"],
         supporting: ["LOGIC", "MEM"],

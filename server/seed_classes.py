@@ -22,6 +22,17 @@ classes_data = [
         },
     },
     {
+        "name": "Management",
+        "description": "Management",
+        "config": {
+            "time_overrides": {
+                "SPEED": 600, "DISC": 420, "LOGIC": 720, "LEAD": 720, "TEMP": 300, "CBI": 900,
+                "MEM": {"encoding": 180, "recall": 600},
+                "IQ": {"phases": [180, 240, 180, 180, 180, 240, 180, 180]}
+            }
+        },
+    },
+    {
         "name": "HO Non Staff",
         "description": "Head Office Non Staff",
         "config": {
