@@ -76,17 +76,17 @@ function ParticipantProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    // Route Protection: Admins (Coordinators) cannot see details
+    // Route Protection: Non-staff users cannot see details
     useEffect(() => {
-        if (token && !canSeeResults) {
+        if (token && !isStaff) {
             Swal.fire({
                 title: "Akses Ditolak",
-                text: "Anda tidak memiliki izin untuk melihat detail psikologis peserta.",
+                text: "Anda tidak memiliki izin untuk melihat detail peserta.",
                 icon: "error"
             });
             navigate('/');
         }
-    }, [canSeeResults, navigate, token]);
+    }, [isStaff, navigate, token]);
 
     const [user, setUser] = useState(null);
     const [assignments, setAssignments] = useState([]);
@@ -145,14 +145,18 @@ function ParticipantProfilePage() {
             const assignRes = await api.getAssignments(id);
             setAssignments(assignRes.data);
 
-            const resultsRes = await api.getResults({ user_id: id });
-            setResults(resultsRes.data);
+            // Only fetch results if user has assessor/superadmin role
+            // Admin role will get 403 from /results/ endpoint
+            if (canSeeResults) {
+                const resultsRes = await api.getResults({ user_id: id });
+                setResults(resultsRes.data);
+            }
         } catch (err) {
             console.error('Error loading participant data:', err);
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, canSeeResults]);
 
     // Load data on mount and when id/token changes
     useEffect(() => {
@@ -471,7 +475,8 @@ function ParticipantProfilePage() {
                 </div>
             </section>
 
-            {/* Assigned Tests - Industrial Grid */}
+            {/* Assigned Tests - Industrial Grid (assessor/superadmin only) */}
+            {canSeeResults && (
             <section className="animate-fade-in-up">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="h-8 w-1.5 bg-neutral-900"></div>
@@ -606,7 +611,8 @@ function ParticipantProfilePage() {
                     </div>
                 )}
             </section>
-            {results.length > 0 && (
+            )}
+            {canSeeResults && results.length > 0 && (
                 <section className="animate-fade-in-up mt-12 pb-20">
                     <div className="flex items-center gap-4 mb-8">
                         <div className="h-8 w-1.5 bg-neutral-900"></div>

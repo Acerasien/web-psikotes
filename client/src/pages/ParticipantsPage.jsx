@@ -553,8 +553,8 @@ function ParticipantsPage() {
                                     {/* Header with checkbox and avatar */}
                                     <div className="flex items-center justify-between">
                                         <div 
-                                            className={`flex items-center gap-3 flex-1 ${canSeeResults ? 'cursor-pointer' : 'cursor-default'}`} 
-                                            onClick={() => canSeeResults && navigate(`/participants/${u.id}`)}
+                                            className="flex items-center gap-3 flex-1 cursor-pointer" 
+                                            onClick={() => navigate(`/participants/${u.id}`)}
                                         >
                                             {isSelectMode && (
                                                 <input
@@ -797,8 +797,8 @@ function ParticipantsPage() {
                                         return (
                                             <tr
                                                 key={u.id}
-                                                className={`hover:bg-neutral-50/80 transition-colors ${canSeeResults ? 'cursor-pointer' : 'cursor-default'}`}
-                                                onClick={() => canSeeResults && navigate(`/participants/${u.id}`)}
+                                                className="hover:bg-neutral-50/80 transition-colors cursor-pointer"
+                                                onClick={() => navigate(`/participants/${u.id}`)}
                                             >
                                                 <td className={`px-4 xl:px-6 py-4 border-l-4 ${rowBorderColor} ${!isSelectMode && selectedUsers.size === 0 ? 'hidden' : ''}`}>
                                                     <input

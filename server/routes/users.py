@@ -101,12 +101,18 @@ def create_user(
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_assessor_or_higher)
+    admin: User = Depends(require_admin)
 ):
-    """Get single user by ID (superadmin only)"""
+    """Get single user by ID"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    # Strip report decisions for non-assessors/superadmins
+    report_decisions = user.report_decisions
+    if admin.role not in ["assessor", "superadmin"]:
+        report_decisions = None
+
     return {
         "id": user.id,
         "username": user.username,
@@ -120,10 +126,9 @@ def get_user(
         "business_unit": user.business_unit,
         "class_id": user.class_id,
         "level": user.level,
-        "report_decisions": user.report_decisions,
+        "report_decisions": report_decisions,
         "class_name": user.class_config.name if user.class_config else None,
         "created_at": user.created_at
-
     }
 
 
