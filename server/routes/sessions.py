@@ -7,14 +7,14 @@ from datetime import datetime
 from database import get_db
 from models import User, ExamSession, Assignment
 from schemas import ExamSessionCreate, ExamSessionOut, ExamSessionStatus, ExamSessionUpdate
-from auth import require_superadmin, get_current_user
+from auth import require_admin, get_current_user
 from utils import get_now_jakarta
 
 router = APIRouter(prefix="/admin/sessions", tags=["Exam Sessions"])
 
 @router.post("/", response_model=ExamSessionOut)
-def create_session(session_in: ExamSessionCreate, db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
-    """Create a new exam session and link participants (superadmin only)"""
+def create_session(session_in: ExamSessionCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Create a new exam session and link participants (admin and superadmin)"""
     new_session = ExamSession(
         name=session_in.name,
         start_time=session_in.start_time,
@@ -36,8 +36,8 @@ def create_session(session_in: ExamSessionCreate, db: Session = Depends(get_db),
     return new_session
 
 @router.get("/", response_model=List[ExamSessionOut])
-def list_sessions(db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
-    """List all exam sessions (superadmin only)"""
+def list_sessions(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """List all exam sessions (admin and superadmin)"""
     sessions = db.query(ExamSession).order_by(ExamSession.start_time.desc()).all()
     
     # Add participant count dynamically for each session
@@ -50,7 +50,7 @@ def list_sessions(db: Session = Depends(get_db), admin: User = Depends(require_s
     return sessions
 
 @router.get("/{session_id}", response_model=ExamSessionOut)
-def get_session(session_id: int, db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
+def get_session(session_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Get a single session details"""
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
     if not session:
@@ -62,7 +62,7 @@ def get_session(session_id: int, db: Session = Depends(get_db), admin: User = De
     return session
 
 @router.put("/{session_id}", response_model=ExamSessionOut)
-def update_session(session_id: int, session_in: ExamSessionUpdate, db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
+def update_session(session_id: int, session_in: ExamSessionUpdate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Update session details and participants"""
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
     if not session:
@@ -98,7 +98,7 @@ def update_session(session_id: int, session_in: ExamSessionUpdate, db: Session =
     return session
 
 @router.post("/{session_id}/unlock")
-def toggle_session_unlock(session_id: int, db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
+def toggle_session_unlock(session_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Toggle the master unlock flag for a session"""
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
     if not session:
@@ -109,7 +109,7 @@ def toggle_session_unlock(session_id: int, db: Session = Depends(get_db), admin:
     return {"message": "Session updated", "is_unlocked": session.is_unlocked}
 
 @router.delete("/{session_id}")
-def delete_session(session_id: int, db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
+def delete_session(session_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Delete a session and unlink assignments"""
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
     if not session:

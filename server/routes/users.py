@@ -164,34 +164,34 @@ def update_user(
             existing = db.query(User).filter(User.username == user_update.username).first()
             if existing:
                 raise HTTPException(status_code=400, detail="Username already taken")
-        user.username = user_update.username
+        user.username = user_update.username  # type: ignore[assignment]
     if user_update.full_name is not None:
-        user.full_name = user_update.full_name
+        user.full_name = user_update.full_name  # type: ignore[assignment]
     if user_update.gender is not None:
-        user.gender = user_update.gender
+        user.gender = user_update.gender  # type: ignore[assignment]
     if user_update.age is not None:
-        user.age = user_update.age
+        user.age = user_update.age  # type: ignore[assignment]
     if user_update.education is not None:
-        user.education = user_update.education
+        user.education = user_update.education  # type: ignore[assignment]
     if user_update.department is not None:
-        user.department = user_update.department
+        user.department = user_update.department  # type: ignore[assignment]
     if user_update.position is not None:
-        user.position = user_update.position
+        user.position = user_update.position  # type: ignore[assignment]
     if user_update.business_unit is not None:
-        user.business_unit = user_update.business_unit
+        user.business_unit = user_update.business_unit  # type: ignore[assignment]
     if user_update.level is not None:
-        user.level = user_update.level
+        user.level = user_update.level  # type: ignore[assignment]
     if user_update.role is not None:
 
-        user.role = user_update.role
+        user.role = user_update.role  # type: ignore[assignment]
     if user_update.class_id is not None:
         if user_update.class_id == 0:
-            user.class_id = None  # Allow clearing the class
+            user.class_id = None  # type: ignore[assignment]  # Allow clearing the class
         else:
             class_exists = db.query(ClassConfig).filter(ClassConfig.id == user_update.class_id).first()
             if not class_exists:
                 raise HTTPException(status_code=400, detail="Class not found")
-            user.class_id = user_update.class_id
+            user.class_id = user_update.class_id  # type: ignore[assignment]
     if user_update.password is not None and user_update.password != "":
         user.password_hash = hash_password(user_update.password)
     if user_update.report_decisions is not None:
@@ -200,7 +200,7 @@ def update_user(
                 status_code=403,
                 detail="Only assessors or superadmins can update clinical decisions"
             )
-        user.report_decisions = user_update.report_decisions
+        user.report_decisions = user_update.report_decisions  # type: ignore[assignment]
 
     db.commit()
     db.refresh(user)

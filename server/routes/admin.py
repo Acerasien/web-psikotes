@@ -125,8 +125,8 @@ def get_completion_stats(db: Session = Depends(get_db), admin: User = Depends(re
 
 
 @router.get("/admin/stats/live")
-def get_live_stats(db: Session = Depends(get_db), admin: User = Depends(require_superadmin)):
-    """Get detailed stats for currently active (started) assignments (superadmin only)"""
+def get_live_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Get detailed stats for currently active (started) assignments (admin and superadmin)"""
     # Only show assignments that have actually started
     active_assignments = db.query(Assignment).filter(
         Assignment.status == "in_progress",
@@ -309,9 +309,9 @@ def get_exit_logs(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    superadmin: User = Depends(require_superadmin)
+    admin: User = Depends(require_admin)
 ):
-    """Get exit logs with filters (superadmin only)"""
+    """Get exit logs with filters (admin and superadmin)"""
     query = db.query(ExitLog).join(User).join(Assignment)
     if user_id:
         query = query.filter(ExitLog.user_id == user_id)
